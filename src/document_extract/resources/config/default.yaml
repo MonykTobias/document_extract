@@ -5,4 +5,5 @@ runtime:
   end_page: 0
   skip_vlm: false
   skip_picture_triage: false
+  photo_summaries: false
   divider_reorder: true

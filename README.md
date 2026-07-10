@@ -88,6 +88,8 @@ document_extract report.pdf --start-page 1 --end-page 5
 | `--triage-model MODEL` | Optional faster model for picture triage. |
 | `--triage-num-predict N` | Token cap for triage responses. |
 | `--triage-confidence N` | Confidence required for specialist routing. |
+| `--photo-skip-confidence N` | Triage confidence at or above which photo-type images skip extraction entirely (default 0.8). |
+| `--photo-summaries` | Also transcribe photo-type images (skipped by default after confident triage). |
 | `--skip-picture-triage` | Use heuristic routing without the triage VLM call. |
 | `--temperature N` | Ollama temperature. |
 | `--num-ctx N` | Ollama context size. |
@@ -214,7 +216,10 @@ prepare
 
 Picture triage is a short VLM classification call for eligible images. It can
 route images to specialist prompts for tables, charts, grouped values, or
-photos. Small and decorative images are filtered before making the call.
+photos. Small and decorative images are filtered before making the call. By
+default, images the triage classifies as photos with high confidence
+(`--photo-skip-confidence`, default 0.8) skip extraction entirely; pass
+`--photo-summaries` to transcribe them anyway.
 
 ## Python integration
 

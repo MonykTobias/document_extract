@@ -68,6 +68,17 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Minimum confidence required for type-specific picture routing.",
     )
     parser.add_argument(
+        "--photo-skip-confidence",
+        type=float,
+        default=0.8,
+        help="Triage confidence at or above which photo-type images skip extraction entirely.",
+    )
+    parser.add_argument(
+        "--photo-summaries",
+        action="store_true",
+        help="Also transcribe photo-type images (skipped by default after confident triage).",
+    )
+    parser.add_argument(
         "--skip-picture-triage",
         action="store_true",
         help="Use the existing heuristic plus generic picture prompt without visual triage.",

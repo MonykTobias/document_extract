@@ -309,6 +309,8 @@ def test_picture_triage_routes_specialist_and_decorative() -> None:
             triage_model="fast-model",
             triage_num_predict=64,
             triage_confidence=0.65,
+            photo_summaries=False,
+            photo_skip_confidence=0.8,
             ollama_base_url="",
             ollama_model="main-model",
             num_ctx=0,
@@ -320,6 +322,54 @@ def test_picture_triage_routes_specialist_and_decorative() -> None:
         check(not decorative.summarize and decorative.skip_reason == "triage_decorative", "decorative image skipped")
         check(calls[0]["model"] == "fast-model", "triage uses the configured model")
         check(calls[0]["num_predict"] == 64, "triage uses the short output cap")
+    finally:
+        ollama_client.call_ollama_vlm = original_call
+
+
+def test_picture_triage_skips_confident_photos() -> None:
+    original_call = ollama_client.call_ollama_vlm
+
+    def make_fake_call(answer: str):
+        def fake_call(**kwargs):
+            return answer, {"total_tokens": 4}
+
+        return fake_call
+
+    def run(answer: str, *, photo_summaries: bool):
+        record = make_record(1, area=0.02)
+        record.abs_path = "photo.png"
+        args = SimpleNamespace(
+            skip_vlm=False,
+            skip_picture_triage=False,
+            triage_model="fast-model",
+            triage_num_predict=64,
+            triage_confidence=0.65,
+            photo_summaries=photo_summaries,
+            photo_skip_confidence=0.8,
+            ollama_base_url="",
+            ollama_model="main-model",
+            num_ctx=0,
+            auto_num_ctx=False,
+        )
+        stats = triage_pictures(records=[record], args=args)
+        return record, stats
+
+    try:
+        ollama_client.call_ollama_vlm = make_fake_call('{"type":"photo","confidence":0.95}')
+        record, stats = run('{"type":"photo","confidence":0.95}', photo_summaries=False)
+        check(not record.summarize, "confident photo is not summarized")
+        check(record.skip_reason == "triage_photo", "confident photo skip reason recorded")
+        check(record.triage_action == "skip", "confident photo skips extraction")
+        check(stats["skipped"] == 1, "confident photo counted as skipped")
+
+        ollama_client.call_ollama_vlm = make_fake_call('{"type":"photo","confidence":0.7}')
+        record, _ = run('{"type":"photo","confidence":0.7}', photo_summaries=False)
+        check(record.summarize, "photo below skip threshold still summarized")
+        check(record.triage_action == "specialist", "photo above routing threshold uses photo specialist")
+
+        ollama_client.call_ollama_vlm = make_fake_call('{"type":"photo","confidence":0.95}')
+        record, _ = run('{"type":"photo","confidence":0.95}', photo_summaries=True)
+        check(record.summarize, "photo_summaries opt-in restores summarization")
     finally:
         ollama_client.call_ollama_vlm = original_call
 

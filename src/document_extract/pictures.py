@@ -257,6 +257,15 @@ def triage_pictures(
             record.triage_action = "skip"
             record.skip_reason = "triage_decorative"
             stats["skipped"] += 1
+        elif (
+            kind == "photo"
+            and not args.photo_summaries
+            and confidence >= args.photo_skip_confidence
+        ):
+            record.summarize = False
+            record.triage_action = "skip"
+            record.skip_reason = "triage_photo"
+            stats["skipped"] += 1
         else:
             record.summarize = True
             record.triage_action = "specialist" if confidence >= args.triage_confidence else "generic"

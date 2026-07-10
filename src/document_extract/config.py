@@ -21,6 +21,7 @@ class RuntimeConfig:
     end_page: int = 0
     skip_vlm: bool = False
     skip_picture_triage: bool = False
+    photo_summaries: bool = False
     divider_reorder: bool = True
 
 
@@ -35,6 +36,7 @@ class ModelConfig:
     auto_num_ctx: bool = False
     triage_num_predict: int = 64
     triage_confidence: float = 0.65
+    photo_skip_confidence: float = 0.8
 
 
 @dataclass(frozen=True)
@@ -133,6 +135,7 @@ def apply_environment_overrides(mapping: dict[str, Any]) -> None:
         "DOCLING_RAG_END_PAGE": ("runtime", "end_page", int),
         "DOCLING_RAG_SKIP_VLM": ("runtime", "skip_vlm", _env_bool),
         "DOCLING_RAG_SKIP_PICTURE_TRIAGE": ("runtime", "skip_picture_triage", _env_bool),
+        "DOCLING_RAG_PHOTO_SUMMARIES": ("runtime", "photo_summaries", _env_bool),
         "DOCLING_RAG_DIVIDER_REORDER": ("runtime", "divider_reorder", _env_bool),
         "DOCLING_RAG_BASE_URL": ("models", "base_url", str),
         "DOCLING_RAG_MODEL": ("models", "model", str),
@@ -143,6 +146,7 @@ def apply_environment_overrides(mapping: dict[str, Any]) -> None:
         "DOCLING_RAG_AUTO_NUM_CTX": ("models", "auto_num_ctx", _env_bool),
         "DOCLING_RAG_TRIAGE_NUM_PREDICT": ("models", "triage_num_predict", int),
         "DOCLING_RAG_TRIAGE_CONFIDENCE": ("models", "triage_confidence", float),
+        "DOCLING_RAG_PHOTO_SKIP_CONFIDENCE": ("models", "photo_skip_confidence", float),
     }
     for env_name, (section, key, converter) in env_map.items():
         raw = os.getenv(env_name)
@@ -171,6 +175,7 @@ def argv_with_config_defaults(config: AppConfig, argv: list[str]) -> list[str]:
         ("--num-predict", config.models.num_predict),
         ("--triage-num-predict", config.models.triage_num_predict),
         ("--triage-confidence", config.models.triage_confidence),
+        ("--photo-skip-confidence", config.models.photo_skip_confidence),
     ]
     for option, value in values:
         if not any(arg == option or arg.startswith(option + "=") for arg in out):
@@ -181,6 +186,8 @@ def argv_with_config_defaults(config: AppConfig, argv: list[str]) -> list[str]:
         out.append("--skip-vlm")
     if config.runtime.skip_picture_triage and "--skip-picture-triage" not in out:
         out.append("--skip-picture-triage")
+    if config.runtime.photo_summaries and "--photo-summaries" not in out:
+        out.append("--photo-summaries")
     if not config.runtime.divider_reorder and "--no-divider-reorder" not in out:
         out.append("--no-divider-reorder")
     return out
@@ -274,6 +281,8 @@ def _validate_section(value: Any, name: str) -> None:
                 raise ValueError(f"{name}.{key} must be between 0 and 1")
     if value.__class__.__name__ == "ModelConfig" and not 0 <= value.triage_confidence <= 1:
         raise ValueError("models.triage_confidence must be between 0 and 1")
+    if value.__class__.__name__ == "ModelConfig" and not 0 <= value.photo_skip_confidence <= 1:
+        raise ValueError("models.photo_skip_confidence must be between 0 and 1")
 
 
 def _env_bool(raw: str) -> bool:
