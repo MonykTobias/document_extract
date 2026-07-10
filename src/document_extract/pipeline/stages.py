@@ -10,7 +10,6 @@ from typing import Any
 from ..artifacts import block_rows_for_page, write_image_summaries
 from ..docling_adapter import (
     assert_docling_export_surface,
-    convert_pdf,
     is_table_item,
     iter_doc_items,
     rasterize_page,
@@ -97,14 +96,18 @@ def _prepare_page(
     reporter: StatusReporter,
     args: argparse.Namespace,
     pdf_doc: Any,
-    converter: Any,
+    document: Any,
     page_size: tuple[float, float],
 ) -> dict[str, Any]:
+    """Prepare one page from a document that was already converted by Docling.
+
+    The runner converts the whole selected page range in a single Docling pass;
+    this stage only reads the items for ``state.page`` out of that document.
+    """
     runtime: dict[str, Any] = {}
     page_dir = Path(state.page_dir)
 
     def action() -> dict[str, Any]:
-        document = convert_pdf(converter, Path(args.pdf), [state.page])
         assert_docling_export_surface(document)
         rasterize_page(pdf_doc, state.page, args.dpi, page_dir / "page.png")
         items = list(iter_doc_items(document, state.page))

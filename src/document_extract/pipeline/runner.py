@@ -5,12 +5,13 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Sequence
 
 from ..artifacts import combine_markdown, summarize_token_usage, write_jsonl
-from ..docling_adapter import build_docling_converter
+from ..docling_adapter import build_docling_converter, convert_pdf
 from ..layout.prompt_map import layout_map_stats
 from ..prompts import load_page_repair_prompt, load_page_refinement_prompt, load_summary_prompt
 from ..runtime import (
@@ -36,6 +37,49 @@ from .stages import (
 )
 from .state import _candidates_from_state, _records_from_state
 from ..tables import table_candidate_rows
+
+# Pages per Docling convert() call, which is also the prefetch unit: the next
+# chunk is converted in a persistent worker process while the current chunk's
+# pages go through the VLM stages. Each call re-parses the whole PDF (~20-70s
+# fixed cost regardless of range), so larger chunks amortize the parse while
+# smaller chunks give earlier first-page output and a lower memory footprint.
+CONVERT_CHUNK_PAGES = 16
+
+# Persistent Docling worker process. docling-parse holds the GIL for the whole
+# PDF-parse phase, so prefetching in a background *thread* stalls the foreground
+# page loop instead of overlapping with it. Running convert() in a separate
+# process sidesteps the GIL. The converter is expensive to build
+# (build_docling_converter loads the OCR and table-structure ML models), so it
+# is built once per worker via the pool initializer and reused for every chunk.
+_WORKER_CONVERTER: Any | None = None
+
+
+def _init_convert_worker() -> None:
+    """Build the Docling converter once in the persistent worker process.
+
+    This runs in a spawned subprocess, so it must re-establish the driver's
+    import order: torch first, so its bundled CUDA/cuDNN DLLs load before docling
+    and onnxruntime-gpu (RapidOCR's OCR engine) — otherwise OCR silently falls
+    back to CPU on Windows. torch is a driver dependency rather than one of
+    document_extract, so its absence is not fatal here.
+    """
+    try:
+        import torch  # noqa: F401, PLC0415
+    except ImportError:
+        pass
+    global _WORKER_CONVERTER
+    _WORKER_CONVERTER = build_docling_converter()
+
+
+def _convert_chunk_in_worker(pdf_path: Path, pages: list[int]) -> Any:
+    """Convert one page chunk in the worker using its prebuilt converter.
+
+    Returns the DoclingDocument, which is pickled back across the process
+    boundary. It is a pydantic model whose picture images are stored as base64
+    data URIs (generate_picture_images=True), so it serializes cheaply.
+    """
+    return convert_pdf(_WORKER_CONVERTER, pdf_path, pages)
+
 
 def ensure_pdf(path: Path) -> Path:
     pdf_path = path.expanduser().resolve()
@@ -138,126 +182,180 @@ def run_pipeline(args: argparse.Namespace) -> int:
             )
             for page in pages
         }
-        converter = None if args.resume_from else build_docling_converter()
+        # Docling's convert() re-parses the whole PDF on every call (~20-70s fixed
+        # cost) before running the ML models on the requested range, and
+        # docling-parse holds the GIL for that whole parse phase. Pages are
+        # converted in chunks to amortize the parse, and the next chunk is
+        # prefetched in a persistent worker process while the main thread runs
+        # the VLM stages for the current chunk, hiding the Docling time behind
+        # the VLM calls. A separate process (not a thread) is required so the
+        # GIL-holding parse overlaps with the foreground page loop instead of
+        # stalling it. The converter is built once inside the worker (via the
+        # pool initializer), so it is never built or held in the main process.
+        # At most one convert() is in flight at a time, and at most two chunk
+        # documents are held in memory (current + prefetched).
+        use_prefetch = not args.resume_from
+        chunks = [
+            pages[i : i + CONVERT_CHUNK_PAGES]
+            for i in range(0, len(pages), CONVERT_CHUNK_PAGES)
+        ]
+
+        def _submit_chunk(pool: ProcessPoolExecutor, chunk: list[int]) -> Future:
+            print(
+                f"Prefetching pages {chunk[0]}-{chunk[-1]} with Docling "
+                f"({len(chunk)} pages, one parse)...",
+                flush=True,
+            )
+            return pool.submit(_convert_chunk_in_worker, pdf_path, chunk)
+
+        pool = (
+            ProcessPoolExecutor(max_workers=1, initializer=_init_convert_worker)
+            if use_prefetch
+            else None
+        )
+        pending: Future | None = (
+            _submit_chunk(pool, chunks[0]) if pool is not None else None
+        )
+        chunk_index = -1
+        document = None
+        chunk_last_page = 0
         total_pages = len(pages)
         run_started_at = time.perf_counter()
         states: list[PageState] = []
 
-        for page_index, page_number in enumerate(pages, start=1):
-            page_started_at = time.perf_counter()
-            page_dir = output_root / f"page_{page_number:04d}"
-            page_dir.mkdir(parents=True, exist_ok=True)
-            reporter = StatusReporter(
-                page_index=page_index, total_pages=total_pages, page=page_number
-            )
-            state: PageState | None = None
-            try:
-                if args.resume_from:
-                    state = PageState.load(page_dir / "page_state.json")
-                    validate_checkpoint(
-                        state,
-                        pdf_path=pdf_path,
-                        page=page_number,
-                        dpi=args.dpi,
-                        page_dir=page_dir,
+        try:
+            for page_index, page_number in enumerate(pages, start=1):
+                if pool is not None and page_number > chunk_last_page:
+                    chunk_index += 1
+                    chunk = chunks[chunk_index]
+                    wait_started = time.perf_counter()
+                    # Re-raises background conversion errors at the chunk boundary.
+                    document = pending.result()
+                    print(
+                        f"Docling chunk {chunk[0]}-{chunk[-1]} ready "
+                        f"(main thread waited {time.perf_counter() - wait_started:.1f}s)",
+                        flush=True,
                     )
-                    state.page_dir = str(page_dir)
-                    clear_downstream_artifacts(page_dir, args.resume_from)
-                    invalidate_from(state, args.resume_from)
-                    state.save()
-                    runtime: dict[str, Any] = {
-                        "items": None,
-                        "records": _records_from_state(state),
-                        "candidates": _candidates_from_state(state),
-                    }
-                    start_index = stage_index(args.resume_from)
-                    reporter.emit("page", "resume", from_stage=args.resume_from)
-                else:
-                    state = new_page_state(
-                        pdf_path=pdf_path,
-                        page=page_number,
-                        page_index=page_index,
-                        total_pages=total_pages,
-                        dpi=args.dpi,
-                        page_dir=page_dir,
-                        page_size=page_sizes[page_number],
-                    )
-                    runtime = _prepare_page(
-                        state=state,
-                        reporter=reporter,
-                        args=args,
-                        pdf_doc=pdf_doc,
-                        converter=converter,
-                        page_size=page_sizes[page_number],
-                    )
-                    start_index = stage_index("picture_triage")
-
-                stage_functions = {
-                    "picture_triage": lambda: _run_picture_triage(
-                        state=state, reporter=reporter, args=args, runtime=runtime
-                    ),
-                    "picture_extract": lambda: _run_picture_extract(
-                        state=state,
-                        reporter=reporter,
-                        args=args,
-                        runtime=runtime,
-                        prompt=image_summary_prompt,
-                    ),
-                    "table_detect": lambda: _run_table_detect(
-                        state=state, reporter=reporter, runtime=runtime
-                    ),
-                    "table_extract": lambda: _run_table_extract(
-                        state=state, reporter=reporter, args=args, runtime=runtime
-                    ),
-                    "page_refine": lambda: _run_page_refine(
-                        state=state,
-                        reporter=reporter,
-                        args=args,
-                        runtime=runtime,
-                        prompt=page_refinement_prompt,
-                    ),
-                    "page_repair": lambda: _run_page_repair(
-                        state=state,
-                        reporter=reporter,
-                        args=args,
-                        runtime=runtime,
-                        prompt=page_repair_prompt,
-                    ),
-                    "finalize": lambda: _run_finalize(
-                        state=state, reporter=reporter, runtime=runtime
-                    ),
-                }
-                for stage in STAGES[start_index:]:
-                    stage_functions[stage]()
-                state.status = "completed"
-                state.save()
-                reporter.emit(
-                    "page",
-                    "ok",
-                    seconds=f"{time.perf_counter() - page_started_at:.1f}",
-                    total=f"{time.perf_counter() - run_started_at:.1f}",
+                    chunk_last_page = chunk[-1]
+                    if chunk_index + 1 < len(chunks):
+                        pending = _submit_chunk(pool, chunks[chunk_index + 1])
+                page_started_at = time.perf_counter()
+                page_dir = output_root / f"page_{page_number:04d}"
+                page_dir.mkdir(parents=True, exist_ok=True)
+                reporter = StatusReporter(
+                    page_index=page_index, total_pages=total_pages, page=page_number
                 )
-            except Exception as error:  # noqa: BLE001
-                if state is None:
-                    state = new_page_state(
-                        pdf_path=pdf_path,
-                        page=page_number,
-                        page_index=page_index,
-                        total_pages=total_pages,
-                        dpi=args.dpi,
-                        page_dir=page_dir,
-                        page_size=page_sizes[page_number],
-                    )
-                if state.status != "failed":
-                    state.status = "failed"
-                    state.failure = {
-                        "stage": args.resume_from or "prepare",
-                        "error_type": type(error).__name__,
-                        "error_message": str(error),
+                state: PageState | None = None
+                try:
+                    if args.resume_from:
+                        state = PageState.load(page_dir / "page_state.json")
+                        validate_checkpoint(
+                            state,
+                            pdf_path=pdf_path,
+                            page=page_number,
+                            dpi=args.dpi,
+                            page_dir=page_dir,
+                        )
+                        state.page_dir = str(page_dir)
+                        clear_downstream_artifacts(page_dir, args.resume_from)
+                        invalidate_from(state, args.resume_from)
+                        state.save()
+                        runtime: dict[str, Any] = {
+                            "items": None,
+                            "records": _records_from_state(state),
+                            "candidates": _candidates_from_state(state),
+                        }
+                        start_index = stage_index(args.resume_from)
+                        reporter.emit("page", "resume", from_stage=args.resume_from)
+                    else:
+                        state = new_page_state(
+                            pdf_path=pdf_path,
+                            page=page_number,
+                            page_index=page_index,
+                            total_pages=total_pages,
+                            dpi=args.dpi,
+                            page_dir=page_dir,
+                            page_size=page_sizes[page_number],
+                        )
+                        runtime = _prepare_page(
+                            state=state,
+                            reporter=reporter,
+                            args=args,
+                            pdf_doc=pdf_doc,
+                            document=document,
+                            page_size=page_sizes[page_number],
+                        )
+                        start_index = stage_index("picture_triage")
+
+                    stage_functions = {
+                        "picture_triage": lambda: _run_picture_triage(
+                            state=state, reporter=reporter, args=args, runtime=runtime
+                        ),
+                        "picture_extract": lambda: _run_picture_extract(
+                            state=state,
+                            reporter=reporter,
+                            args=args,
+                            runtime=runtime,
+                            prompt=image_summary_prompt,
+                        ),
+                        "table_detect": lambda: _run_table_detect(
+                            state=state, reporter=reporter, runtime=runtime
+                        ),
+                        "table_extract": lambda: _run_table_extract(
+                            state=state, reporter=reporter, args=args, runtime=runtime
+                        ),
+                        "page_refine": lambda: _run_page_refine(
+                            state=state,
+                            reporter=reporter,
+                            args=args,
+                            runtime=runtime,
+                            prompt=page_refinement_prompt,
+                        ),
+                        "page_repair": lambda: _run_page_repair(
+                            state=state,
+                            reporter=reporter,
+                            args=args,
+                            runtime=runtime,
+                            prompt=page_repair_prompt,
+                        ),
+                        "finalize": lambda: _run_finalize(
+                            state=state, reporter=reporter, runtime=runtime
+                        ),
                     }
+                    for stage in STAGES[start_index:]:
+                        stage_functions[stage]()
+                    state.status = "completed"
                     state.save()
-                    reporter.emit("page", "fail", error=type(error).__name__)
-            states.append(state)
+                    reporter.emit(
+                        "page",
+                        "ok",
+                        seconds=f"{time.perf_counter() - page_started_at:.1f}",
+                        total=f"{time.perf_counter() - run_started_at:.1f}",
+                    )
+                except Exception as error:  # noqa: BLE001
+                    if state is None:
+                        state = new_page_state(
+                            pdf_path=pdf_path,
+                            page=page_number,
+                            page_index=page_index,
+                            total_pages=total_pages,
+                            dpi=args.dpi,
+                            page_dir=page_dir,
+                            page_size=page_sizes[page_number],
+                        )
+                    if state.status != "failed":
+                        state.status = "failed"
+                        state.failure = {
+                            "stage": args.resume_from or "prepare",
+                            "error_type": type(error).__name__,
+                            "error_message": str(error),
+                        }
+                        state.save()
+                        reporter.emit("page", "fail", error=type(error).__name__)
+                states.append(state)
+        finally:
+            if pool is not None:
+                pool.shutdown(wait=True, cancel_futures=True)
 
     _write_run_outputs(output_root, states)
     failed = [state for state in states if state.status == "failed"]
