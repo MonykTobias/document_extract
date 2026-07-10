@@ -1,0 +1,10 @@
+models:
+  base_url: http://host.docker.internal:11434
+  model: hf.co/unsloth/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M
+  triage_model: ""
+  temperature: 0.0
+  num_ctx: 8192
+  num_predict: 1200
+  auto_num_ctx: false
+  triage_num_predict: 64
+  triage_confidence: 0.65

@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.7
+FROM python:3.12-slim-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/models/huggingface \
+    XDG_CACHE_HOME=/models/xdg
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        libgl1 \
+        libglib2.0-0 \
+        libgomp1 \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+COPY requirements-docling-gpu.txt /tmp/requirements-docling-gpu.txt
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && python -m pip install -r /tmp/requirements-docling-gpu.txt \
+    && python -m pip check
+
+RUN mkdir -p /models/huggingface /models/xdg /workspace
+
+COPY pyproject.toml /workspace/pyproject.toml
+COPY src /workspace/src
+COPY config /workspace/config
+COPY prompts /workspace/prompts
+COPY docling_rag_slides.py pipeline_runtime.py ollama_client.py slide_postprocess.py /workspace/
+RUN python -m pip install --no-deps .
+
+ENTRYPOINT ["python", "-m", "docling_rag"]
+CMD ["--help"]

@@ -1,0 +1,27 @@
+pictures:
+  min_area_ratio: 0.01
+  decorative_max_area_ratio: 0.05
+  table_min_area_ratio: 0.08
+  nearby_block_distance: 0.12
+  crop_neighbor_gap: 0.03
+  crop_margin: 0.02
+tables:
+  min_cells: 6
+  min_columns: 2
+  min_column_members: 3
+  min_aligned_rows: 3
+  column_x_tolerance: 0.025
+  row_y_tolerance: 0.02
+  score_threshold: 0.55
+  regions_max_per_page: 3
+  numeric_coverage_min: 0.9
+  word_coverage_min: 0.8
+reading_order:
+  max_depth: 4
+  edge_eps: 0.006
+  boundary_nudge: 0.002
+  boundary_min_spacing: 0.01
+  h_divider_min_span: 0.6
+  v_divider_min_span: 0.35
+  band_gap: 0.05
+  column_gutter: 0.035

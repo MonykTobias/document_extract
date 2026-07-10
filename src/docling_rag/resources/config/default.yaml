@@ -1,0 +1,8 @@
+runtime:
+  output_dir: outputs_docling_rag
+  dpi: 200
+  start_page: 1
+  end_page: 0
+  skip_vlm: false
+  skip_picture_triage: false
+  divider_reorder: true

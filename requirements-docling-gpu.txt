@@ -1,0 +1,11 @@
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+docling==2.70.0
+torch==2.8.0
+torchvision==0.23.0
+rapidocr==3.4.2
+onnxruntime-gpu==1.22.0
+pymupdf==1.27.2.2
+Pillow==11.3.0
+requests==2.34.2
+PyYAML==6.0.2
