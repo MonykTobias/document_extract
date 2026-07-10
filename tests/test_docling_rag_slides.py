@@ -29,6 +29,7 @@ from document_extract.markdown.formatting import (
     export_page_markdown,
     image_block,
     insert_image_references_and_summaries,
+    mark_redundant_summaries,
     normalize_pipe_tables,
 )
 from document_extract.models import PictureRecord, TableCandidate
@@ -104,6 +105,66 @@ def test_image_placeholder_replacement_order() -> None:
         "image refs preserve placeholder order",
     )
     check(out.count("**Image summary:**") == 2, "summaries inserted under refs")
+
+
+def test_redundant_image_summary_suppressed() -> None:
+    source = (
+        "This Universal Registration Document was filed with the French Financial "
+        "Markets Authority as the competent authority under the applicable "
+        "regulation, without prior approval pursuant to the said article."
+    )
+    duplicate = make_record(
+        1,
+        summary=(
+            "This Universal Registration Document was filed with the French "
+            "Financial Markets Authority as the competent authority under the "
+            "applicable regulation, without prior approval pursuant to the said "
+            "article."
+        ),
+    )
+    flagged = mark_redundant_summaries(source, [duplicate])
+    check(duplicate.summary_redundant, "duplicate summary flagged as redundant")
+    check(
+        "summary_duplicates_page_text" in duplicate.summary_warnings,
+        "redundant summary records a warning",
+    )
+    check(duplicate.placeholder in flagged, "flagged placeholder returned")
+
+    md = "Intro\n\n{{DOC_IMAGE_p0026_i001}}\n\n" + source
+    out = insert_image_references_and_summaries(md, [duplicate])
+    check("picture_p0026_i001.png" in out, "redundant record keeps its image ref")
+    check("**Image summary:**" not in out, "redundant summary is not rendered")
+
+    # A chart summary shares label words with the page but its printed values do
+    # not appear there, so token coverage stays below the threshold.
+    chart_source = "Consolidated sales by category and by geographical zone in euros."
+    chart = make_record(
+        2,
+        summary=(
+            "Consolidated sales by category in euros. EDP: 13,158. Waters: 4,848. "
+            "Specialized Nutrition: 8,551. Total: 26,557 across every zone shown."
+        ),
+    )
+    mark_redundant_summaries(chart_source, [chart])
+    check(not chart.summary_redundant, "chart summary with unique values kept")
+    check(
+        "**Image summary:**" in image_block(chart),
+        "chart summary still rendered",
+    )
+
+    # A short summary can be fully covered by coincidence, so it is never dropped.
+    short_source = "Revenue grew this year in every region."
+    short = make_record(3, summary="Revenue grew this year.")
+    mark_redundant_summaries(short_source, [short])
+    check(not short.summary_redundant, "short summary under token floor kept")
+
+    # Running twice must not duplicate the warning nor re-report the placeholder.
+    second_pass = mark_redundant_summaries(source, [duplicate])
+    check(second_pass == [], "already-flagged record not re-reported")
+    check(
+        duplicate.summary_warnings.count("summary_duplicates_page_text") == 1,
+        "warning recorded exactly once across passes",
+    )
 
 
 def test_refine_page_markdown_skip_vlm_returns_source() -> None:

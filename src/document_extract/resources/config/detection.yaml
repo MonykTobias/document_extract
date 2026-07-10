@@ -5,6 +5,8 @@ pictures:
   nearby_block_distance: 0.12
   crop_neighbor_gap: 0.03
   crop_margin: 0.02
+  summary_dup_min_tokens: 12
+  summary_dup_coverage: 0.9
 tables:
   min_cells: 6
   min_columns: 2

@@ -22,6 +22,9 @@ IMAGE_PLACEHOLDER_RE = re.compile(
     re.IGNORECASE,
 )
 
+SUMMARY_DUP_MIN_TOKENS = 12
+SUMMARY_DUP_COVERAGE = 0.9
+
 def item_to_markdown(item: Any, document: Any, picture_records: dict[int, PictureRecord]) -> str:
     if is_picture_item(item):
         # Same placeholder as the Docling serializer path, so the refine
@@ -101,9 +104,37 @@ def insert_image_references_and_summaries(
     return re.sub(r"\n{3,}", "\n\n", out).strip() + "\n"
 
 
+def _overlap_tokens(text: str) -> list[str]:
+    """Words plus numbers-with-separators, so '13,158' and '4.5%' stay whole."""
+    return re.findall(r"[^\W\d_]+|\d+(?:[.,]\d+)*%?", text.lower())
+
+
+def mark_redundant_summaries(source_markdown: str, records: list[PictureRecord]) -> list[str]:
+    """Flag summaries whose tokens are already covered by the raw page text.
+
+    Returns the placeholders of newly flagged records (for the page warning).
+    """
+    page_tokens = set(_overlap_tokens(source_markdown))
+    newly_flagged: list[str] = []
+    for record in records:
+        if not record.summary or record.summary_redundant:
+            continue
+        summary_tokens = _overlap_tokens(record.summary)
+        if len(summary_tokens) < SUMMARY_DUP_MIN_TOKENS:
+            continue
+        distinct = set(summary_tokens)
+        coverage = len(distinct & page_tokens) / len(distinct)
+        if coverage >= SUMMARY_DUP_COVERAGE:
+            record.summary_redundant = True
+            if "summary_duplicates_page_text" not in record.summary_warnings:
+                record.summary_warnings.append("summary_duplicates_page_text")
+            newly_flagged.append(record.placeholder)
+    return newly_flagged
+
+
 def image_block(record: PictureRecord) -> str:
     block = image_reference(record)
-    if record.summary:
+    if record.summary and not record.summary_redundant:
         block += f"\n\n**Image summary:** {record.summary.strip()}"
     return block
 
@@ -295,6 +326,7 @@ __all__ = [
     "IMAGE_PLACEHOLDER_RE", "item_to_markdown", "heading_level",
     "export_page_markdown", "image_reference",
     "insert_image_references_and_summaries", "image_block",
+    "mark_redundant_summaries",
     "standalone_value_line_count", "normalize_pipe_tables", "_pipe_table_spans",
     "_rows_prefix_subset", "drop_duplicate_subset_tables",
     "missing_verified_table_ids", "pipe_row_count",

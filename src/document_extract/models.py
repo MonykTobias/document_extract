@@ -25,6 +25,7 @@ class PictureRecord:
     summary: str = ""
     summary_type: str = ""
     summary_warnings: list[str] = field(default_factory=list)
+    summary_redundant: bool = False
     usage: dict[str, Any] | None = None
 
 

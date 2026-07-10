@@ -15,6 +15,7 @@ from .markdown.formatting import (
     IMAGE_PLACEHOLDER_RE,
     drop_duplicate_subset_tables,
     insert_image_references_and_summaries,
+    mark_redundant_summaries,
     missing_verified_table_ids,
     normalize_pipe_tables,
     pipe_row_count,
@@ -94,12 +95,15 @@ def postprocess_markdown(
     final = sp.flatten_html_tables(working_markdown)
     final = sp.normalize_bullets_and_headings(final)
     final = sp.demote_datapoint_headings(final)
+    flagged_summaries = mark_redundant_summaries(source_markdown, records)
     final = insert_image_references_and_summaries(final, records)
     final = sp.strip_meta_commentary(final)
     final = sp.normalize_footnotes(final)
     final = normalize_pipe_tables(final)
 
     warnings: dict[str, Any] = {}
+    if flagged_summaries:
+        warnings["redundant_image_summaries"] = flagged_summaries
     final, dropped_tables = drop_duplicate_subset_tables(final, table_candidates)
     if dropped_tables:
         warnings["duplicate_tables_dropped"] = dropped_tables

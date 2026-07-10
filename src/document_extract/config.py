@@ -47,6 +47,8 @@ class PictureConfig:
     nearby_block_distance: float = 0.12
     crop_neighbor_gap: float = 0.03
     crop_margin: float = 0.02
+    summary_dup_min_tokens: int = 12
+    summary_dup_coverage: float = 0.9
 
 
 @dataclass(frozen=True)
@@ -198,6 +200,7 @@ def apply_detection_config(config: AppConfig) -> None:
 
     from . import pictures, tables
     from .layout import prompt_map, reading_order
+    from .markdown import formatting
 
     picture_map = {
         "PICTURE_MIN_AREA_RATIO": config.pictures.min_area_ratio,
@@ -231,6 +234,8 @@ def apply_detection_config(config: AppConfig) -> None:
     for key, value in picture_map.items():
         setattr(pictures, key, value)
     prompt_map.NEARBY_BLOCK_DISTANCE = config.pictures.nearby_block_distance
+    formatting.SUMMARY_DUP_MIN_TOKENS = config.pictures.summary_dup_min_tokens
+    formatting.SUMMARY_DUP_COVERAGE = config.pictures.summary_dup_coverage
     for key, value in table_map.items():
         setattr(tables, key, value)
     for key, value in reading_map.items():
