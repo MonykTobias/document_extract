@@ -19,6 +19,7 @@ from ..docling_adapter import (
     item_kind,
     item_text,
 )
+from ..models import PictureRecord
 from .geometry import bbox_area_ratio, bbox_to_normalized_rect, rect_center, rect_distance
 
 NON_CELL_KINDS = {"footnote", "page_footer", "page_header"}
@@ -166,6 +167,9 @@ def build_layout_prompt_map(
     picture_records: dict[int, PictureRecord],
     unplaced_lines: list[str] | None = None,
 ) -> dict[str, Any]:
+    """Build the compact block map; ``picture_records`` must be keyed by
+    ``id(item)`` (the map returned by ``save_picture_records``), not by
+    picture index — caption enrichment silently misses otherwise."""
     entries: list[dict[str, Any]] = []
     for index, item in enumerate(items, start=1):
         bbox = bbox_dict(item)

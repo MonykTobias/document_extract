@@ -48,6 +48,10 @@ def ensure_pdf(path: Path) -> Path:
 def selected_page_numbers(page_count: int, start_page: int, end_page: int) -> list[int]:
     if start_page < 1:
         raise ValueError("--start-page must be at least 1")
+    if start_page > page_count:
+        raise ValueError(
+            f"--start-page {start_page} exceeds the document's {page_count} pages"
+        )
     final_end = end_page or page_count
     if final_end < start_page:
         raise ValueError("--end-page must be >= --start-page")

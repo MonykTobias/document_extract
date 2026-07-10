@@ -455,7 +455,11 @@ def summarize_pictures(
                 num_predict=args.num_predict,
                 auto_num_ctx=args.auto_num_ctx,
             )
-            record.usage = retry_usage
+            combined_usage = dict(retry_usage)
+            for token_key in ("prompt_tokens", "output_tokens", "total_tokens"):
+                combined_usage[token_key] = usage.get(token_key, 0) + retry_usage.get(token_key, 0)
+            combined_usage["retried"] = True
+            record.usage = combined_usage
             retry_body = sp.strip_meta_commentary(
                 ollama_client.strip_markdown_fences(retry_answer)
             ).strip()

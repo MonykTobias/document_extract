@@ -166,6 +166,8 @@ def _prepare_page(
                 "document": document,
                 "items": items,
                 "records": records,
+                # Keyed by id(item), the lookup key build_layout_prompt_map uses.
+                "picture_map": picture_map,
                 "detection_cells": detection_cells,
                 "layout_map": layout_prompt_map,
             }
@@ -327,6 +329,8 @@ def _run_page_refine(
             warnings["verified_tables_missing"] = missing_tables
         state.final_markdown = final_markdown
         state.warnings = warnings
+        state.pre_repair_markdown = final_markdown
+        state.pre_repair_warnings = dict(warnings)
         _sync_page_state(state, records=records, candidates=candidates)
         return {
             "calls": 1 if usage else 0,
@@ -366,11 +370,10 @@ def _run_page_repair(
 
     def action() -> dict[str, Any]:
         if has_runtime_items:
-            picture_map = {record.index: record for record in records}
             repair_layout_map = build_layout_prompt_map(
                 items=items,
                 page_size=tuple(state.page_size),
-                picture_records=picture_map,
+                picture_records=runtime.get("picture_map") or {},
                 unplaced_lines=state.warnings.get("unplaced_content_lines", []),
             )
         else:

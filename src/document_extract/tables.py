@@ -36,14 +36,10 @@ from .llm import ollama as ollama_client
 from .markdown import postprocess as sp
 from .markdown.formatting import normalize_pipe_tables
 from .models import PictureRecord, TableCandidate
-from .pictures import (
-    DECORATIVE_LABELS,
-    PICTURE_DECORATIVE_MAX_AREA_RATIO,
-    PICTURE_MIN_AREA_RATIO,
-    PICTURE_TABLE_MIN_AREA_RATIO,
-    SUMMARY_LABELS,
-    save_region_crop,
-)
+# Accessed via the module so apply_detection_config's runtime overrides of the
+# picture thresholds are visible here; a from-import would freeze the defaults.
+from . import pictures
+from .pictures import save_region_crop
 from .prompts import DEFAULT_TABLE_REGION_PROMPT
 from .docling_adapter import bbox_dict, item_kind
 
@@ -393,12 +389,12 @@ def picture_record_is_table_like(
     nearby_blocks: list[dict[str, Any]],
 ) -> tuple[bool, str, float]:
     haystack = f"{record.classification} {record.caption}".lower()
-    if record.area_ratio < PICTURE_TABLE_MIN_AREA_RATIO:
+    if record.area_ratio < pictures.PICTURE_TABLE_MIN_AREA_RATIO:
         return False, "picture_too_small", 0.0
-    if any(label in haystack for label in DECORATIVE_LABELS):
+    if any(label in haystack for label in pictures.DECORATIVE_LABELS):
         return False, "decorative_picture", 0.0
     aspect = rect_aspect_ratio(rect)
-    has_semantic_label = any(label in haystack for label in SUMMARY_LABELS)
+    has_semantic_label = any(label in haystack for label in pictures.SUMMARY_LABELS)
     has_nearby_signal = bool(nearby_blocks)
     wide_lower_region = bool(rect and aspect >= 1.8 and rect[1] >= 0.32)
     if not (wide_lower_region or has_semantic_label or has_nearby_signal):

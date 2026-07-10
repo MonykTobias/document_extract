@@ -1,8 +1,8 @@
-"""Deterministic (no-model) post-processing for the slide-parsing pipeline.
+"""Deterministic (no-model) post-processing for extracted page markdown.
 
-All functions here are pure and depend only on the standard library so they can
-be imported by both ``paddleocr_vl_qwen_slides.py`` (the pipeline) and
-``eval_slides.py`` (the metrics harness) without pulling in PaddleOCR/fitz.
+All functions here are pure and depend only on the standard library so the
+pipeline stages and any external metrics harness can import them without
+pulling in Docling/fitz/PIL.
 
 They implement Part 2.3 / 2.5 of the improvement plan:
 

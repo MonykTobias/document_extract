@@ -66,6 +66,10 @@ class PageState:
     raw_markdown: str = ""
     refined_markdown: str = ""
     final_markdown: str = ""
+    # Post-refine snapshot: page_repair overwrites final_markdown/warnings in
+    # place, so replaying it needs the pre-repair values preserved separately.
+    pre_repair_markdown: str = ""
+    pre_repair_warnings: dict[str, Any] = field(default_factory=dict)
     layout_map: dict[str, Any] = field(default_factory=dict)
     repair_layout_map: dict[str, Any] = field(default_factory=dict)
     table_candidates: list[dict[str, Any]] = field(default_factory=list)
@@ -281,8 +285,17 @@ def invalidate_from(state: PageState, stage: str) -> None:
         state.refined_markdown = ""
         state.final_markdown = ""
         state.warnings = {}
+        state.pre_repair_markdown = ""
+        state.pre_repair_warnings = {}
     if start <= stage_index("page_repair"):
-        state.final_markdown = ""
+        # Restore the post-refine snapshot: the checkpoint's final_markdown may
+        # already be the repaired version, and the repair pass must re-run
+        # against its real input, not its own previous output (or nothing).
+        # Old checkpoints without a snapshot keep their final_markdown as the
+        # best available approximation.
+        if state.pre_repair_markdown:
+            state.final_markdown = state.pre_repair_markdown
+            state.warnings = dict(state.pre_repair_warnings)
     if start <= stage_index("finalize"):
         state.status = "ready"
         state.failure = None
