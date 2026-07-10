@@ -1,6 +1,6 @@
 """Focused checks for the package boundary and configuration layer.
 
-Run from ``v2-docling`` with ``python tests/test_package.py``.
+Run from the repository root with ``python tests/test_package.py``.
 """
 
 from __future__ import annotations
@@ -12,9 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from document_extract import legacy_pipeline
 from document_extract.config import load_config
-from document_extract.prompts import load_prompt
+from document_extract.prompts import DEFAULT_IMAGE_SUMMARY_PROMPT, load_prompt
 
 
 def check(condition: bool, message: str) -> None:
@@ -28,7 +27,7 @@ def main() -> int:
     check(defaults.runtime.dpi == 200, "bundled runtime defaults load")
     check(defaults.models.num_ctx == 8192, "bundled model defaults load")
     check(
-        load_prompt("picture_generic.md") == legacy_pipeline.DEFAULT_IMAGE_SUMMARY_PROMPT,
+        load_prompt("picture_generic.md") == DEFAULT_IMAGE_SUMMARY_PROMPT,
         "picture prompt resource is verbatim",
     )
 

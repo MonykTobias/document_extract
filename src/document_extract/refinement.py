@@ -1,16 +1,236 @@
-"""Page refinement and repair compatibility surface."""
+"""Page refinement, deterministic cleanup, and repair safeguards."""
 
-from .legacy_pipeline import (
-    postprocess_markdown,
-    refine_page_markdown,
-    repair_page_markdown,
-    should_run_repair_pass,
+from __future__ import annotations
+
+import argparse
+import re
+from pathlib import Path
+from typing import Any
+
+from .docling_adapter import is_table_item
+from .layout.prompt_map import layout_map_prompt_json
+from .llm import ollama as ollama_client
+from .markdown import postprocess as sp
+from .markdown.formatting import (
+    IMAGE_PLACEHOLDER_RE,
+    drop_duplicate_subset_tables,
+    insert_image_references_and_summaries,
+    missing_verified_table_ids,
+    normalize_pipe_tables,
+    pipe_row_count,
+    standalone_value_line_count,
 )
+from .models import PictureRecord, TableCandidate
+from .tables import verified_tables_prompt_block
+
+def format_page_refinement_prompt(
+    *,
+    prompt_template: str,
+    source_markdown: str,
+    layout_blocks: dict[str, Any],
+    table_candidates: list[TableCandidate],
+) -> str:
+    return prompt_template.format(
+        source_markdown=source_markdown,
+        layout_blocks=layout_map_prompt_json(layout_blocks),
+        verified_tables=verified_tables_prompt_block(table_candidates),
+    )
+
+
+def format_page_repair_prompt(
+    *,
+    prompt_template: str,
+    current_markdown: str,
+    layout_blocks: dict[str, Any],
+    table_candidates: list[TableCandidate],
+    unplaced_lines: list[str],
+) -> str:
+    unplaced_block = "\n".join(f"- {line}" for line in unplaced_lines) if unplaced_lines else "(none)"
+    return prompt_template.format(
+        current_markdown=current_markdown,
+        layout_blocks=layout_map_prompt_json(layout_blocks),
+        verified_tables=verified_tables_prompt_block(table_candidates),
+        unplaced_lines=unplaced_block,
+    )
+
+
+def refine_page_markdown(
+    *,
+    source_markdown: str,
+    layout_blocks: dict[str, Any],
+    table_candidates: list[TableCandidate],
+    page_image_path: Path,
+    prompt_template: str,
+    args: argparse.Namespace,
+) -> tuple[str, dict[str, Any] | None]:
+    if args.skip_vlm:
+        return source_markdown, None
+    prompt = format_page_refinement_prompt(
+        prompt_template=prompt_template,
+        source_markdown=source_markdown,
+        layout_blocks=layout_blocks,
+        table_candidates=table_candidates,
+    )
+    answer, usage = ollama_client.call_ollama_vlm(
+        base_url=args.ollama_base_url,
+        model=args.ollama_model,
+        prompt=prompt,
+        image_path=page_image_path,
+        temperature=args.temperature,
+        num_ctx=args.num_ctx,
+        num_predict=args.num_predict,
+        auto_num_ctx=args.auto_num_ctx,
+    )
+    refined = sp.strip_meta_commentary(ollama_client.strip_markdown_fences(answer))
+    return refined or source_markdown, usage
+
+
+def postprocess_markdown(
+    source_markdown: str,
+    working_markdown: str,
+    records: list[PictureRecord],
+    table_candidates: list[TableCandidate] | None = None,
+) -> tuple[str, dict[str, Any]]:
+    final = sp.flatten_html_tables(working_markdown)
+    final = sp.normalize_bullets_and_headings(final)
+    final = sp.demote_datapoint_headings(final)
+    final = insert_image_references_and_summaries(final, records)
+    final = sp.strip_meta_commentary(final)
+    final = sp.normalize_footnotes(final)
+    final = normalize_pipe_tables(final)
+
+    warnings: dict[str, Any] = {}
+    final, dropped_tables = drop_duplicate_subset_tables(final, table_candidates)
+    if dropped_tables:
+        warnings["duplicate_tables_dropped"] = dropped_tables
+    final, guard_warnings = apply_completeness_guard(source_markdown, final)
+    warnings.update(guard_warnings)
+    footnote_warnings = sp.footnote_consistency(final)
+    if footnote_warnings:
+        warnings["footnotes"] = footnote_warnings
+    meta_warnings = sp.meta_commentary_warnings(final)
+    if meta_warnings:
+        warnings["meta_commentary"] = meta_warnings
+    return final, warnings
+
+
+def should_run_repair_pass(
+    *,
+    items: list[Any],
+    warnings: dict[str, Any],
+    current_markdown: str,
+    records: list[PictureRecord],
+    table_candidates: list[TableCandidate] | None = None,
+    has_docling_table: bool | None = None,
+) -> bool:
+    if warnings.get("content_loss_guard_triggered"):
+        return True
+    if warnings.get("verified_tables_missing"):
+        return True
+    table_present = (
+        has_docling_table
+        if has_docling_table is not None
+        else any(is_table_item(item) for item in items)
+    )
+    if table_present:
+        return True
+    if len(records) >= 2 and standalone_value_line_count(current_markdown) >= 3:
+        return True
+    return False
+
+
+def repair_page_markdown(
+    *,
+    current_markdown: str,
+    layout_blocks: dict[str, Any],
+    table_candidates: list[TableCandidate],
+    page_image_path: Path,
+    unplaced_lines: list[str],
+    prompt_template: str,
+    args: argparse.Namespace,
+) -> tuple[str, dict[str, Any] | None]:
+    if args.skip_vlm:
+        return current_markdown, None
+    prompt = format_page_repair_prompt(
+        prompt_template=prompt_template,
+        current_markdown=current_markdown,
+        layout_blocks=layout_blocks,
+        table_candidates=table_candidates,
+        unplaced_lines=unplaced_lines,
+    )
+    answer, usage = ollama_client.call_ollama_vlm(
+        base_url=args.ollama_base_url,
+        model=args.ollama_model,
+        prompt=prompt,
+        image_path=page_image_path,
+        temperature=args.temperature,
+        num_ctx=args.num_ctx,
+        num_predict=args.num_predict,
+        auto_num_ctx=args.auto_num_ctx,
+    )
+    repaired = sp.strip_meta_commentary(ollama_client.strip_markdown_fences(answer))
+    return repaired or current_markdown, usage
+
+
+def strip_unplaced_section(markdown: str) -> str:
+    lines = markdown.splitlines()
+    out: list[str] = []
+    skipping = False
+    for line in lines:
+        if re.match(r"^##\s+Unplaced content\s*$", line.strip()):
+            skipping = True
+            continue
+        if skipping and re.match(r"^#{1,2}\s+\S", line):
+            skipping = False
+        if not skipping:
+            out.append(line)
+    return "\n".join(out)
+
+
+def repair_regression_reasons(
+    pre_markdown: str,
+    repaired_markdown: str,
+    usage: dict[str, Any] | None,
+) -> list[str]:
+    """Why a repair result must be rejected in favor of the pre-repair markdown.
+
+    A repair pass re-emits the whole page, so a truncated or lossy generation
+    silently replaces a good result — this guard makes that impossible.
+    """
+    reasons: list[str] = []
+    for key in ("length_capped", "decoding_anomaly", "context_overflow"):
+        if usage and usage.get(key):
+            reasons.append(key)
+    pre_body = strip_unplaced_section(pre_markdown)
+    repaired_body = strip_unplaced_section(repaired_markdown)
+    if len(repaired_body) < 0.7 * len(pre_body):
+        reasons.append("shrunk_output")
+    if pipe_row_count(repaired_body) < pipe_row_count(pre_body):
+        reasons.append("fewer_table_rows")
+    if sp.completeness_diff(pre_markdown, repaired_markdown):
+        reasons.append("content_loss_vs_pre_repair")
+    return reasons
+
+
+def apply_completeness_guard(
+    raw_markdown: str, final_markdown: str
+) -> tuple[str, dict[str, Any]]:
+    warnings: dict[str, Any] = {}
+    raw_for_diff = IMAGE_PLACEHOLDER_RE.sub("", raw_markdown)
+    final_for_diff = IMAGE_PLACEHOLDER_RE.sub("", final_markdown)
+    missing = sp.completeness_diff(raw_for_diff, final_for_diff)
+    if missing:
+        final = sp.merge_unplaced_content(final_markdown, missing)
+        warnings["content_loss_guard_triggered"] = True
+        warnings["unplaced_content_lines"] = missing
+    else:
+        final = final_markdown
+        warnings["content_loss_guard_triggered"] = False
+    return final, warnings
 
 __all__ = [
-    "postprocess_markdown",
-    "refine_page_markdown",
-    "repair_page_markdown",
-    "should_run_repair_pass",
+    "format_page_refinement_prompt", "format_page_repair_prompt",
+    "refine_page_markdown", "postprocess_markdown",
+    "should_run_repair_pass", "repair_page_markdown",
+    "strip_unplaced_section", "repair_regression_reasons", "apply_completeness_guard",
 ]
-

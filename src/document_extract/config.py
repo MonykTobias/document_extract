@@ -154,7 +154,7 @@ def apply_environment_overrides(mapping: dict[str, Any]) -> None:
             raise ValueError(f"Invalid value for {env_name}: {raw!r}") from exc
 
 
-def legacy_argv_defaults(config: AppConfig, argv: list[str]) -> list[str]:
+def argv_with_config_defaults(config: AppConfig, argv: list[str]) -> list[str]:
     """Add config values only when the user did not pass the CLI option."""
 
     out = list(argv)
@@ -186,14 +186,16 @@ def legacy_argv_defaults(config: AppConfig, argv: list[str]) -> list[str]:
     return out
 
 
-def apply_detection_config(config: AppConfig, legacy_module: Any) -> None:
-    """Bridge YAML thresholds into the current implementation during migration."""
+def apply_detection_config(config: AppConfig) -> None:
+    """Apply YAML thresholds to the domain modules that own each algorithm."""
+
+    from . import pictures, tables
+    from .layout import prompt_map, reading_order
 
     picture_map = {
         "PICTURE_MIN_AREA_RATIO": config.pictures.min_area_ratio,
         "PICTURE_DECORATIVE_MAX_AREA_RATIO": config.pictures.decorative_max_area_ratio,
         "PICTURE_TABLE_MIN_AREA_RATIO": config.pictures.table_min_area_ratio,
-        "NEARBY_BLOCK_DISTANCE": config.pictures.nearby_block_distance,
         "PICTURE_CROP_NEIGHBOR_GAP": config.pictures.crop_neighbor_gap,
         "PICTURE_CROP_MARGIN": config.pictures.crop_margin,
     }
@@ -219,9 +221,13 @@ def apply_detection_config(config: AppConfig, legacy_module: Any) -> None:
         "READING_BAND_GAP": config.reading_order.band_gap,
         "READING_COLUMN_GUTTER": config.reading_order.column_gutter,
     }
-    for key, value in {**picture_map, **table_map, **reading_map}.items():
-        setattr(legacy_module, key, value)
-
+    for key, value in picture_map.items():
+        setattr(pictures, key, value)
+    prompt_map.NEARBY_BLOCK_DISTANCE = config.pictures.nearby_block_distance
+    for key, value in table_map.items():
+        setattr(tables, key, value)
+    for key, value in reading_map.items():
+        setattr(reading_order, key, value)
 
 def _read_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():

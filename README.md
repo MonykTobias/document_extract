@@ -275,4 +275,4 @@ python tests/test_docling_rag_slides.py
 python tests/test_slide_postprocess.py
 ```
 
-The original root-level tests remain available for compatibility as well.
+The maintained integration and post-processing checks live under `tests/`.

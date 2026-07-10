@@ -1,9 +1,4 @@
-"""Small runtime primitives for the page-oriented Docling pipeline.
-
-The extraction algorithms remain in ``legacy_pipeline.py``.  This module
-only owns the workflow state, checkpoint format, and human-readable progress
-reporting so those concerns do not get mixed into OCR/VLM logic.
-"""
+"""Runtime primitives for checkpointing and reporting page-stage progress."""
 
 from __future__ import annotations
 

@@ -1,8 +1,4 @@
-"""Thin public CLI entrypoint.
-
-The legacy module is intentionally kept as an internal compatibility layer
-for this migration. Future algorithm moves can happen behind this stable API.
-"""
+"""Thin public CLI entrypoint."""
 
 from __future__ import annotations
 

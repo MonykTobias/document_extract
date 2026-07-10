@@ -1,4 +1,4 @@
-"""Quick tests for slide_postprocess against synthetic cases and real baseline artifacts.
+"""Quick Markdown post-processing tests against synthetic cases and artifacts.
 
 Run: python test_slide_postprocess.py
 Exits non-zero on failure. Real-artifact checks are skipped if the baseline

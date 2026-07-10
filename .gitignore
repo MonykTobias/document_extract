@@ -58,3 +58,6 @@ Thumbs.db
 *.secret
 *.local.yaml
 *.local.yml
+
+AGENTS.md
+CLAUDE.md

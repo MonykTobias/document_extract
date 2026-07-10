@@ -1,6 +1,6 @@
-"""Lightweight tests for docling_rag_slides glue code.
+"""Focused tests for the document extraction pipeline components.
 
-Run: python test_docling_rag_slides.py
+Run: python tests/test_docling_rag_slides.py
 """
 
 from __future__ import annotations
@@ -13,8 +13,57 @@ from pathlib import Path
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from document_extract import legacy_pipeline as drs
-from document_extract import runtime
+from document_extract import runtime, tables
+from document_extract.artifacts import block_rows_for_page, summarize_token_usage
+from document_extract.docling_adapter import item_text
+from document_extract.layout.geometry import bbox_area_ratio, bbox_to_pixel_rect
+from document_extract.layout.prompt_map import build_layout_prompt_map
+from document_extract.layout.reading_order import (
+    divider_segments_from_drawings,
+    reading_order_permutation,
+    reorder_items_for_reading_order,
+)
+from document_extract.llm import ollama as ollama_client
+from document_extract.markdown.formatting import (
+    drop_duplicate_subset_tables,
+    export_page_markdown,
+    image_block,
+    insert_image_references_and_summaries,
+    normalize_pipe_tables,
+)
+from document_extract.models import PictureRecord, TableCandidate
+from document_extract.pictures import (
+    parse_picture_triage,
+    parse_typed_summary,
+    picture_specialist_prompt,
+    picture_summary_rect,
+    save_region_crop,
+    should_summarize_picture,
+    summarize_pictures,
+    summary_shape_ok,
+    triage_pictures,
+)
+from document_extract.prompts import (
+    DEFAULT_IMAGE_SUMMARY_PROMPT,
+    DEFAULT_PAGE_REFINEMENT_PROMPT,
+    DEFAULT_PAGE_REPAIR_PROMPT,
+)
+from document_extract.refinement import (
+    apply_completeness_guard,
+    format_page_refinement_prompt,
+    format_page_repair_prompt,
+    missing_verified_table_ids,
+    refine_page_markdown,
+    repair_page_markdown,
+    repair_regression_reasons,
+    should_run_repair_pass,
+)
+from document_extract.tables import (
+    TABLE_SCORE_THRESHOLD,
+    build_table_candidates,
+    transcribe_table_candidates,
+    verify_region_table,
+)
 
 _failures: list[str] = []
 
@@ -26,8 +75,8 @@ def check(cond: bool, msg: str) -> None:
         _failures.append(msg)
 
 
-def make_record(index: int, *, summary: str = "", area: float = 0.1) -> drs.PictureRecord:
-    return drs.PictureRecord(
+def make_record(index: int, *, summary: str = "", area: float = 0.1) -> PictureRecord:
+    return PictureRecord(
         page=26,
         index=index,
         placeholder=f"{{{{DOC_IMAGE_p0026_i{index:03d}}}}}",
@@ -47,7 +96,7 @@ def test_image_placeholder_replacement_order() -> None:
         make_record(2, summary="Second chart summary."),
     ]
     md = "Before\n\n{{DOC_IMAGE_p0026_i001}}\n\nMiddle\n\n<!-- image -->\n\nAfter"
-    out = drs.insert_image_references_and_summaries(md, records)
+    out = insert_image_references_and_summaries(md, records)
     check("picture_p0026_i001.png" in out, "first image ref inserted")
     check("picture_p0026_i002.png" in out, "second image ref inserted")
     check(
@@ -67,12 +116,12 @@ def test_refine_page_markdown_skip_vlm_returns_source() -> None:
         num_predict=0,
         auto_num_ctx=False,
     )
-    refined, usage = drs.refine_page_markdown(
+    refined, usage = refine_page_markdown(
         source_markdown="# Source\n",
         layout_blocks={"page_size": [100, 100], "blocks": []},
         table_candidates=[],
-        page_image_path=drs.Path("page.png"),
-        prompt_template=drs.DEFAULT_PAGE_REFINEMENT_PROMPT,
+        page_image_path=Path("page.png"),
+        prompt_template=DEFAULT_PAGE_REFINEMENT_PROMPT,
         args=args,
     )
     check(refined == "# Source\n", "skip-vlm keeps Docling markdown unchanged")
@@ -80,7 +129,7 @@ def test_refine_page_markdown_skip_vlm_returns_source() -> None:
 
 
 def test_should_run_repair_pass_for_unplaced_content() -> None:
-    run = drs.should_run_repair_pass(
+    run = should_run_repair_pass(
         items=[],
         warnings={"content_loss_guard_triggered": True, "unplaced_content_lines": ["1929"]},
         current_markdown="# Page\n",
@@ -91,7 +140,7 @@ def test_should_run_repair_pass_for_unplaced_content() -> None:
 
 def test_should_run_repair_pass_for_table_item() -> None:
     item = SimpleNamespace(label="table")
-    run = drs.should_run_repair_pass(
+    run = should_run_repair_pass(
         items=[item],
         warnings={"content_loss_guard_triggered": False},
         current_markdown="# Page\n",
@@ -101,12 +150,12 @@ def test_should_run_repair_pass_for_table_item() -> None:
 
 
 def test_should_run_repair_pass_candidate_routing() -> None:
-    unverified = drs.TableCandidate(
+    unverified = TableCandidate(
         candidate_id="tc001",
         kind="layout_region",
         bbox=[0.1, 0.1, 0.9, 0.4],
     )
-    run = drs.should_run_repair_pass(
+    run = should_run_repair_pass(
         items=[],
         warnings={"content_loss_guard_triggered": False},
         current_markdown="# Page\n",
@@ -115,7 +164,7 @@ def test_should_run_repair_pass_candidate_routing() -> None:
     )
     check(not run, "unverified candidates alone do not force a repair pass")
 
-    run = drs.should_run_repair_pass(
+    run = should_run_repair_pass(
         items=[],
         warnings={"content_loss_guard_triggered": False, "verified_tables_missing": ["tc001"]},
         current_markdown="# Page\n",
@@ -127,7 +176,7 @@ def test_should_run_repair_pass_candidate_routing() -> None:
 
 def test_missing_verified_table_ids() -> None:
     table = "| Region | Growth |\n| --- | --- |\n| Europe | +2.3% |\n| AMEA | +5.6% |"
-    verified = drs.TableCandidate(
+    verified = TableCandidate(
         candidate_id="tc001",
         kind="layout_region",
         bbox=[0.1, 0.1, 0.9, 0.4],
@@ -136,14 +185,14 @@ def test_missing_verified_table_ids() -> None:
     )
     present = "# Page\n\n| Region | Growth |\n| --- | --- |\n| Europe | +2.3% |\n| AMEA | +5.6% |\n"
     check(
-        drs.missing_verified_table_ids(present, [verified]) == [],
+        missing_verified_table_ids(present, [verified]) == [],
         "verified table found in markdown is not reported missing",
     )
     check(
-        drs.missing_verified_table_ids("# Page\n\nNo table here.\n", [verified]) == ["tc001"],
+        missing_verified_table_ids("# Page\n\nNo table here.\n", [verified]) == ["tc001"],
         "verified table absent from markdown is reported missing",
     )
-    unverified = drs.TableCandidate(
+    unverified = TableCandidate(
         candidate_id="tc002",
         kind="layout_region",
         bbox=None,
@@ -151,14 +200,14 @@ def test_missing_verified_table_ids() -> None:
         verified=False,
     )
     check(
-        drs.missing_verified_table_ids("# Page\n", [unverified]) == [],
+        missing_verified_table_ids("# Page\n", [unverified]) == [],
         "unverified candidates are never reported missing",
     )
 
 
 def test_should_run_repair_pass_for_value_cluster_with_figures() -> None:
     markdown = "# Dashboard\n\n27.3BnEUR\n\n90,000\n\n151\n\n120\n"
-    run = drs.should_run_repair_pass(
+    run = should_run_repair_pass(
         items=[],
         warnings={"content_loss_guard_triggered": False},
         current_markdown=markdown,
@@ -177,13 +226,13 @@ def test_repair_page_markdown_skip_vlm_returns_current() -> None:
         num_predict=0,
         auto_num_ctx=False,
     )
-    repaired, usage = drs.repair_page_markdown(
+    repaired, usage = repair_page_markdown(
         current_markdown="# Current\n",
         layout_blocks={"page_size": [100, 100], "blocks": []},
         table_candidates=[],
-        page_image_path=drs.Path("page.png"),
+        page_image_path=Path("page.png"),
         unplaced_lines=["1929"],
-        prompt_template=drs.DEFAULT_PAGE_REPAIR_PROMPT,
+        prompt_template=DEFAULT_PAGE_REPAIR_PROMPT,
         args=args,
     )
     check(repaired == "# Current\n", "skip-vlm keeps current markdown in repair pass")
@@ -198,7 +247,7 @@ def test_export_page_markdown_prefers_docling_serializer() -> None:
             calls.append((kwargs["page_no"], kwargs["image_placeholder"]))
             return "# Docling page\n\n<!-- image -->\n"
 
-    out = drs.export_page_markdown(FakeDocument(), 6, [], {})
+    out = export_page_markdown(FakeDocument(), 6, [], {})
     check(out.startswith("# Docling page"), "page export uses Docling markdown when available")
     check(calls == [(6, "<!-- image -->")], "Docling serializer called with page-specific placeholder export")
 
@@ -206,37 +255,37 @@ def test_export_page_markdown_prefers_docling_serializer() -> None:
 def test_image_routing() -> None:
     small = make_record(1, area=0.005)
     small.page = 8
-    summarize, reason = drs.should_summarize_picture(small)
+    summarize, reason = should_summarize_picture(small)
     check(not summarize and reason == "too_small", "tiny image skipped")
 
     decorative = make_record(2, area=0.02)
     decorative.page = 8
     decorative.classification = "logo icon"
-    summarize, reason = drs.should_summarize_picture(decorative)
+    summarize, reason = should_summarize_picture(decorative)
     check(not summarize and reason == "decorative", "decorative small image skipped")
 
     large = make_record(3, area=0.12)
     large.page = 8
     large.classification = ""
-    summarize, reason = drs.should_summarize_picture(large)
+    summarize, reason = should_summarize_picture(large)
     check(summarize and reason == "large_picture", "large image summarized")
 
 
 def test_picture_triage_json_contract() -> None:
-    kind, confidence, warnings = drs.parse_picture_triage(
+    kind, confidence, warnings = parse_picture_triage(
         "```json\n{\"type\": \"chart\", \"confidence\": 0.91}\n```"
     )
     check(kind == "chart", "triage parses the image type")
     check(confidence == 0.91, "triage parses confidence")
     check(not warnings, "valid triage JSON has no warnings")
 
-    kind, confidence, warnings = drs.parse_picture_triage("not json")
+    kind, confidence, warnings = parse_picture_triage("not json")
     check(kind == "unclear" and confidence == 0.0, "invalid triage falls back to unclear")
     check("triage_invalid_json" in warnings, "invalid triage JSON is recorded")
 
 
 def test_picture_triage_routes_specialist_and_decorative() -> None:
-    original_call = drs.ollama_client.call_ollama_vlm
+    original_call = ollama_client.call_ollama_vlm
     calls: list[dict] = []
 
     def fake_call(**kwargs):
@@ -248,7 +297,7 @@ def test_picture_triage_routes_specialist_and_decorative() -> None:
         )
         return answer, {"total_tokens": 4}
 
-    drs.ollama_client.call_ollama_vlm = fake_call
+    ollama_client.call_ollama_vlm = fake_call
     try:
         chart = make_record(1, area=0.02)
         chart.abs_path = "chart.png"
@@ -265,29 +314,29 @@ def test_picture_triage_routes_specialist_and_decorative() -> None:
             num_ctx=0,
             auto_num_ctx=False,
         )
-        stats = drs.triage_pictures(records=[chart, decorative], args=args)
+        stats = triage_pictures(records=[chart, decorative], args=args)
         check(stats["calls"] == 2, "visual triage calls every non-tiny candidate")
         check(chart.triage_type == "chart" and chart.triage_action == "specialist", "chart routed to specialist")
         check(not decorative.summarize and decorative.skip_reason == "triage_decorative", "decorative image skipped")
         check(calls[0]["model"] == "fast-model", "triage uses the configured model")
         check(calls[0]["num_predict"] == 64, "triage uses the short output cap")
     finally:
-        drs.ollama_client.call_ollama_vlm = original_call
+        ollama_client.call_ollama_vlm = original_call
 
 
 def test_picture_specialist_prompt_contains_typed_contract() -> None:
     record = make_record(1, area=0.2)
     record.triage_type = "chart"
-    prompt = drs.picture_specialist_prompt(record, drs.DEFAULT_IMAGE_SUMMARY_PROMPT)
+    prompt = picture_specialist_prompt(record, DEFAULT_IMAGE_SUMMARY_PROMPT)
     check("TYPE: chart" in prompt, "specialist prompt preserves the typed output contract")
     check("axis label" in prompt, "chart specialist prompt requests chart fields")
 
 
 def test_page_state_checkpoint_round_trip_and_paths() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
-        page_dir = drs.Path(temp_dir) / "page_0001"
+        page_dir = Path(temp_dir) / "page_0001"
         page_dir.mkdir()
-        pdf_path = drs.Path(temp_dir) / "source.pdf"
+        pdf_path = Path(temp_dir) / "source.pdf"
         pdf_path.write_bytes(b"")
         state = runtime.new_page_state(
             pdf_path=pdf_path,
@@ -324,7 +373,7 @@ def test_status_reporter_is_compact_and_flushed() -> None:
 
 def test_summary_block_format() -> None:
     record = make_record(1, summary="Visible labels: 2015: 77%, 2023: 89%.")
-    block = drs.image_block(record)
+    block = image_block(record)
     check(block.startswith("![Picture p0026-i001]"), "image block starts with markdown ref")
     check("**Image summary:** Visible labels" in block, "summary uses expected marker")
 
@@ -345,7 +394,7 @@ def test_block_sidecar_serialization() -> None:
         prov=prov,
         self_ref="#/texts/2",
     )
-    rows = drs.block_rows_for_page([title, para], 6, {})
+    rows = block_rows_for_page([title, para], 6, {})
     check(rows[0]["bbox"]["l"] == 1.0, "bbox serialized")
     check(rows[1]["heading_path"] == ["Performance"], "heading path carried forward")
     check(rows[1]["text"].startswith("Revenue grew"), "text snippet serialized")
@@ -379,7 +428,7 @@ def test_layout_prompt_map_schema_and_value_text() -> None:
         fake_item(text="2017", bbox=(100, 500, 140, 480), origin="BOTTOMLEFT"),
         fake_item(text="A long ordinary paragraph " * 30, bbox=(300, 500, 900, 300)),
     ]
-    layout_map = drs.build_layout_prompt_map(items, (1000.0, 800.0), {})
+    layout_map = build_layout_prompt_map(items, (1000.0, 800.0), {})
     check(layout_map["page_size"] == [1000.0, 800.0], "layout map has page size")
     check(layout_map["blocks"][0]["id"] == "b0001", "layout block has compact id")
     check(layout_map["blocks"][0]["bbox"] == [0.1, 0.375, 0.14, 0.4], "bottom-left bbox normalized")
@@ -392,7 +441,7 @@ def test_layout_prompt_map_headers_tables_pictures() -> None:
     table = fake_item(text="Header A | Header B | 42%", label="table", bbox=(30, 30, 80, 80))
     header = fake_item(text="Milestones", label="section_header", bbox=(90, 90, 150, 110))
     records = {
-        id(picture): drs.PictureRecord(
+        id(picture): PictureRecord(
             page=1,
             index=1,
             placeholder="{{DOC_IMAGE_p0001_i001}}",
@@ -404,7 +453,7 @@ def test_layout_prompt_map_headers_tables_pictures() -> None:
             caption="Visible product photo",
         )
     }
-    layout_map = drs.build_layout_prompt_map([picture, table, header], (1000.0, 800.0), records)
+    layout_map = build_layout_prompt_map([picture, table, header], (1000.0, 800.0), records)
     check(layout_map["blocks"][0]["type"] == "picture", "picture block type preserved")
     check(layout_map["blocks"][0]["caption"] == "Visible product photo", "picture uses caption field")
     check("text" not in layout_map["blocks"][0], "picture does not use text field")
@@ -415,7 +464,7 @@ def test_layout_prompt_map_headers_tables_pictures() -> None:
 def test_layout_prompt_map_nearby_context_includes_text() -> None:
     text = fake_item(text="Nearby panel text should be retained for mapping. " * 8, bbox=(110, 100, 360, 300))
     picture = fake_item(label="picture", bbox=(100, 160, 180, 240))
-    layout_map = drs.build_layout_prompt_map([text, picture], (1000.0, 800.0), {})
+    layout_map = build_layout_prompt_map([text, picture], (1000.0, 800.0), {})
     check("text" in layout_map["blocks"][0], "nearby structured context includes text")
 
 
@@ -424,22 +473,22 @@ def test_page_prompt_layout_and_unplaced_routing() -> None:
         "page_size": [100, 100],
         "blocks": [{"id": "b0001", "type": "paragraph", "bbox": [0, 0, 1, 1], "text": "2017"}],
     }
-    verified_table = drs.TableCandidate(
+    verified_table = TableCandidate(
         candidate_id="tc001",
         kind="layout_region",
         bbox=[0, 0, 1, 1],
         markdown="| Year | Value |\n| --- | --- |\n| 2017 | 42% |",
         verified=True,
     )
-    unverified_table = drs.TableCandidate(
+    unverified_table = TableCandidate(
         candidate_id="tc002",
         kind="layout_region",
         bbox=[0, 0, 1, 1],
         markdown="| Junk | Junk |\n| --- | --- |\n| a | b |",
         verified=False,
     )
-    first_prompt = drs.format_page_refinement_prompt(
-        prompt_template=drs.DEFAULT_PAGE_REFINEMENT_PROMPT,
+    first_prompt = format_page_refinement_prompt(
+        prompt_template=DEFAULT_PAGE_REFINEMENT_PROMPT,
         source_markdown="Raw draft\n",
         layout_blocks=layout_map,
         table_candidates=[verified_table, unverified_table],
@@ -450,16 +499,16 @@ def test_page_prompt_layout_and_unplaced_routing() -> None:
     check("| Junk | Junk |" not in first_prompt, "unverified table markdown stays out of the prompt")
     check("Unplaced lines:" not in first_prompt, "first pass prompt does not include unplaced lines")
 
-    empty_prompt = drs.format_page_refinement_prompt(
-        prompt_template=drs.DEFAULT_PAGE_REFINEMENT_PROMPT,
+    empty_prompt = format_page_refinement_prompt(
+        prompt_template=DEFAULT_PAGE_REFINEMENT_PROMPT,
         source_markdown="Raw draft\n",
         layout_blocks=layout_map,
         table_candidates=[],
     )
     check("(none)" in empty_prompt, "no verified tables renders as (none)")
 
-    repair_prompt = drs.format_page_repair_prompt(
-        prompt_template=drs.DEFAULT_PAGE_REPAIR_PROMPT,
+    repair_prompt = format_page_repair_prompt(
+        prompt_template=DEFAULT_PAGE_REPAIR_PROMPT,
         current_markdown="Current\n",
         layout_blocks=layout_map,
         table_candidates=[verified_table],
@@ -472,13 +521,13 @@ def test_page_prompt_layout_and_unplaced_routing() -> None:
 
 def test_bbox_area_ratio_bottomleft_coords() -> None:
     bbox = {"l": 0.0, "t": 800.0, "r": 1000.0, "b": 0.0, "origin": "BOTTOMLEFT"}
-    ratio = drs.bbox_area_ratio(bbox, (1000.0, 800.0))
+    ratio = bbox_area_ratio(bbox, (1000.0, 800.0))
     check(ratio == 1.0, "bottom-left bbox still yields correct positive area ratio")
 
 
 def test_bbox_to_pixel_rect_bottomleft_coords() -> None:
     bbox = {"l": 100.0, "t": 700.0, "r": 300.0, "b": 500.0, "origin": "BOTTOMLEFT"}
-    rect = drs.bbox_to_pixel_rect(
+    rect = bbox_to_pixel_rect(
         bbox,
         page_size=(1000.0, 800.0),
         image_size=(2000, 1600),
@@ -489,7 +538,7 @@ def test_bbox_to_pixel_rect_bottomleft_coords() -> None:
 def test_completeness_guard_appends_missing_lines() -> None:
     raw = "This important sustainability paragraph must remain visible in the final markdown.\n"
     final = "# Slide\n\nDifferent content only.\n"
-    guarded, warnings = drs.apply_completeness_guard(raw, final)
+    guarded, warnings = apply_completeness_guard(raw, final)
     check(warnings["content_loss_guard_triggered"], "guard reports content loss")
     check("## Unplaced content" in guarded, "guard appends unplaced section")
     check("important sustainability paragraph" in guarded, "missing line preserved")
@@ -498,7 +547,7 @@ def test_completeness_guard_appends_missing_lines() -> None:
 def test_completeness_guard_ignores_image_placeholder_replacement() -> None:
     raw = "# Slide\n\n{{DOC_IMAGE_p0001_i001}}\n"
     final = "# Slide\n\n![Picture p0001-i001](images/picture_p0001_i001.png)\n"
-    guarded, warnings = drs.apply_completeness_guard(raw, final)
+    guarded, warnings = apply_completeness_guard(raw, final)
     check(not warnings["content_loss_guard_triggered"], "image placeholder replacement is not treated as content loss")
     check("## Unplaced content" not in guarded, "no unplaced-content section for image replacement")
 
@@ -570,8 +619,8 @@ def prose_column_cells() -> list[dict[str, object]]:
     return cells
 
 
-def layout_region_candidates(cells: list[dict[str, object]]) -> list[drs.TableCandidate]:
-    candidates = drs.build_table_candidates(
+def layout_region_candidates(cells: list[dict[str, object]]) -> list[TableCandidate]:
+    candidates = build_table_candidates(
         cells=cells,
         page_size=(1000.0, 800.0),
         picture_records={},
@@ -584,7 +633,7 @@ def test_detector_accepts_label_value_grid() -> None:
     candidates = layout_region_candidates(grid_cells())
     check(len(candidates) == 1, "label/value grid detected as one region")
     if candidates:
-        check(candidates[0].confidence >= drs.TABLE_SCORE_THRESHOLD, "grid confidence above threshold")
+        check(candidates[0].confidence >= TABLE_SCORE_THRESHOLD, "grid confidence above threshold")
         check(len(candidates[0].source_block_ids) == 15, "grid keeps all cells as sources")
 
 
@@ -649,44 +698,44 @@ def test_normalize_pipe_tables() -> None:
         "|  | Target B | 61% |\n\n"
         "Outro stays.\n"
     )
-    out = drs.normalize_pipe_tables(malformed)
+    out = normalize_pipe_tables(malformed)
     check("|---|---|---|" in out.splitlines(), "separator widened to match the 3-column rows")
     check("|---|---|" not in out.splitlines(), "malformed 2-column separator removed")
     check("| Goal A | Target A | 42% |" in out, "data rows unchanged")
     check("Intro text stays." in out and "Outro stays." in out, "prose untouched")
 
     missing_separator = "| A | B |\n| 1 | 2 |\n| 3 | 4 |\n"
-    out = drs.normalize_pipe_tables(missing_separator)
+    out = normalize_pipe_tables(missing_separator)
     lines = [line for line in out.splitlines() if line]
     check(lines[1] == "|---|---|", "missing separator inserted after header")
     check(len(lines) == 4, "no rows lost when inserting separator")
 
     ragged = "| A | B | C |\n|---|---|---|\n| 1 | 2 |\n"
-    out = drs.normalize_pipe_tables(ragged)
+    out = normalize_pipe_tables(ragged)
     check("| 1 | 2 |  |" in out, "short row padded to table width")
 
     well_formed = "| A | B |\n|---|---|\n| 1 | 2 |\n"
-    out = drs.normalize_pipe_tables(well_formed)
+    out = normalize_pipe_tables(well_formed)
     check("|---|---|" in out and "| 1 | 2 |" in out, "well-formed table survives")
 
 
 def test_parse_typed_summary() -> None:
-    kind, body = drs.parse_typed_summary("TYPE: table\n| A | B |\n|---|---|\n| 1 | 2 |")
+    kind, body = parse_typed_summary("TYPE: table\n| A | B |\n|---|---|\n| 1 | 2 |")
     check(kind == "table" and body.startswith("| A | B |"), "TYPE line parsed and stripped")
-    kind, body = drs.parse_typed_summary("Type: PHOTO\nA farmer walks through a barn.")
+    kind, body = parse_typed_summary("Type: PHOTO\nA farmer walks through a barn.")
     check(kind == "photo", "TYPE parsing is case-insensitive")
-    kind, body = drs.parse_typed_summary("Just some text without a type line.")
+    kind, body = parse_typed_summary("Just some text without a type line.")
     check(kind == "" and body.startswith("Just some"), "missing TYPE keeps full body")
 
 
 def test_summary_shape_ok() -> None:
     table = "| A | B |\n|---|---|\n| 1 | 2 |"
-    check(drs.summary_shape_ok("table", table), "table shape accepts pipe table")
-    check(not drs.summary_shape_ok("table", "values must be added here"), "table shape rejects prose")
-    check(drs.summary_shape_ok("photo", "A farmer walks through a barn."), "photo shape accepts sentence")
-    check(not drs.summary_shape_ok("photo", "x" * 500), "photo shape rejects walls of text")
-    check(drs.summary_shape_ok("chart", "Milk: 36%\nDairy: 18%"), "chart shape accepts label:value lines")
-    check(not drs.summary_shape_ok("diagram", "one line only"), "diagram shape rejects single label-less line")
+    check(summary_shape_ok("table", table), "table shape accepts pipe table")
+    check(not summary_shape_ok("table", "values must be added here"), "table shape rejects prose")
+    check(summary_shape_ok("photo", "A farmer walks through a barn."), "photo shape accepts sentence")
+    check(not summary_shape_ok("photo", "x" * 500), "photo shape rejects walls of text")
+    check(summary_shape_ok("chart", "Milk: 36%\nDairy: 18%"), "chart shape accepts label:value lines")
+    check(not summary_shape_ok("diagram", "one line only"), "diagram shape rejects single label-less line")
 
 
 def test_picture_summary_rect_grows_over_neighbors() -> None:
@@ -697,14 +746,14 @@ def test_picture_summary_rect_grows_over_neighbors() -> None:
         # unrelated paragraph far above
         {"id": "b2", "rect": [0.05, 0.10, 0.40, 0.30], "text": "Far away", "is_heading": False},
     ]
-    grown = drs.picture_summary_rect(picture, cells)
+    grown = picture_summary_rect(picture, cells)
     check(grown[1] <= 0.575, "adjacent title above pulled into the crop")
     check(grown[1] > 0.30, "distant text not pulled into the crop")
     check(grown[3] >= 0.97, "margin added below for pixel-only footer lines")
 
 
 def test_summarize_pictures_typed_retry() -> None:
-    original_call = drs.ollama_client.call_ollama_vlm
+    original_call = ollama_client.call_ollama_vlm
     prompts: list[str] = []
     answers = iter(
         [
@@ -717,7 +766,7 @@ def test_summarize_pictures_typed_retry() -> None:
         prompts.append(kwargs.get("prompt", ""))
         return next(answers), {"total_tokens": 7}
 
-    drs.ollama_client.call_ollama_vlm = fake_call
+    ollama_client.call_ollama_vlm = fake_call
     try:
         record = make_record(1, area=0.3)
         record.abs_path = "fake.png"
@@ -726,7 +775,7 @@ def test_summarize_pictures_typed_retry() -> None:
             skip_vlm=False, ollama_base_url="", ollama_model="", temperature=0.0,
             num_ctx=0, num_predict=0, auto_num_ctx=False,
         )
-        drs.summarize_pictures(records=[record], prompt_template=drs.DEFAULT_IMAGE_SUMMARY_PROMPT, args=args)
+        summarize_pictures(records=[record], prompt_template=DEFAULT_IMAGE_SUMMARY_PROMPT, args=args)
         check(len(prompts) == 2, "failed table shape triggers one focused retry")
         check("markdown pipe tables only" in prompts[1], "retry uses the focused table prompt")
         check(record.summary_type == "table", "summary type recorded")
@@ -734,18 +783,18 @@ def test_summarize_pictures_typed_retry() -> None:
         check("TYPE:" not in record.summary, "TYPE line stripped from stored summary")
         check(not record.summary_warnings, "successful retry leaves no warning")
     finally:
-        drs.ollama_client.call_ollama_vlm = original_call
+        ollama_client.call_ollama_vlm = original_call
 
 
 def test_summarize_pictures_calls_vlm() -> None:
-    original_call = drs.ollama_client.call_ollama_vlm
+    original_call = ollama_client.call_ollama_vlm
     calls: list[str] = []
 
     def fake_call(**kwargs):
         calls.append(str(kwargs.get("image_path")))
         return "Visible values: Scope 1 & 2: 5%, Scope 3: 31%.", {"total_tokens": 9}
 
-    drs.ollama_client.call_ollama_vlm = fake_call
+    ollama_client.call_ollama_vlm = fake_call
     try:
         record = make_record(1, area=0.3)
         record.abs_path = "fake.png"
@@ -756,16 +805,16 @@ def test_summarize_pictures_calls_vlm() -> None:
             skip_vlm=False, ollama_base_url="", ollama_model="", temperature=0.0,
             num_ctx=0, num_predict=0, auto_num_ctx=False,
         )
-        drs.summarize_pictures(records=[record, skipped], prompt_template=drs.DEFAULT_IMAGE_SUMMARY_PROMPT, args=args)
+        summarize_pictures(records=[record, skipped], prompt_template=DEFAULT_IMAGE_SUMMARY_PROMPT, args=args)
         check(len(calls) == 1, "summary requested only for routed pictures")
         check("Scope 1 & 2: 5%" in record.summary, "summary stored on the record")
         check(not skipped.summary, "skipped picture stays unsummarized")
     finally:
-        drs.ollama_client.call_ollama_vlm = original_call
+        ollama_client.call_ollama_vlm = original_call
 
 
 def test_drop_duplicate_subset_tables() -> None:
-    verified = drs.TableCandidate(
+    verified = TableCandidate(
         candidate_id="tc001",
         kind="layout_region",
         bbox=None,
@@ -782,13 +831,13 @@ def test_drop_duplicate_subset_tables() -> None:
         "| Goal A | Target A | 42% |\n| Goal B | Target B | 61% |\n\n"
         "| Other | Table |\n| --- | --- |\n| keep | me |\n| and | this |\n"
     )
-    out, dropped = drs.drop_duplicate_subset_tables(markdown, [verified])
+    out, dropped = drop_duplicate_subset_tables(markdown, [verified])
     check(dropped == 1, "column-subset duplicate dropped")
     check("| Goal A | Target A | 42% |" in out, "full verified table kept")
     check("| Goal A | Target A |\n" not in out, "2-column twin removed")
     check("| keep | me |" in out, "unrelated table untouched")
 
-    out, dropped = drs.drop_duplicate_subset_tables(markdown, [])
+    out, dropped = drop_duplicate_subset_tables(markdown, [])
     check(dropped == 0 and out == markdown, "no verified tables leaves markdown unchanged")
 
     twin = (
@@ -798,7 +847,7 @@ def test_drop_duplicate_subset_tables() -> None:
         "| GOALS | TARGETS | 2025 RESULTS |\n| --- | --- | --- |\n"
         "| Goal A | Target A | 42% |\n| Goal B | Target B | 61% |\n"
     )
-    out, dropped = drs.drop_duplicate_subset_tables(twin, [verified])
+    out, dropped = drop_duplicate_subset_tables(twin, [verified])
     check(dropped == 1, "identical twin deduplicated")
     check(out.count("| Goal A | Target A | 42% |") == 1, "exactly one instance survives")
 
@@ -835,7 +884,7 @@ def test_detector_splits_sections_at_banners() -> None:
 
 
 def test_picture_table_detection_and_hero_rejection() -> None:
-    table_record = drs.PictureRecord(
+    table_record = PictureRecord(
         page=1,
         index=1,
         placeholder="{{DOC_IMAGE_p0001_i001}}",
@@ -846,7 +895,7 @@ def test_picture_table_detection_and_hero_rejection() -> None:
         classification="",
         caption="",
     )
-    hero_record = drs.PictureRecord(
+    hero_record = PictureRecord(
         page=1,
         index=2,
         placeholder="{{DOC_IMAGE_p0001_i002}}",
@@ -857,7 +906,7 @@ def test_picture_table_detection_and_hero_rejection() -> None:
         classification="photo",
         caption="",
     )
-    candidates = drs.build_table_candidates(
+    candidates = build_table_candidates(
         cells=[],
         page_size=(1000.0, 800.0),
         picture_records={1: table_record, 2: hero_record},
@@ -871,23 +920,23 @@ def test_picture_table_detection_and_hero_rejection() -> None:
 def test_verify_region_table() -> None:
     cells = ["GOALS", "TARGETS", "Curb emissions", "-21% vs. 2020", "Reach 42% by 2030"]
     good = "| GOALS | TARGETS |\n| --- | --- |\n| Curb emissions | -21% vs. 2020 |\n| | Reach 42% by 2030 |"
-    ok, stats = drs.verify_region_table(good, cells)
+    ok, stats = verify_region_table(good, cells)
     check(ok, "faithful table transcription verifies")
 
     invented = good.replace("42%", "43%")
-    ok, stats = drs.verify_region_table(invented, cells)
+    ok, stats = verify_region_table(invented, cells)
     check(not ok and stats["fail"] == "invented_numbers", "invented number rejected")
 
     missing = "| GOALS | TARGETS |\n| --- | --- |\n| Curb emissions | -21% vs. 2020 |"
-    ok, stats = drs.verify_region_table(missing, cells)
+    ok, stats = verify_region_table(missing, cells)
     check(not ok and stats["fail"] == "missing_numbers", "dropped numbers rejected")
 
-    ok, stats = drs.verify_region_table("No table at all.", cells)
+    ok, stats = verify_region_table("No table at all.", cells)
     check(not ok and stats["fail"] == "no_table_structure", "non-table output rejected")
 
     wordy_cells = ["Category", "Description", "Alpha item", "Beta item", "Gamma item"]
     wordy = "| Category | Description |\n| --- | --- |\n| Alpha item | Beta item |\n| Gamma item | |"
-    ok, stats = drs.verify_region_table(wordy, wordy_cells)
+    ok, stats = verify_region_table(wordy, wordy_cells)
     check(ok, "numberless table verified via word coverage")
 
 
@@ -906,12 +955,12 @@ def region_transcribe_env(answers: list[str]):
     return calls, fake_call, fake_crop
 
 
-def make_region_candidate() -> tuple[drs.TableCandidate, list[dict[str, object]]]:
+def make_region_candidate() -> tuple[TableCandidate, list[dict[str, object]]]:
     cells = [
         {"id": "b0001", "rect": [0.1, 0.1, 0.2, 0.12], "text": "Europe", "is_heading": False},
         {"id": "b0002", "rect": [0.3, 0.1, 0.4, 0.12], "text": "+2.3%", "is_heading": False},
     ]
-    candidate = drs.TableCandidate(
+    candidate = TableCandidate(
         candidate_id="tc001",
         kind="layout_region",
         bbox=[0.1, 0.1, 0.4, 0.12],
@@ -923,17 +972,17 @@ def make_region_candidate() -> tuple[drs.TableCandidate, list[dict[str, object]]
 def test_transcribe_verifies_and_persists() -> None:
     answers = ["| Region | Growth |\n| --- | --- |\n| Europe | +2.3% |"]
     calls, fake_call, fake_crop = region_transcribe_env(answers)
-    original_call, original_crop = drs.ollama_client.call_ollama_vlm, drs.save_region_crop
-    drs.ollama_client.call_ollama_vlm, drs.save_region_crop = fake_call, fake_crop
+    original_call, original_crop = ollama_client.call_ollama_vlm, tables.save_region_crop
+    ollama_client.call_ollama_vlm, tables.save_region_crop = fake_call, fake_crop
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            page_dir = drs.Path(temp_dir)
+            page_dir = Path(temp_dir)
             candidate, cells = make_region_candidate()
             args = SimpleNamespace(
                 skip_vlm=False, ollama_base_url="", ollama_model="", temperature=0.0,
                 num_ctx=0, num_predict=0, auto_num_ctx=False,
             )
-            drs.transcribe_table_candidates(
+            transcribe_table_candidates(
                 candidates=[candidate], cells=cells,
                 page_image_path=page_dir / "page.png", page_dir=page_dir, args=args,
             )
@@ -944,23 +993,23 @@ def test_transcribe_verifies_and_persists() -> None:
                 "verified table persisted as sidecar",
             )
     finally:
-        drs.ollama_client.call_ollama_vlm, drs.save_region_crop = original_call, original_crop
+        ollama_client.call_ollama_vlm, tables.save_region_crop = original_call, original_crop
 
 
 def test_transcribe_retries_then_discards() -> None:
     bad = "| Region | Growth |\n| --- | --- |\n| Europe | +9.9% |"
     calls, fake_call, fake_crop = region_transcribe_env([bad, bad])
-    original_call, original_crop = drs.ollama_client.call_ollama_vlm, drs.save_region_crop
-    drs.ollama_client.call_ollama_vlm, drs.save_region_crop = fake_call, fake_crop
+    original_call, original_crop = ollama_client.call_ollama_vlm, tables.save_region_crop
+    ollama_client.call_ollama_vlm, tables.save_region_crop = fake_call, fake_crop
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            page_dir = drs.Path(temp_dir)
+            page_dir = Path(temp_dir)
             candidate, cells = make_region_candidate()
             args = SimpleNamespace(
                 skip_vlm=False, ollama_base_url="", ollama_model="", temperature=0.0,
                 num_ctx=0, num_predict=0, auto_num_ctx=False,
             )
-            drs.transcribe_table_candidates(
+            transcribe_table_candidates(
                 candidates=[candidate], cells=cells,
                 page_image_path=page_dir / "page.png", page_dir=page_dir, args=args,
             )
@@ -969,22 +1018,22 @@ def test_transcribe_retries_then_discards() -> None:
             check("9.9" in calls[1], "retry feedback names the invented number")
             check("verification_failed" in candidate.warnings, "failure recorded as warning")
     finally:
-        drs.ollama_client.call_ollama_vlm, drs.save_region_crop = original_call, original_crop
+        ollama_client.call_ollama_vlm, tables.save_region_crop = original_call, original_crop
 
 
 def test_transcribe_respects_vlm_skip_answer() -> None:
     calls, fake_call, fake_crop = region_transcribe_env(["SKIP"])
-    original_call, original_crop = drs.ollama_client.call_ollama_vlm, drs.save_region_crop
-    drs.ollama_client.call_ollama_vlm, drs.save_region_crop = fake_call, fake_crop
+    original_call, original_crop = ollama_client.call_ollama_vlm, tables.save_region_crop
+    ollama_client.call_ollama_vlm, tables.save_region_crop = fake_call, fake_crop
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            page_dir = drs.Path(temp_dir)
+            page_dir = Path(temp_dir)
             candidate, cells = make_region_candidate()
             args = SimpleNamespace(
                 skip_vlm=False, ollama_base_url="", ollama_model="", temperature=0.0,
                 num_ctx=0, num_predict=0, auto_num_ctx=False,
             )
-            drs.transcribe_table_candidates(
+            transcribe_table_candidates(
                 candidates=[candidate], cells=cells,
                 page_image_path=page_dir / "page.png", page_dir=page_dir, args=args,
             )
@@ -992,7 +1041,7 @@ def test_transcribe_respects_vlm_skip_answer() -> None:
             check(len(calls) == 1, "SKIP answer is not retried")
             check("vlm_skip" in candidate.warnings, "SKIP recorded as warning")
     finally:
-        drs.ollama_client.call_ollama_vlm, drs.save_region_crop = original_call, original_crop
+        ollama_client.call_ollama_vlm, tables.save_region_crop = original_call, original_crop
 
 
 def test_repair_regression_reasons() -> None:
@@ -1001,22 +1050,22 @@ def test_repair_regression_reasons() -> None:
         "A closing paragraph with details.\n"
     )
     check(
-        drs.repair_regression_reasons(pre, pre, {"length_capped": False}) == [],
+        repair_regression_reasons(pre, pre, {"length_capped": False}) == [],
         "identical repair output passes the guard",
     )
     truncated = "# Page\n\n| A | B |\n| --- | --- |\n| Goal one | 42% |\n"
-    reasons = drs.repair_regression_reasons(pre, truncated, None)
+    reasons = repair_regression_reasons(pre, truncated, None)
     check("fewer_table_rows" in reasons, "lost table rows rejected")
     check("content_loss_vs_pre_repair" in reasons, "lost content rejected")
-    reasons = drs.repair_regression_reasons(pre, pre, {"length_capped": True})
+    reasons = repair_regression_reasons(pre, pre, {"length_capped": True})
     check(reasons == ["length_capped"], "length-capped repair rejected on usage alone")
     padded = truncated + "\n## Unplaced content\n\n- 61%\n- Goal two\n- A closing paragraph with details.\n"
-    reasons = drs.repair_regression_reasons(pre, padded, None)
+    reasons = repair_regression_reasons(pre, padded, None)
     check("fewer_table_rows" in reasons, "unplaced-content padding does not hide lost rows")
 
 
 def test_token_usage_includes_table_extraction() -> None:
-    usage = drs.summarize_token_usage(
+    usage = summarize_token_usage(
         [
             {
                 "page": 1,
@@ -1085,7 +1134,7 @@ def test_reading_order_page8_bands() -> None:
         ro_cell(23, [0.514, 0.599, 0.828, 0.624], kind="caption", text="CONSOLIDATED SALES BY GEOGRAPHICAL ZONE (in € millions)"),
     ]
     dividers = {"h": [[0.161, 0.084, 0.916], [0.577, 0.084, 0.916]], "v": []}
-    order = drs.reading_order_permutation(cells, dividers)
+    order = reading_order_permutation(cells, dividers)
     expected = list(range(6)) + list(range(13, 22)) + list(range(6, 13)) + [23, 22]
     check(order == expected, "page 8: bands complete before MAIN MARKETS starts")
     check(order[-2:] == [23, 22], "page 8: chart title caption precedes its picture")
@@ -1121,7 +1170,7 @@ def test_reading_order_page14_bands() -> None:
         ro_cell(23, [0.514, 0.674, 0.92, 0.782]),
     ]
     dividers = {"h": [[0.114, 0.084, 0.916], [0.478, 0.084, 0.916]], "v": []}
-    order = drs.reading_order_permutation(cells, dividers)
+    order = reading_order_permutation(cells, dividers)
     expected = [0, 1] + list(range(2, 11)) + [17, 18, 19, 20] + list(range(11, 17)) + [21, 22, 23]
     check(order == expected, "page 14: NA band complete before CNAO band starts")
     check(order[:2] == [0, 1], "page 14: pinned page header stays first")
@@ -1139,13 +1188,13 @@ def test_reading_order_vertical_divider_panels() -> None:
         return cells
 
     v_rule = {"h": [], "v": [[0.5, 0.08, 0.52]]}
-    order = drs.reading_order_permutation(panels(0.507), v_rule)
+    order = reading_order_permutation(panels(0.507), v_rule)
     check(order == [0, 2, 4, 1, 3, 5], "vertical rule groups panels before rows")
     check(
-        drs.reading_order_permutation(panels(0.507), {"h": [], "v": []}) is None,
+        reading_order_permutation(panels(0.507), {"h": [], "v": []}) is None,
         "narrow gutter without a rule leaves row order unchanged",
     )
-    order = drs.reading_order_permutation(panels(0.55), {"h": [], "v": []})
+    order = reading_order_permutation(panels(0.55), {"h": [], "v": []})
     check(order == [0, 2, 4, 1, 3, 5], "wide whitespace gutter groups panels")
 
 
@@ -1164,14 +1213,14 @@ def test_reading_order_rule_adopts_heading() -> None:
         ]
 
     rule = {"h": [[0.35, 0.08, 0.92]], "v": []}
-    order = drs.reading_order_permutation(cells(True), rule)
+    order = reading_order_permutation(cells(True), rule)
     check(order == [0, 1, 4, 2, 3, 5], "rule under heading cuts bands above the heading")
     check(
-        drs.reading_order_permutation(cells(True), {"h": [], "v": []}) is None,
+        reading_order_permutation(cells(True), {"h": [], "v": []}) is None,
         "without the rule the order is unchanged",
     )
     check(
-        drs.reading_order_permutation(cells(False), rule) is None,
+        reading_order_permutation(cells(False), rule) is None,
         "heading-less rule (row separator) does not cut",
     )
 
@@ -1192,9 +1241,9 @@ def test_reading_order_caption_position() -> None:
         ]
 
     rule = {"h": [[0.35, 0.08, 0.92]], "v": []}
-    order = drs.reading_order_permutation(cells([0.52, 0.37, 0.92, 0.39]), rule)
+    order = reading_order_permutation(cells([0.52, 0.37, 0.92, 0.39]), rule)
     check(order == [0, 1, 4, 2, 3, 6, 5], "caption above picture is read before it")
-    order = drs.reading_order_permutation(cells([0.52, 0.53, 0.92, 0.55]), rule)
+    order = reading_order_permutation(cells([0.52, 0.53, 0.92, 0.55]), rule)
     check(order == [0, 1, 4, 2, 3, 5, 6], "caption below picture stays after it")
 
 
@@ -1209,7 +1258,7 @@ def test_reading_order_identity_for_plain_columns() -> None:
         ro_cell(4, [0.512, 0.40, 0.92, 0.68]),
     ]
     check(
-        drs.reading_order_permutation(cells, {"h": [], "v": []}) is None,
+        reading_order_permutation(cells, {"h": [], "v": []}) is None,
         "plain two-column page keeps Docling order",
     )
 
@@ -1224,7 +1273,7 @@ def test_divider_segments_from_drawings() -> None:
         {"items": [("l", point(100.0, 50.0), point(115.0, 50.0))]},
         {"items": [("re", rect(100.0, 400.0, 800.0, 460.0))]},
     ]
-    segments = drs.divider_segments_from_drawings(drawings, (1000.0, 800.0))
+    segments = divider_segments_from_drawings(drawings, (1000.0, 800.0))
     check(len(segments["h"]) == 1, "split h-strokes merged into one rule")
     y, x0, x1 = segments["h"][0]
     check(abs(y - 0.375) < 0.01 and x0 < 0.06 and x1 > 0.93, "merged h-rule spans both strokes")
@@ -1247,16 +1296,16 @@ def test_reorder_items_for_reading_order() -> None:
         fake_item(text="Right two", bbox=(520, 296, 920, 440)),
     ]
     dividers = {"h": [[0.35, 0.08, 0.92]], "v": []}
-    out, info = drs.reorder_items_for_reading_order(items, (1000.0, 800.0), dividers)
+    out, info = reorder_items_for_reading_order(items, (1000.0, 800.0), dividers)
     check(info["applied"], "reorder applied for banded page")
-    texts = [drs.item_text(item) for item in out]
+    texts = [item_text(item) for item in out]
     check(
         texts == ["Running header", "Alpha", "Left one", "Right one", "No geometry", "Beta", "Left two", "Right two"],
         "bands reordered, furniture pinned, rect-less item glued",
     )
     check(info["moved_items"] == 4, "moved item count reported")
 
-    same, info = drs.reorder_items_for_reading_order(items, (1000.0, 800.0), {"h": [], "v": []})
+    same, info = reorder_items_for_reading_order(items, (1000.0, 800.0), {"h": [], "v": []})
     check(same is items and not info["applied"], "no dividers: original item list returned")
 
 
@@ -1271,7 +1320,7 @@ def test_export_page_markdown_item_order() -> None:
         def export_to_markdown(self, **kwargs):
             return "# docling order\n"
 
-    out = drs.export_page_markdown(
+    out = export_page_markdown(
         FakeDocument(), 1, [para, picture, heading], records, use_docling_order=False
     )
     check("docling order" not in out, "reordered page skips the Docling serializer")

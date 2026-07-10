@@ -1,22 +1,506 @@
-"""Picture triage and VLM extraction compatibility surface."""
+"""Picture triage, crop expansion, and typed VLM extraction."""
 
-from .legacy_pipeline import (
-    DEFAULT_IMAGE_SUMMARY_PROMPT,
-    parse_picture_triage,
-    picture_specialist_prompt,
-    should_summarize_picture,
-    should_visual_triage_picture,
-    summarize_pictures,
-    triage_pictures,
+from __future__ import annotations
+
+import argparse
+import json
+import re
+from pathlib import Path
+from typing import Any
+
+from .docling_adapter import (
+    bbox_dict,
+    caption_text,
+    is_picture_item,
+)
+from .docling_adapter import item_kind
+from .layout.geometry import bbox_area_ratio, bbox_to_normalized_rect, normalized_rect_to_pixel_rect
+from .llm import ollama as ollama_client
+from .markdown import postprocess as sp
+from .markdown.formatting import normalize_pipe_tables, pipe_row_count
+from .models import PictureRecord
+from .prompts import (
+    DEFAULT_PICTURE_CHART_PROMPT,
+    DEFAULT_PICTURE_GROUPED_VALUES_PROMPT,
+    DEFAULT_PICTURE_PHOTO_PROMPT,
+    DEFAULT_PICTURE_TABLE_PROMPT,
+    DEFAULT_PICTURE_TRIAGE_PROMPT,
+    DEFAULT_PICTURE_VALUES_PROMPT,
 )
 
-__all__ = [
-    "DEFAULT_IMAGE_SUMMARY_PROMPT",
-    "parse_picture_triage",
-    "picture_specialist_prompt",
-    "should_summarize_picture",
-    "should_visual_triage_picture",
-    "summarize_pictures",
-    "triage_pictures",
-]
+TRIAGE_TYPES = {
+    "photo",
+    "table",
+    "chart",
+    "kpi",
+    "infographic",
+    "map",
+    "diagram",
+    "decorative",
+    "unclear",
+}
+DECORATIVE_LABELS = {"icon", "logo", "decorative", "stamp", "background"}
+SUMMARY_LABELS = {"chart", "diagram", "figure", "graph", "map", "table", "infographic"}
+PICTURE_MIN_AREA_RATIO = 0.01
+PICTURE_DECORATIVE_MAX_AREA_RATIO = 0.05
+PICTURE_TABLE_MIN_AREA_RATIO = 0.08
+SUMMARY_TYPES = {"photo", "table", "chart", "kpi", "infographic", "map", "diagram"}
+SUMMARY_TABLE_TYPES = {"table", "kpi"}
+SUMMARY_TYPE_RE = re.compile(r"^\s*TYPE:\s*([a-z]+)\s*$", re.IGNORECASE)
+PICTURE_CROP_NEIGHBOR_GAP = 0.03
+PICTURE_CROP_MARGIN = 0.02
 
+def classification_text(item: Any) -> str:
+    parts: list[str] = []
+    for attr in ("classification", "picture_class", "meta"):
+        value = getattr(item, attr, None)
+        if value is None:
+            continue
+        if isinstance(value, str):
+            parts.append(value)
+        elif isinstance(value, dict):
+            parts.extend(str(v) for v in value.values() if v is not None)
+        elif isinstance(value, (list, tuple)):
+            for entry in value:
+                parts.append(str(getattr(entry, "label", entry)))
+        else:
+            parts.append(str(value))
+    return " ".join(parts).lower()
+
+
+def should_summarize_picture(record: PictureRecord) -> tuple[bool, str]:
+    haystack = f"{record.classification} {record.caption}".lower()
+    if record.area_ratio < PICTURE_MIN_AREA_RATIO:
+        return False, "too_small"
+    if any(label in haystack for label in DECORATIVE_LABELS) and record.area_ratio < PICTURE_DECORATIVE_MAX_AREA_RATIO:
+        return False, "decorative"
+    if record.area_ratio >= PICTURE_DECORATIVE_MAX_AREA_RATIO:
+        return True, "large_picture"
+    if any(label in haystack for label in SUMMARY_LABELS):
+        return True, "semantic_label"
+    return False, "not_semantic"
+
+
+def should_visual_triage_picture(record: PictureRecord) -> tuple[bool, str]:
+    """Apply the cheap prefilter before spending a VLM call on triage.
+
+    The old heuristic skipped small unlabeled images.  Visual triage widens
+    that middle band so a chart without useful Docling metadata is not lost,
+    while still avoiding tiny page furniture and icons.
+    """
+
+    if not record.abs_path:
+        return False, "missing_image"
+    if record.area_ratio < PICTURE_MIN_AREA_RATIO:
+        return False, "too_small"
+    haystack = f"{record.classification} {record.caption}".lower()
+    if any(label in haystack for label in DECORATIVE_LABELS) and record.area_ratio < PICTURE_DECORATIVE_MAX_AREA_RATIO:
+        return False, "decorative"
+    return True, "visual_candidate"
+
+
+def parse_picture_triage(answer: str) -> tuple[str, float, list[str]]:
+    """Parse and validate the tiny JSON contract returned by the triage VLM."""
+
+    cleaned = sp.strip_meta_commentary(ollama_client.strip_markdown_fences(answer)).strip()
+    warnings: list[str] = []
+    payload: Any = None
+    try:
+        payload = json.loads(cleaned)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+        if match:
+            try:
+                payload = json.loads(match.group(0))
+            except json.JSONDecodeError:
+                payload = None
+        if payload is None:
+            warnings.append("triage_invalid_json")
+
+    if not isinstance(payload, dict):
+        return "unclear", 0.0, warnings or ["triage_invalid_payload"]
+    kind = str(payload.get("type") or "unclear").strip().lower()
+    if kind not in TRIAGE_TYPES:
+        warnings.append("triage_unknown_type")
+        kind = "unclear"
+    try:
+        confidence = float(payload.get("confidence", 0.0))
+    except (TypeError, ValueError):
+        confidence = 0.0
+        warnings.append("triage_invalid_confidence")
+    confidence = max(0.0, min(1.0, confidence))
+    return kind, confidence, warnings
+
+
+def picture_vlm_image_path(
+    record: PictureRecord,
+    *,
+    page_image_path: Path | None,
+    page_size: tuple[float, float] | None,
+    cells: list[dict[str, Any]] | None,
+) -> Path | None:
+    if not record.abs_path:
+        return None
+    image_path = Path(record.abs_path)
+    if page_image_path is None or page_size is None:
+        return image_path
+    rect = picture_summary_rect(
+        bbox_to_normalized_rect(record.bbox, page_size), cells or []
+    )
+    crop_path = image_path.with_name(image_path.stem + "_vlm.png")
+    if rect and save_region_crop(
+        page_image_path=page_image_path,
+        bbox=rect,
+        crop_path=crop_path,
+        margin=0.0,
+    ):
+        return crop_path
+    return image_path
+
+
+def picture_specialist_prompt(record: PictureRecord, generic_prompt: str) -> str:
+    """Select a type-specific extraction contract after visual triage."""
+
+    prompt_by_type = {
+        "table": DEFAULT_PICTURE_TABLE_PROMPT,
+        "kpi": DEFAULT_PICTURE_TABLE_PROMPT,
+        "chart": DEFAULT_PICTURE_CHART_PROMPT,
+        "infographic": DEFAULT_PICTURE_GROUPED_VALUES_PROMPT,
+        "map": DEFAULT_PICTURE_GROUPED_VALUES_PROMPT,
+        "diagram": DEFAULT_PICTURE_GROUPED_VALUES_PROMPT,
+        "photo": DEFAULT_PICTURE_PHOTO_PROMPT,
+    }
+    body = prompt_by_type.get(record.triage_type, generic_prompt)
+    if body == generic_prompt:
+        return body
+    return f"The image type is {record.triage_type}.\nYour first line must be exactly `TYPE: {record.triage_type}`.\n\n{body}"
+
+
+def triage_pictures(
+    *,
+    records: list[PictureRecord],
+    args: argparse.Namespace,
+    page_image_path: Path | None = None,
+    page_size: tuple[float, float] | None = None,
+    cells: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Classify candidate pictures and decide which specialist to run."""
+
+    stats: dict[str, Any] = {
+        "candidates": 0,
+        "calls": 0,
+        "retries": 0,
+        "skipped": 0,
+        "types": {},
+    }
+    for record in records:
+        eligible, reason = should_visual_triage_picture(record)
+        record.triage_eligible = eligible
+        if not eligible:
+            record.summarize = False
+            record.skip_reason = reason
+            record.triage_action = "skip"
+            stats["skipped"] += 1
+            continue
+
+        stats["candidates"] += 1
+        legacy_summarize, legacy_reason = should_summarize_picture(record)
+        if args.skip_picture_triage:
+            record.summarize = legacy_summarize
+            record.skip_reason = legacy_reason
+            record.triage_type = ""
+            record.triage_action = "extract" if legacy_summarize else "skip"
+            if not legacy_summarize:
+                stats["skipped"] += 1
+            continue
+        if args.skip_vlm:
+            record.summarize = False
+            record.triage_action = "skip"
+            record.skip_reason = "skip_vlm"
+            stats["skipped"] += 1
+            continue
+
+        image_path = picture_vlm_image_path(
+            record,
+            page_image_path=page_image_path,
+            page_size=page_size,
+            cells=cells,
+        )
+        if image_path is None:
+            record.summarize = False
+            record.triage_action = "skip"
+            record.skip_reason = "missing_image"
+            stats["skipped"] += 1
+            continue
+        prompt = DEFAULT_PICTURE_TRIAGE_PROMPT
+        answer, usage = ollama_client.call_ollama_vlm(
+            base_url=args.ollama_base_url,
+            model=args.triage_model,
+            prompt=prompt,
+            image_path=image_path,
+            temperature=0.0,
+            num_ctx=args.num_ctx,
+            num_predict=args.triage_num_predict,
+            auto_num_ctx=args.auto_num_ctx,
+        )
+        stats["calls"] += 1
+        if usage.get("retried"):
+            stats["retries"] += 1
+        kind, confidence, warnings = parse_picture_triage(answer)
+        record.triage_type = kind
+        record.triage_confidence = confidence
+        record.triage_usage = usage
+        record.triage_warnings = warnings
+        stats["types"][kind] = stats["types"].get(kind, 0) + 1
+        if kind == "decorative" and confidence >= args.triage_confidence:
+            record.summarize = False
+            record.triage_action = "skip"
+            record.skip_reason = "triage_decorative"
+            stats["skipped"] += 1
+        else:
+            record.summarize = True
+            record.triage_action = "specialist" if confidence >= args.triage_confidence else "generic"
+            record.skip_reason = ""
+    return stats
+
+
+def save_picture_records(
+    *,
+    document: Any,
+    items: list[Any],
+    page_number: int,
+    page_dir: Path,
+    page_size: tuple[float, float],
+) -> dict[int, PictureRecord]:
+    images_dir = page_dir / "images"
+    records: dict[int, PictureRecord] = {}
+    picture_index = 0
+    for item in items:
+        if not is_picture_item(item):
+            continue
+        picture_index += 1
+        placeholder = f"{{{{DOC_IMAGE_p{page_number:04d}_i{picture_index:03d}}}}}"
+        rel_path = f"images/picture_p{page_number:04d}_i{picture_index:03d}.png"
+        abs_path: Path | None = None
+        image = get_picture_image(item, document)
+        if image is not None:
+            images_dir.mkdir(parents=True, exist_ok=True)
+            abs_path = page_dir / rel_path
+            image.save(abs_path)
+        bbox = bbox_dict(item)
+        record = PictureRecord(
+            page=page_number,
+            index=picture_index,
+            placeholder=placeholder,
+            rel_path=rel_path,
+            abs_path=str(abs_path) if abs_path else None,
+            bbox=bbox,
+            area_ratio=bbox_area_ratio(bbox, page_size),
+            classification=classification_text(item),
+            caption=caption_text(item),
+        )
+        record.summarize, record.skip_reason = should_summarize_picture(record)
+        record.triage_eligible, _ = should_visual_triage_picture(record)
+        records[id(item)] = record
+    return records
+
+
+def get_picture_image(item: Any, document: Any) -> Any | None:
+    if hasattr(item, "get_image"):
+        for kwargs in ({"doc": document}, {"document": document}, {}):
+            try:
+                return item.get_image(**kwargs)
+            except TypeError:
+                continue
+            except Exception:
+                return None
+    image_ref = getattr(item, "image", None)
+    for attr in ("pil_image", "image"):
+        value = getattr(image_ref, attr, None)
+        if value is not None:
+            return value
+    return None
+
+
+def parse_typed_summary(answer: str) -> tuple[str, str]:
+    """Split a typed summary into (type, body); type is "" when missing."""
+    lines = answer.strip().splitlines()
+    if lines:
+        match = SUMMARY_TYPE_RE.match(lines[0])
+        if match and match.group(1).lower() in SUMMARY_TYPES:
+            return match.group(1).lower(), "\n".join(lines[1:]).strip()
+    return "", answer.strip()
+
+
+def summary_shape_ok(summary_type: str, body: str) -> bool:
+    """Deterministic per-type shape check for an image transcription."""
+    if not body:
+        return False
+    if summary_type == "photo":
+        return len(body) <= 400
+    if summary_type in SUMMARY_TABLE_TYPES:
+        return pipe_row_count(body) >= 2
+    if summary_type in SUMMARY_TYPES:
+        value_lines = sum(
+            1
+            for line in body.splitlines()
+            if ":" in line or line.strip().startswith("|")
+        )
+        return value_lines >= 2 or pipe_row_count(body) >= 2
+    return True  # unknown type: accept anything non-empty
+
+
+def picture_summary_rect(
+    rect: list[float] | None,
+    cells: list[dict[str, Any]],
+) -> list[float] | None:
+    """Crop rect for summarizing a picture: its bbox grown to swallow adjacent
+    text lines (title above, total line below, axis labels beside) plus a
+    margin for text that lives only in pixels right at the bbox edge.
+    """
+    if not rect:
+        return None
+    grown = list(rect)
+    for cell in cells:
+        other = cell["rect"]
+        x_overlap = min(grown[2], other[2]) - max(grown[0], other[0])
+        y_overlap = min(grown[3], other[3]) - max(grown[1], other[1])
+        x_gap = max(grown[0], other[0]) - min(grown[2], other[2])
+        y_gap = max(grown[1], other[1]) - min(grown[3], other[3])
+        vertical_neighbor = (
+            y_gap <= PICTURE_CROP_NEIGHBOR_GAP
+            and x_overlap >= 0.5 * (other[2] - other[0])
+        )
+        horizontal_neighbor = (
+            x_gap <= PICTURE_CROP_NEIGHBOR_GAP
+            and y_overlap >= 0.5 * (other[3] - other[1])
+        )
+        if vertical_neighbor or horizontal_neighbor:
+            grown = [
+                min(grown[0], other[0]),
+                min(grown[1], other[1]),
+                max(grown[2], other[2]),
+                max(grown[3], other[3]),
+            ]
+    return [
+        max(0.0, grown[0] - PICTURE_CROP_MARGIN),
+        max(0.0, grown[1] - PICTURE_CROP_MARGIN),
+        min(1.0, grown[2] + PICTURE_CROP_MARGIN),
+        min(1.0, grown[3] + PICTURE_CROP_MARGIN),
+    ]
+
+
+def summarize_pictures(
+    *,
+    records: list[PictureRecord],
+    prompt_template: str,
+    args: argparse.Namespace,
+    page_image_path: Path | None = None,
+    page_size: tuple[float, float] | None = None,
+    cells: list[dict[str, Any]] | None = None,
+) -> None:
+    if args.skip_vlm:
+        return
+    for record in records:
+        if not record.summarize or not record.abs_path:
+            continue
+        image_path = picture_vlm_image_path(
+            record,
+            page_image_path=page_image_path,
+            page_size=page_size,
+            cells=cells,
+        )
+        if image_path is None:
+            record.summary_warnings.append("missing_image")
+            continue
+        context = {
+            "page": record.page,
+            "picture": record.index,
+            "caption": record.caption,
+            "classification": record.classification,
+        }
+        prompt = picture_specialist_prompt(
+            record,
+            prompt_template.format(context=json.dumps(context, ensure_ascii=False)),
+        )
+        answer, usage = ollama_client.call_ollama_vlm(
+            base_url=args.ollama_base_url,
+            model=args.ollama_model,
+            prompt=prompt,
+            image_path=image_path,
+            temperature=args.temperature,
+            num_ctx=args.num_ctx,
+            num_predict=args.num_predict,
+            auto_num_ctx=args.auto_num_ctx,
+        )
+        record.usage = usage
+        summary_type, body = parse_typed_summary(
+            sp.strip_meta_commentary(ollama_client.strip_markdown_fences(answer))
+        )
+        record.summary_type = summary_type
+        if not summary_shape_ok(summary_type, body) and summary_type in SUMMARY_TYPES:
+            # One focused retry with the type-specific contract.
+            retry_prompt = (
+                DEFAULT_PICTURE_TABLE_PROMPT
+                if summary_type in SUMMARY_TABLE_TYPES
+                else DEFAULT_PICTURE_VALUES_PROMPT
+            )
+            retry_answer, retry_usage = ollama_client.call_ollama_vlm(
+                base_url=args.ollama_base_url,
+                model=args.ollama_model,
+                prompt=retry_prompt,
+                image_path=image_path,
+                temperature=args.temperature,
+                num_ctx=args.num_ctx,
+                num_predict=args.num_predict,
+                auto_num_ctx=args.auto_num_ctx,
+            )
+            record.usage = retry_usage
+            retry_body = sp.strip_meta_commentary(
+                ollama_client.strip_markdown_fences(retry_answer)
+            ).strip()
+            if summary_shape_ok(summary_type, retry_body):
+                body = retry_body
+            else:
+                body = retry_body if len(retry_body) > len(body) else body
+                record.summary_warnings.append("summary_shape_failed")
+        if summary_type in SUMMARY_TABLE_TYPES:
+            body = normalize_pipe_tables(body)
+        record.summary = body.strip()
+
+
+def save_region_crop(
+    *,
+    page_image_path: Path,
+    bbox: list[float] | None,
+    crop_path: Path,
+    margin: float = 0.02,
+) -> bool:
+    from PIL import Image  # noqa: PLC0415
+
+    if not bbox:
+        return False
+    image = Image.open(page_image_path)
+    padded = [
+        max(0.0, bbox[0] - margin),
+        max(0.0, bbox[1] - margin),
+        min(1.0, bbox[2] + margin),
+        min(1.0, bbox[3] + margin),
+    ]
+    rect = normalized_rect_to_pixel_rect(padded, image.size)
+    if not rect:
+        return False
+    crop_path.parent.mkdir(parents=True, exist_ok=True)
+    image.crop(rect).save(crop_path)
+    return True
+
+__all__ = [
+    "DECORATIVE_LABELS", "SUMMARY_LABELS", "PICTURE_MIN_AREA_RATIO",
+    "PICTURE_DECORATIVE_MAX_AREA_RATIO", "PICTURE_TABLE_MIN_AREA_RATIO",
+    "classification_text", "should_summarize_picture",
+    "should_visual_triage_picture", "parse_picture_triage",
+    "picture_vlm_image_path", "picture_specialist_prompt", "triage_pictures",
+    "save_picture_records", "get_picture_image", "parse_typed_summary",
+    "summary_shape_ok", "picture_summary_rect", "summarize_pictures",
+    "save_region_crop",
+]

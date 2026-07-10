@@ -38,8 +38,8 @@ docker run --rm --gpus all `
 
 PACKAGE USAGE:
 
-The pipeline is now installable from this directory.  The package entrypoint
-is the canonical CLI; the old script remains a compatibility wrapper:
+The pipeline is installable from this directory. The package entrypoint is the
+canonical CLI:
 
     python -m pip install -e .
     document_extract danoneiar2025.pdf --output-dir outputs_docling_rag
