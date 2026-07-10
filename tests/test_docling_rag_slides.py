@@ -13,8 +13,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from docling_rag import legacy_pipeline as drs
-from docling_rag import runtime
+from document_extract import legacy_pipeline as drs
+from document_extract import runtime
 
 _failures: list[str] = []
 

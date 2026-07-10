@@ -1,4 +1,4 @@
-"""Lightweight tests for docling_rag_slides glue code.
+"""Lightweight tests for document_extract pipeline glue code.
 
 Run: python test_docling_rag_slides.py
 """
@@ -11,8 +11,11 @@ from contextlib import redirect_stdout
 from io import StringIO
 from types import SimpleNamespace
 
-import docling_rag_slides as drs
-import pipeline_runtime as runtime
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+from document_extract import legacy_pipeline as drs
+from document_extract import runtime
 
 _failures: list[str] = []
 

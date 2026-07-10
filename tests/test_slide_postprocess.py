@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from docling_rag.markdown import postprocess as sp
+from document_extract.markdown import postprocess as sp
 
 BASELINE = Path("outputs_paddleocr_vl_qwen/danoneiar2025v1")
 NEWRUN = Path("outputs_paddleocr_vl_qwen/danoneiar2025v2")

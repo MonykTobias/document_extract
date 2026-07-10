@@ -12,9 +12,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from docling_rag import legacy_pipeline
-from docling_rag.config import load_config
-from docling_rag.prompts import load_prompt
+from document_extract import legacy_pipeline
+from document_extract.config import load_config
+from document_extract.prompts import load_prompt
 
 
 def check(condition: bool, message: str) -> None:

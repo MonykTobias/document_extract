@@ -1,6 +1,6 @@
 """Small runtime primitives for the page-oriented Docling pipeline.
 
-The extraction algorithms remain in ``docling_rag_slides.py``.  This module
+The extraction algorithms remain in ``legacy_pipeline.py``.  This module
 only owns the workflow state, checkpoint format, and human-readable progress
 reporting so those concerns do not get mixed into OCR/VLM logic.
 """

@@ -1,11 +1,29 @@
-# Docling RAG
+# document_extract
 
-`docling-rag` converts PDF reports into page-level, RAG-ready Markdown using
-Docling, deterministic layout processing, optional picture triage, table
+`document_extract` converts PDF reports into page-level, RAG-ready Markdown
+using Docling, deterministic layout processing, optional picture triage, table
 extraction, and optional Ollama VLM refinement.
+
+The Python package is currently named `document_extract` and the installed CLI is
+`document_extract`. The project is named `document_extract`.
 
 The package is CLI-first and preserves the existing checkpoint, replay, and
 output formats.
+
+## Supported input formats
+
+| Format | Status | Notes |
+| --- | --- | --- |
+| PDF (`.pdf`) | Supported | Main input format, including text-based and scanned/image-heavy reports. |
+| DOCX (`.docx`) | Not supported directly | Convert to PDF first. |
+| PowerPoint (`.pptx`, `.ppt`) | Not supported directly | Export slides to PDF first. |
+| Excel (`.xlsx`, `.xls`, `.csv`) | Not supported directly | Export the relevant content to PDF first. |
+| Standalone images (`.png`, `.jpg`, `.jpeg`, `.webp`) | Not supported as input | Images inside PDFs can be triaged and extracted. |
+| HTML/web pages/URLs | Not supported | Download or print the content to PDF first. |
+
+The current command-line entrypoint validates that the input path exists and
+has a `.pdf` extension. Other formats may be added later through separate
+adapters without changing the PDF pipeline.
 
 ## Installation
 
@@ -26,7 +44,7 @@ python -m pip install --no-build-isolation -e .
 Verify the installation:
 
 ```powershell
-python -c "import docling_rag; print(docling_rag.__version__)"
+python -c "import document_extract; print(document_extract.__version__)"
 ```
 
 ## Basic usage
@@ -34,26 +52,25 @@ python -c "import docling_rag; print(docling_rag.__version__)"
 The canonical entrypoint is:
 
 ```powershell
-docling-rag report.pdf --output-dir outputs
+document_extract report.pdf --output-dir outputs
 ```
 
 Equivalent forms are also supported:
 
 ```powershell
-python -m docling_rag report.pdf --output-dir outputs
-python docling_rag_slides.py report.pdf --output-dir outputs
+python -m document_extract report.pdf --output-dir outputs
 ```
 
 To run without Ollama/VLM calls:
 
 ```powershell
-docling-rag report.pdf --skip-vlm
+document_extract report.pdf --skip-vlm
 ```
 
 To process only selected pages:
 
 ```powershell
-docling-rag report.pdf --start-page 1 --end-page 5
+document_extract report.pdf --start-page 1 --end-page 5
 ```
 
 ## Command-line options
@@ -95,7 +112,7 @@ finalize
 Example:
 
 ```powershell
-docling-rag report.pdf `
+document_extract report.pdf `
   --output-dir outputs `
   --resume-from page_refine `
   --start-page 1 `
@@ -124,13 +141,16 @@ config/detection.yaml
 Use multiple overlays when needed:
 
 ```powershell
-docling-rag report.pdf `
+document_extract report.pdf `
   --config config/models.yaml `
   --config config/detection.yaml `
   --config my-run.yaml
 ```
 
 Supported environment variables include:
+
+The `DOCLING_RAG_*` names are retained for compatibility with existing
+deployment scripts, even though the project is now named `document_extract`.
 
 ```text
 OLLAMA_BASE_URL
@@ -149,7 +169,7 @@ DOCLING_RAG_AUTO_NUM_CTX
 DOCLING_RAG_DIVIDER_REORDER
 ```
 
-Prompts are bundled under `src/docling_rag/resources/prompts/`. The editable
+Prompts are bundled under `src/document_extract/resources/prompts/`. The editable
 copies in `prompts/` are useful for inspection and project-level management.
 
 ## Output structure
@@ -201,7 +221,7 @@ photos. Small and decorative images are filtered before making the call.
 The current stable integration surface is the argument-based runner:
 
 ```python
-from docling_rag.pipeline.runner import run_document
+from document_extract.pipeline.runner import run_document
 
 exit_code = run_document([
     "report.pdf",
@@ -214,7 +234,7 @@ exit_code = run_document([
 Configuration can also be loaded directly:
 
 ```python
-from docling_rag.config import load_config
+from document_extract.config import load_config
 
 config = load_config()
 print(config.models.model)
@@ -225,7 +245,7 @@ print(config.models.model)
 Build the image:
 
 ```powershell
-docker build -f Dockerfile.docling -t docling-rag .
+docker build -f Dockerfile.docling -t document_extract .
 ```
 
 Run the CLI:
@@ -233,7 +253,7 @@ Run the CLI:
 ```powershell
 docker run --rm --gpus all `
   -v "${PWD}:/workspace" `
-  docling-rag `
+  document_extract `
   /workspace/report.pdf `
   --output-dir /workspace/outputs
 ```
@@ -242,10 +262,9 @@ docker run --rm --gpus all `
 
 These tools operate on saved artifacts and do not call Ollama:
 
-```powershell
-python replay_reading_order.py outputs/report
-python replay_table_detector.py outputs/report
-```
+Offline replay scripts are not currently included in the standalone package.
+Use the saved `page_state.json`, layout maps, and table candidate artifacts for
+manual inspection or add the replay tools as a separate development module.
 
 ## Development checks
 

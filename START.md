@@ -33,7 +33,7 @@ docker run --rm --gpus all `
   -v unlimited-ocr-docling-models:/models `
   unlimited-ocr-docling-gpu `
   /workspace/danoneiar2025.pdf --start-page 9 --end-page 13 ...
-py -3 eval_slides.py outputs_docling_rag/danoneiar2025 --source-name docling_raw.md --final-names docling_final.md --anchors 9,12,13
+# Optional evaluation tooling is not included in the standalone package.
 
 
 PACKAGE USAGE:
@@ -42,17 +42,16 @@ The pipeline is now installable from this directory.  The package entrypoint
 is the canonical CLI; the old script remains a compatibility wrapper:
 
     python -m pip install -e .
-    docling-rag danoneiar2025.pdf --output-dir outputs_docling_rag
-    python -m docling_rag danoneiar2025.pdf --skip-vlm
-    python docling_rag_slides.py danoneiar2025.pdf --skip-vlm
+    document_extract danoneiar2025.pdf --output-dir outputs_docling_rag
+    python -m document_extract danoneiar2025.pdf --skip-vlm
 
 Configuration is loaded in this order: bundled defaults, each repeated
 `--config` YAML overlay, environment variables, and explicit CLI arguments.
 Use the split examples in `config/` for runtime, model, and detection values:
 
-    docling-rag danoneiar2025.pdf --config config/models.yaml --config my-run.yaml
+    document_extract danoneiar2025.pdf --config config/models.yaml --config my-run.yaml
 
-The package keeps prompts in `src/docling_rag/resources/prompts/`; the copies
+The package keeps prompts in `src/document_extract/resources/prompts/`; the copies
 in `prompts/` are convenient editable project-level references.  Existing
 `page_state.json` checkpoints and `--resume-from` replay stages are unchanged.
 
@@ -94,7 +93,7 @@ only text are found via the heading, not the bar; rotated pages untested.
 
 Offline validation against a finished run (no Docker):
 
-py -3 replay_reading_order.py outputs_docling_rag/danoneurdaccessible --pdf danoneurdaccessible.pdf --verbose 8 14
+# Optional reading-order replay tooling is not included in the standalone package.
 # expected: p8/p14 reorder into band-major order; slide-deck anchor pages
 # 6, 9, 12, 13, 26 of danoneiar2025 must stay identity
 
@@ -111,7 +110,7 @@ truncates, loses content, or drops table rows vs. the pre-repair markdown.
 
 EVAL (run after a full pass, diff eval_report.json against the previous run):
 
-py -3 eval_slides.py outputs_docling_rag/danoneiar2025 --source-name docling_raw.md --final-names docling_final.md
+# Optional evaluation tooling is not included in the standalone package.
 
 Replay pages 9 (must stay table-free), 12 + 13 (dashboard tables, no duplicate
 2-column twins, all separators valid), 24 + 39 (severed goals/targets columns,
@@ -167,7 +166,7 @@ the figure sits instead of at the page end.
 
 Detector-only changes can be validated offline against a finished run (no Docker):
 
-py -3 replay_table_detector.py outputs_docling_rag/danoneiar2025
+# Optional table-detector replay tooling is not included in the standalone package.
 # expected candidate pages for danoneiar2025: 8, 12, 13, 24, 39, 53
 
 UNIT TESTS (no Docker/Ollama needed):

@@ -32,8 +32,7 @@ COPY pyproject.toml /workspace/pyproject.toml
 COPY src /workspace/src
 COPY config /workspace/config
 COPY prompts /workspace/prompts
-COPY docling_rag_slides.py pipeline_runtime.py ollama_client.py slide_postprocess.py /workspace/
 RUN python -m pip install --no-deps .
 
-ENTRYPOINT ["python", "-m", "docling_rag"]
+ENTRYPOINT ["python", "-m", "document_extract"]
 CMD ["--help"]
