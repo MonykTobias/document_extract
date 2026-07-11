@@ -778,6 +778,146 @@ def normalize_ocr_artifacts(markdown: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Duplicated-content detection and removal (F2)
+# --------------------------------------------------------------------------- #
+
+# Below this normalized length a repeated block is treated as legitimate
+# structure (short headings, "- 100%" list items), not duplicated content.
+DUPLICATE_PARAGRAPH_MIN_CHARS = 80
+DUPLICATE_PARAGRAPH_MIN_WORDS = 15
+
+
+def _split_blocks(markdown: str) -> list[list[str]]:
+    """Blank-line-separated blocks, each a list of raw lines."""
+    blocks: list[list[str]] = []
+    current: list[str] = []
+    for line in markdown.splitlines():
+        if line.strip():
+            current.append(line)
+        elif current:
+            blocks.append(current)
+            current = []
+    if current:
+        blocks.append(current)
+    return blocks
+
+
+def _block_norm(block: list[str]) -> str:
+    return re.sub(r"\s+", " ", " ".join(block).lower()).strip()
+
+
+def _block_is_table(block: list[str]) -> bool:
+    return block[0].lstrip().startswith("|")
+
+
+def _block_is_heading(block: list[str]) -> bool:
+    return len(block) == 1 and bool(_HEADING_RE.match(block[0]))
+
+
+def _block_is_image(block: list[str]) -> bool:
+    return all(
+        IMAGE_PLACEHOLDER_LINE_RE.match(line.strip())
+        or line.strip().startswith("**Image summary:**")
+        for line in block
+    )
+
+
+def _block_dedupe_eligible(block: list[str]) -> bool:
+    if _block_is_table(block) or _block_is_image(block) or _block_is_heading(block):
+        return False
+    norm = _block_norm(block)
+    return (
+        len(norm) >= DUPLICATE_PARAGRAPH_MIN_CHARS
+        or len(norm.split()) >= DUPLICATE_PARAGRAPH_MIN_WORDS
+    )
+
+
+def duplicate_paragraph_count(markdown: str) -> int:
+    """Extra occurrences of long normalized paragraphs (repair-loss signal).
+
+    Counts the sum of repeat occurrences of >=80-char paragraphs; table rows,
+    image blocks, and headings are ignored.
+    """
+    counts: dict[str, int] = {}
+    for block in _split_blocks(markdown):
+        if _block_is_table(block) or _block_is_image(block) or _block_is_heading(block):
+            continue
+        norm = _block_norm(block)
+        if len(norm) < DUPLICATE_PARAGRAPH_MIN_CHARS:
+            continue
+        counts[norm] = counts.get(norm, 0) + 1
+    return sum(count - 1 for count in counts.values() if count > 1)
+
+
+def collapse_duplicate_paragraphs(markdown: str) -> tuple[str, list[str]]:
+    """Remove later occurrences of paragraphs already present on the page.
+
+    Deterministic safety net for duplicated content from any source (observed:
+    an accepted repair pass re-emitted a whole column, page 19). Rules:
+
+    - a block repeats when its normalized text was already seen, or (>=80
+      chars) is a suffix of an already-seen paragraph — the column duplication
+      started mid-paragraph, producing a suffix copy;
+    - table rows, image blocks, and short blocks (< 80 chars and < 15 words)
+      are never touched, so legitimate repeated list items survive;
+    - a heading immediately followed by a removed duplicate paragraph is
+      removed with it when the same heading+paragraph pair appeared earlier.
+
+    Returns the cleaned markdown and the removed paragraphs (as warnings).
+    """
+    blocks = _split_blocks(markdown)
+    seen_norms: set[str] = set()
+    seen_long: list[str] = []
+    seen_pairs: set[tuple[str, str]] = set()
+    removed: list[str] = []
+    kept: list[list[str]] = []
+
+    def _is_duplicate(norm: str) -> bool:
+        if norm in seen_norms:
+            return True
+        if len(norm) >= DUPLICATE_PARAGRAPH_MIN_CHARS:
+            return any(previous.endswith(norm) for previous in seen_long)
+        return False
+
+    index = 0
+    while index < len(blocks):
+        block = blocks[index]
+        norm = _block_norm(block)
+
+        if _block_is_heading(block) and index + 1 < len(blocks):
+            nxt = blocks[index + 1]
+            nxt_norm = _block_norm(nxt)
+            if (
+                _block_dedupe_eligible(nxt)
+                and _is_duplicate(nxt_norm)
+                and (norm, nxt_norm) in seen_pairs
+            ):
+                removed.append(norm)
+                removed.append(nxt_norm)
+                index += 2
+                continue
+
+        if _block_dedupe_eligible(block) and _is_duplicate(norm):
+            removed.append(norm)
+            index += 1
+            continue
+
+        if _block_dedupe_eligible(block):
+            seen_norms.add(norm)
+            if len(norm) >= DUPLICATE_PARAGRAPH_MIN_CHARS:
+                seen_long.append(norm)
+            if kept and _block_is_heading(kept[-1]):
+                seen_pairs.add((_block_norm(kept[-1]), norm))
+        kept.append(block)
+        index += 1
+
+    if not removed:
+        return markdown, []
+    text = "\n\n".join("\n".join(block) for block in kept).strip()
+    return (text + "\n" if text else ""), removed
+
+
+# --------------------------------------------------------------------------- #
 # Page furniture (running headers/footers, sidebar chapter tabs)
 # --------------------------------------------------------------------------- #
 

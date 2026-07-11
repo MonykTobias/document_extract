@@ -135,6 +135,14 @@ def postprocess_markdown(
     final, dropped_tables = drop_duplicate_subset_tables(final, table_candidates)
     if dropped_tables:
         warnings["duplicate_tables_dropped"] = dropped_tables
+    # Dedupe before the completeness guard: the guard diffs against the raw
+    # markdown, which contains each paragraph once, so dropped copies are not
+    # re-appended as missing content.
+    final, dropped_paragraphs = sp.collapse_duplicate_paragraphs(final)
+    if dropped_paragraphs:
+        warnings["duplicate_paragraphs_dropped"] = [
+            paragraph[:80] for paragraph in dropped_paragraphs
+        ]
     # Strip furniture from the raw side too: checkpoints written before the
     # prepare-stage filter existed still carry furniture in raw_markdown, and
     # the guard must not re-append it as "missing" content.
@@ -248,6 +256,12 @@ def repair_regression_reasons(
         reasons.append("fewer_table_rows")
     if sp.completeness_diff(pre_markdown, repaired_markdown):
         reasons.append("content_loss_vs_pre_repair")
+    # A repair that duplicates content is as broken as one that loses it:
+    # an accepted repair once re-emitted a whole column twice (page 19).
+    if sp.duplicate_paragraph_count(repaired_body) > sp.duplicate_paragraph_count(
+        pre_body
+    ):
+        reasons.append("duplicate_content_added")
     return reasons
 
 
