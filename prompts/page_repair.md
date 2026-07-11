@@ -25,6 +25,7 @@ Rules:
 - A picture block with a `value` field is a symbol printed inside a table: write its value as plain text in the table cell whose row and column contain the block's bbox. Do not keep an image marker, image link, or image summary for such blocks.
 - Do not calculate, derive, estimate, or infer missing values.
 - Keep every image reference (`![...](...)`) and its following `**Image summary:**` block at its position. Do not add any other image links or HTML tags.
+- Do not transcribe running page headers, running footers, page numbers, or page-edge chapter tab characters; they are navigation furniture, not content.
 - Do not write meta-commentary.
 
 Current markdown:

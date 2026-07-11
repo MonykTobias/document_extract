@@ -11,7 +11,16 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from ..artifacts import combine_markdown, summarize_token_usage, write_jsonl
-from ..docling_adapter import build_docling_converter, convert_pdf
+from ..docling_adapter import (
+    bbox_dict,
+    build_docling_converter,
+    convert_pdf,
+    item_page_number,
+    item_text,
+    iter_doc_items,
+)
+from ..layout.furniture import repeated_furniture_signatures
+from ..layout.geometry import bbox_to_normalized_rect
 from ..layout.prompt_map import layout_map_stats
 from ..prompts import load_page_repair_prompt, load_page_refinement_prompt, load_summary_prompt
 from ..runtime import (
@@ -77,6 +86,33 @@ def _convert_chunk_in_worker(pdf_path: Path, pages: list[int]) -> Any:
     data URIs (generate_picture_images=True), so it serializes cheaply.
     """
     return convert_pdf(_WORKER_CONVERTER, pdf_path, pages)
+
+
+def _chunk_furniture_signatures(
+    document: Any,
+    chunk: list[int],
+    page_sizes: dict[int, tuple[float, float]],
+) -> set[tuple[str, str]]:
+    """Cross-page repetition signatures for one converted chunk.
+
+    Furniture detection needs to compare pages against each other; the chunk
+    (one Docling convert() call) is the widest window in which all items are
+    available before the per-page loop consumes them.
+    """
+    pages_entries: dict[int, list[tuple[str, list[float] | None]]] = {
+        page: [] for page in chunk
+    }
+    chunk_set = set(chunk)
+    for item in iter_doc_items(document):
+        page = item_page_number(item)
+        if page not in chunk_set:
+            continue
+        text = item_text(item)
+        if not text:
+            continue
+        rect = bbox_to_normalized_rect(bbox_dict(item), page_sizes[page])
+        pages_entries[page].append((text, rect))
+    return repeated_furniture_signatures(pages_entries)
 
 
 def ensure_pdf(path: Path) -> Path:
@@ -217,6 +253,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
         chunk_index = -1
         document = None
         chunk_last_page = 0
+        chunk_furniture: set[tuple[str, str]] = set()
         total_pages = len(pages)
         run_started_at = time.perf_counter()
         states: list[PageState] = []
@@ -235,6 +272,9 @@ def run_pipeline(args: argparse.Namespace) -> int:
                         flush=True,
                     )
                     chunk_last_page = chunk[-1]
+                    chunk_furniture = _chunk_furniture_signatures(
+                        document, chunk, page_sizes
+                    )
                     if chunk_index + 1 < len(chunks):
                         pending = _submit_chunk(pool, chunks[chunk_index + 1])
                 page_started_at = time.perf_counter()
@@ -282,6 +322,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                             pdf_doc=pdf_doc,
                             document=document,
                             page_size=page_sizes[page_number],
+                            furniture_signatures=chunk_furniture,
                         )
                         start_index = stage_index("picture_triage")
 

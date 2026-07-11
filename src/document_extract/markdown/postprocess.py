@@ -778,6 +778,122 @@ def normalize_ocr_artifacts(markdown: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Page furniture (running headers/footers, sidebar chapter tabs)
+# --------------------------------------------------------------------------- #
+
+# A bare 1-2 digit number or single capital letter on its own line; a *run* of
+# these after the page's images (or at the very end) is a sidebar chapter-tab
+# column the VLM transcribed top-to-bottom. 3-digit numbers are deliberately
+# excluded: they are real content (TOC page numbers like ``159``).
+_TAB_LINE_RE = re.compile(r"^(?:\d{1,2}|[A-Z])$")
+# A line that is exactly one image reference/placeholder (local copy: this
+# module must stay stdlib-only, so it cannot import formatting's constant).
+IMAGE_PLACEHOLDER_LINE_RE = re.compile(
+    r"^(?:!\[[^\]]*\]\([^)]*\)|<!--\s*image\s*-->|\{\{DOC_IMAGE_[^}]+\}\})$",
+    re.IGNORECASE,
+)
+
+
+def normalize_furniture_text(text: str) -> str:
+    """Repetition signature for margin text: lowercase, digits stripped,
+    whitespace collapsed — so ``4 DANONE - ... 2025`` and ``38 DANONE - ...
+    2025`` share one signature across pages."""
+    text = re.sub(r"\d+", " ", text.lower())
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def strip_furniture_lines(
+    markdown: str, furniture_texts: set[str] | None = None
+) -> str:
+    """Remove page-furniture lines the models transcribed into the body.
+
+    Two rules, both line-scoped so body prose is never touched:
+
+    - a standalone line (or ``#``-heading line) whose normalized text equals a
+      known furniture signature for this page is dropped;
+    - a run of >= 2 consecutive standalone chapter-tab lines (bare 1-2 digit
+      numbers or single capitals, blanks between them allowed) is dropped when
+      it sits after the last image reference on the page or at the very end of
+      the body. A single such line is never dropped.
+    """
+    texts = {t for t in (furniture_texts or set()) if t}
+    lines = markdown.splitlines()
+
+    def _line_normalized(line: str) -> str | None:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("|"):
+            return None
+        return normalize_furniture_text(re.sub(r"^#{1,6}\s+", "", stripped))
+
+    # A furniture text may span several markdown lines: Docling merges the
+    # running header into one item ("OVERVIEW ... 1.6 Risk factors") while the
+    # VLM emits it as two heading lines. Match 1..4 consecutive content lines
+    # (concatenated) against each furniture text, not just single lines.
+    kept: list[str] = []
+    index = 0
+    while index < len(lines):
+        normalized = _line_normalized(lines[index])
+        span_end = -1
+        if normalized:
+            parts = [normalized]
+            last_content = index
+            while len(parts) <= 4:
+                if " ".join(parts) in texts:
+                    span_end = last_content
+                    break
+                probe = last_content + 1
+                while probe < len(lines) and not lines[probe].strip():
+                    probe += 1
+                if probe >= len(lines):
+                    break
+                nxt = _line_normalized(lines[probe])
+                if not nxt:
+                    break
+                parts.append(nxt)
+                last_content = probe
+        if span_end >= 0:
+            index = span_end + 1
+            continue
+        kept.append(lines[index])
+        index += 1
+
+    last_image_index = -1
+    for index, line in enumerate(kept):
+        if IMAGE_PLACEHOLDER_LINE_RE.match(line.strip()):
+            last_image_index = index
+
+    drop: set[int] = set()
+    index = 0
+    while index < len(kept):
+        if not _TAB_LINE_RE.fullmatch(kept[index].strip()):
+            index += 1
+            continue
+        run = [index]
+        probe = index + 1
+        while probe < len(kept):
+            stripped = kept[probe].strip()
+            if not stripped:
+                probe += 1
+                continue
+            if _TAB_LINE_RE.fullmatch(stripped):
+                run.append(probe)
+                probe += 1
+                continue
+            break
+        if len(run) >= 2:
+            after_images = last_image_index >= 0 and run[0] > last_image_index
+            at_end = all(not line.strip() for line in kept[run[-1] + 1 :])
+            if after_images or at_end:
+                drop.update(range(run[0], run[-1] + 1))
+        index = probe if len(run) >= 2 else index + 1
+
+    if drop:
+        kept = [line for i, line in enumerate(kept) if i not in drop]
+    text = re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
+    return text + "\n" if text else ""
+
+
+# --------------------------------------------------------------------------- #
 # Meta-commentary leaks (F9)
 # --------------------------------------------------------------------------- #
 

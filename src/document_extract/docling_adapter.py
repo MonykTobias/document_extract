@@ -137,6 +137,52 @@ def item_kind(item: Any) -> str:
     return re.sub(r"item$", "", name, flags=re.IGNORECASE).lower()
 
 
+def item_content_layer(item: Any) -> str:
+    layer = getattr(item, "content_layer", None)
+    if layer is None:
+        return ""
+    return str(layer).split(".")[-1].lower()
+
+
+def is_furniture_item(item: Any) -> bool:
+    """True for items Docling itself labels as page furniture."""
+    if item_kind(item) in {"page_header", "page_footer"}:
+        return True
+    return item_content_layer(item) == "furniture"
+
+
+def iter_furniture_items(document: Any, page_number: int | None = None) -> Iterable[Any]:
+    """Yield the page's furniture-layer items (running headers/footers).
+
+    ``iterate_items`` returns only the BODY content layer by default, which is
+    why Docling-classified footers never show up in the exported markdown —
+    but the refine VLM still transcribes them from the page image, so their
+    texts are needed for deterministic stripping. Yields nothing when the
+    installed docling-core cannot filter by content layer.
+    """
+    content_layer = None
+    for module in ("docling_core.types.doc", "docling_core.types.doc.document"):
+        try:
+            content_layer = getattr(__import__(module, fromlist=["ContentLayer"]), "ContentLayer")
+            break
+        except (ImportError, AttributeError):
+            continue
+    if content_layer is None or not hasattr(document, "iterate_items"):
+        return
+    try:
+        iterator = document.iterate_items(
+            included_content_layers={content_layer.BODY, content_layer.FURNITURE}
+        )
+    except TypeError:
+        return
+    for entry in iterator:
+        item = entry[0] if isinstance(entry, tuple) else entry
+        if page_number is not None and item_page_number(item) != page_number:
+            continue
+        if is_furniture_item(item):
+            yield item
+
+
 def is_picture_item(item: Any) -> bool:
     return "picture" in type(item).__name__.lower() or item_kind(item) == "picture"
 
@@ -346,6 +392,7 @@ __all__ = [
     "rasterize_page", "build_docling_converter", "set_if_present",
     "make_rapidocr_options", "make_table_options", "configure_cuda_accelerator",
     "convert_pdf", "iter_doc_items", "item_page_number", "item_kind",
+    "item_content_layer", "is_furniture_item", "iter_furniture_items",
     "is_picture_item", "is_table_item", "is_heading_item", "item_text",
     "list_marker", "infer_list_levels", "table_cell_text", "table_header_profile",
     "caption_text", "bbox_dict", "export_item_markdown",

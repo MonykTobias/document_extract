@@ -4,22 +4,31 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
 
 from ..artifacts import block_rows_for_page, write_image_summaries
 from ..docling_adapter import (
     assert_docling_export_surface,
+    bbox_dict,
+    is_furniture_item,
+    is_picture_item,
     is_table_item,
+    item_text,
     iter_doc_items,
+    iter_furniture_items,
     rasterize_page,
 )
+from ..layout.furniture import furniture_band, is_chapter_tab
+from ..layout.geometry import bbox_to_normalized_rect
 from ..layout.prompt_map import (
     annotate_picture_values,
     build_layout_prompt_map,
     detection_cells_from_items,
     detection_cells_from_layout_map,
 )
+from ..markdown.postprocess import normalize_furniture_text, strip_furniture_lines
 from ..layout.reading_order import extract_divider_segments, reorder_items_for_reading_order
 from ..markdown.formatting import export_page_markdown
 from ..models import PictureRecord, TableCandidate
@@ -91,6 +100,57 @@ def _skip_stage(state: PageState, reporter: StatusReporter, stage: str, reason: 
     state.save()
 
 
+def _split_furniture_items(
+    items: list[Any],
+    document: Any,
+    page_number: int,
+    page_size: tuple[float, float],
+    furniture_signatures: set[tuple[str, str]],
+) -> tuple[list[Any], set[str], int]:
+    """Partition a page's items into (kept, furniture_texts, dropped_count).
+
+    Drops Docling-labelled furniture, sidebar chapter tabs, and body items
+    matching a cross-page repetition signature. Also collects the texts of the
+    page's furniture-layer items (footers the body export never contains) so
+    the postprocess strip can remove VLM transcriptions of them.
+    """
+    kept: list[Any] = []
+    texts: set[str] = set()
+    kept_texts: set[str] = set()
+    dropped = 0
+    for item in items:
+        if is_picture_item(item) or is_table_item(item):
+            kept.append(item)
+            continue
+        text = item_text(item)
+        rect = bbox_to_normalized_rect(bbox_dict(item), page_size)
+        if is_furniture_item(item):
+            dropped += 1
+            normalized = normalize_furniture_text(text)
+            if normalized and re.search(r"[^\W\d_]", normalized):
+                texts.add(normalized)
+            continue
+        if text and is_chapter_tab(text, rect):
+            dropped += 1
+            continue
+        normalized = normalize_furniture_text(text) if text else ""
+        if normalized and (normalized, furniture_band(rect)) in furniture_signatures:
+            dropped += 1
+            texts.add(normalized)
+            continue
+        if normalized:
+            kept_texts.add(normalized)
+        kept.append(item)
+    for furniture in iter_furniture_items(document, page_number):
+        normalized = normalize_furniture_text(item_text(furniture))
+        if normalized and re.search(r"[^\W\d_]", normalized):
+            texts.add(normalized)
+    # Text-level stripping cannot see bands: on a section's first page the
+    # genuine heading shares the running header's normalized text (observed:
+    # page 22 ``1.6 RISK FACTORS``). Never strip a text a kept item still uses.
+    return kept, texts - kept_texts, dropped
+
+
 def _prepare_page(
     *,
     state: PageState,
@@ -99,6 +159,7 @@ def _prepare_page(
     pdf_doc: Any,
     document: Any,
     page_size: tuple[float, float],
+    furniture_signatures: set[tuple[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Prepare one page from a document that was already converted by Docling.
 
@@ -121,6 +182,14 @@ def _prepare_page(
             items, reading_order_info = reorder_items_for_reading_order(
                 items, page_size, dividers
             )
+        items, furniture_texts, furniture_dropped = _split_furniture_items(
+            items,
+            document,
+            state.page,
+            page_size,
+            furniture_signatures or set(),
+        )
+        state.furniture_texts = sorted(furniture_texts)
         render_layout_overlay(
             page_image_path=page_dir / "page.png",
             items=items,
@@ -143,6 +212,9 @@ def _prepare_page(
             picture_map,
             use_docling_order=not reading_order_info["applied"],
         )
+        # The Docling-serializer export path renders the page's full body item
+        # list, so furniture dropped from ``items`` can still be in the text.
+        raw_markdown = strip_furniture_lines(raw_markdown, furniture_texts)
         (page_dir / "docling_raw.md").write_text(raw_markdown, encoding="utf-8")
         layout_prompt_map = build_layout_prompt_map(
             items=items,
@@ -181,6 +253,7 @@ def _prepare_page(
             "pictures": len(records),
             "text_blocks": len(detection_cells),
             "reordered": reading_order_info.get("moved_items", 0),
+            "furniture_dropped": furniture_dropped,
         }
 
     _execute_stage(state, reporter, "prepare", action)
@@ -358,7 +431,12 @@ def _run_page_refine(
         if usage:
             (page_dir / "page_vlm.md").write_text(refined, encoding="utf-8")
         final_markdown, warnings = postprocess_markdown(
-            state.raw_markdown, refined, records, candidates, layout_map
+            state.raw_markdown,
+            refined,
+            records,
+            candidates,
+            layout_map,
+            furniture_texts=set(state.furniture_texts),
         )
         missing_tables = missing_verified_table_ids(final_markdown, candidates)
         if missing_tables:
@@ -437,7 +515,12 @@ def _run_page_repair(
             return {"calls": 0, "reason": "skip_vlm"}
         (page_dir / "page_repair.md").write_text(repaired, encoding="utf-8")
         repaired_final, repaired_warnings = postprocess_markdown(
-            state.raw_markdown, repaired, records, candidates, repair_layout_map
+            state.raw_markdown,
+            repaired,
+            records,
+            candidates,
+            repair_layout_map,
+            furniture_texts=set(state.furniture_texts),
         )
         reject_reasons = repair_regression_reasons(
             state.final_markdown, repaired_final, usage

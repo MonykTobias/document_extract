@@ -94,6 +94,7 @@ def postprocess_markdown(
     records: list[PictureRecord],
     table_candidates: list[TableCandidate] | None = None,
     layout_blocks: dict[str, Any] | None = None,
+    furniture_texts: set[str] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     final = sp.flatten_html_tables(working_markdown)
     final = sp.normalize_bullets_and_headings(final)
@@ -112,6 +113,9 @@ def postprocess_markdown(
     ]
     final = normalize_headerless_pipe_tables(final, headerless_rows)
     final = apply_list_levels_from_layout(final, layout_blocks)
+    # The refine/repair VLM re-transcribes margin furniture from the page
+    # image even when the Docling items were dropped in prepare.
+    final = sp.strip_furniture_lines(final, furniture_texts)
 
     warnings: dict[str, Any] = {}
     if flagged_summaries:
@@ -131,7 +135,12 @@ def postprocess_markdown(
     final, dropped_tables = drop_duplicate_subset_tables(final, table_candidates)
     if dropped_tables:
         warnings["duplicate_tables_dropped"] = dropped_tables
-    final, guard_warnings = apply_completeness_guard(source_markdown, final)
+    # Strip furniture from the raw side too: checkpoints written before the
+    # prepare-stage filter existed still carry furniture in raw_markdown, and
+    # the guard must not re-append it as "missing" content.
+    final, guard_warnings = apply_completeness_guard(
+        sp.strip_furniture_lines(source_markdown, furniture_texts), final
+    )
     warnings.update(guard_warnings)
     footnote_warnings = sp.footnote_consistency(final)
     if footnote_warnings:
