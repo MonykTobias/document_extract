@@ -175,6 +175,28 @@ def _manifest_row(state: PageState) -> dict[str, Any]:
     }
 
 
+def _warn_stale_page_dirs(output_root: Path, states: list[PageState]) -> list[str]:
+    """List page_* dirs under the output root that this run did not produce.
+
+    Leftovers from an older run (different page range) sit next to current
+    pages and would silently pollute a RAG index built from the directory.
+    Never deletes — the user decides.
+    """
+    current = {Path(state.page_dir).name for state in states}
+    stale = sorted(
+        child.name
+        for child in output_root.glob("page_*")
+        if child.is_dir() and child.name not in current
+    )
+    if stale:
+        print(
+            f"WARNING: {len(stale)} page dir(s) in {output_root} are not part of "
+            f"this run (stale from an earlier run?): {', '.join(stale)}",
+            flush=True,
+        )
+    return stale
+
+
 def _write_run_outputs(output_root: Path, states: list[PageState]) -> None:
     ordered = sorted(states, key=lambda state: state.page)
     manifest = [_manifest_row(state) for state in ordered]
@@ -192,6 +214,7 @@ def _write_run_outputs(output_root: Path, states: list[PageState]) -> None:
     )
     combine_markdown(raw_dirs, output_root / "combined_docling_raw.md", "docling_raw.md")
     combine_markdown(final_dirs, output_root / "combined_docling_final.md", "docling_final.md")
+    _warn_stale_page_dirs(output_root, ordered)
 
 
 def run_pipeline(args: argparse.Namespace) -> int:
