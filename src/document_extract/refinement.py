@@ -15,6 +15,8 @@ from .markdown.formatting import (
     IMAGE_PLACEHOLDER_RE,
     apply_list_levels_from_layout,
     drop_duplicate_subset_tables,
+    drop_empty_header_row,
+    drop_orphan_header_tables,
     insert_image_references_and_summaries,
     mark_redundant_summaries,
     missing_verified_table_ids,
@@ -22,6 +24,8 @@ from .markdown.formatting import (
     normalize_pipe_tables,
     pipe_row_count,
     standalone_value_line_count,
+    strip_br_lines,
+    unwrap_layout_tables,
 )
 from .models import PictureRecord, TableCandidate
 from .tables import verified_tables_prompt_block
@@ -104,6 +108,17 @@ def postprocess_markdown(
     final = sp.strip_meta_commentary(final)
     final = sp.normalize_footnotes(final)
     final = normalize_pipe_tables(final)
+    table_warnings: dict[str, int] = {}
+    final, orphan_texts = drop_orphan_header_tables(final)
+    if orphan_texts:
+        table_warnings["orphan_header_tables_dropped"] = len(orphan_texts)
+    final, unwrapped_count = unwrap_layout_tables(final)
+    if unwrapped_count:
+        table_warnings["layout_tables_unwrapped"] = unwrapped_count
+    final = strip_br_lines(final)
+    final, empty_count = drop_empty_header_row(final)
+    if empty_count:
+        table_warnings["empty_tables_dropped"] = empty_count
     headerless_rows = [
         tuple((candidate.stats or {}).get("first_row", []))
         for candidate in (table_candidates or [])
@@ -118,6 +133,7 @@ def postprocess_markdown(
     final = sp.strip_furniture_lines(final, furniture_texts)
 
     warnings: dict[str, Any] = {}
+    warnings.update(table_warnings)
     # Route the model's `## Uncertain mappings` block to a sidecar warning
     # instead of the final markdown. Image references inside it return to the
     # body (images are never sidecar content); its text lines re-enter the
@@ -168,11 +184,16 @@ def postprocess_markdown(
         ]
     # Strip furniture from the raw side too: checkpoints written before the
     # prepare-stage filter existed still carry furniture in raw_markdown, and
-    # the guard must not re-append it as "missing" content.
+    # the guard must not re-append it as "missing" content. Orphan layout-
+    # table headers were removed deliberately; the guard must not resurrect
+    # them either, so their texts join the filter set.
+    guard_filter_texts = {
+        sp.normalize_furniture_text(text) for text in orphan_texts
+    } | (furniture_texts or set())
     final, guard_warnings = apply_completeness_guard(
         sp.strip_furniture_lines(source_markdown, furniture_texts),
         final,
-        furniture_texts=furniture_texts,
+        furniture_texts=guard_filter_texts,
         extra_lines=uncertain_lines,
     )
     warnings.update(guard_warnings)

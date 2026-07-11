@@ -327,6 +327,235 @@ def normalize_pipe_tables(markdown: str) -> str:
     return "\n".join(out) + ("\n" if markdown.endswith("\n") else "")
 
 
+# --------------------------------------------------------------------------- #
+# Pseudo-table unwrapping (F4): ruled two-column *layout* pages (Description /
+# Management measures risk spreads) that TableFormer serialized as data tables.
+# --------------------------------------------------------------------------- #
+
+_SEPARATOR_ROW_RE = re.compile(r"^\|?[\s:|-]+\|?$")
+_BR_RE = re.compile(r"<br\s*/?>", re.IGNORECASE)
+# The known layout-table header pair; matched case-insensitively.
+_LAYOUT_HEADER_PAIR = ("description", "management measures")
+# Trigger thresholds: prose in disguise, not data.
+_LAYOUT_CELL_MAX_CHARS = 200
+_LAYOUT_MEAN_CELL_CHARS = 120
+# A table with this many numeric cells is a data table however long its cells.
+_NUMERIC_CELL_GUARD = 3
+# Layout tables collapse a page into 1-2 giant rows; a long-celled table with
+# MANY rows is a real categorical data table (page 18's competitor table).
+_LAYOUT_MAX_BODY_ROWS = 3
+
+
+def _split_row(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _is_separator_line(line: str) -> bool:
+    stripped = line.strip()
+    # Requires a dash/colon: an all-blank row ("|  |  |") is a row, not a rule.
+    return (
+        stripped.startswith("|")
+        and set(stripped) <= set("|-: ")
+        and any(ch in "-:" for ch in stripped)
+    )
+
+
+def _raw_pipe_blocks(lines: list[str]) -> list[tuple[int, int]]:
+    """(start, end_exclusive) spans of consecutive ``|``-prefixed lines."""
+    blocks: list[tuple[int, int]] = []
+    start: int | None = None
+    for index, line in enumerate(lines + [""]):
+        if line.strip().startswith("|"):
+            if start is None:
+                start = index
+        elif start is not None:
+            blocks.append((start, index))
+            start = None
+    return blocks
+
+
+def _is_layout_header(cells: list[str]) -> bool:
+    non_empty = [collapse_ws(cell).lower() for cell in cells if cell.strip()]
+    return tuple(non_empty) == _LAYOUT_HEADER_PAIR
+
+
+def _numeric_cell(cell: str) -> bool:
+    text = cell.strip()
+    if not text or not any(ch.isdigit() for ch in text):
+        return False
+    alpha = sum(ch.isalpha() for ch in text)
+    return len(text) <= 20 and alpha <= 4
+
+
+def drop_orphan_header_tables(markdown: str) -> tuple[str, list[str]]:
+    """Remove header-only pipe tables with no content.
+
+    Docling emits the ruled risk-spread layout as a table; on some pages only
+    the header survives: ``| Description | Management measures |`` plus a
+    separator and zero body rows (pages 29/33), or even a lone header line
+    with no separator at all (page 31). All-empty headers count too.
+
+    Returns the cleaned markdown and the dropped header texts (cells joined),
+    so the completeness guard can be told not to re-append them as missing.
+    """
+    lines = markdown.splitlines()
+    drop: set[int] = set()
+    dropped_texts: list[str] = []
+    for start, end in _raw_pipe_blocks(lines):
+        rows = [
+            _split_row(line)
+            for line in lines[start:end]
+            if not _is_separator_line(line)
+        ]
+        if len(rows) != 1:
+            continue
+        cells = rows[0]
+        if all(not cell for cell in cells) or _is_layout_header(cells):
+            drop.update(range(start, end))
+            dropped_texts.append(" ".join(cell for cell in cells if cell))
+    if not drop:
+        return markdown, []
+    kept = "\n".join(line for index, line in enumerate(lines) if index not in drop)
+    return re.sub(r"\n{3,}", "\n\n", kept).strip() + "\n", dropped_texts
+
+
+def _unwrap_cell(cell: str) -> list[str]:
+    """One table cell -> markdown lines (paragraphs / list items)."""
+    out: list[str] = []
+    for fragment in _BR_RE.split(cell):
+        fragment = fragment.replace("\\|", "|").strip()
+        if not fragment:
+            continue
+        if fragment.startswith("- "):
+            out.append(fragment)
+        else:
+            out.append(fragment)
+            out.append("")
+    while out and not out[-1]:
+        out.pop()
+    return out
+
+
+def unwrap_layout_tables(markdown: str) -> tuple[str, int]:
+    """Turn pipe tables that are prose in disguise back into flowing markdown.
+
+    Trigger: <= 3 columns AND (a cell over 200 chars, a ``<br>`` inside a
+    cell, or mean non-empty cell length over 120). Guard: >= 3 numeric cells
+    means a real data table (long footnote cells included), never unwrapped.
+
+    With a distinct-label header (``Description`` / ``Management measures``),
+    each column becomes a ``**<label>**`` block followed by that column's
+    cells in row order; without one, cells flow row by row.
+    """
+    lines = markdown.splitlines()
+    unwrapped = 0
+    for start, end in reversed(_raw_pipe_blocks(lines)):
+        block_lines = lines[start:end]
+        has_separator = any(_is_separator_line(line) for line in block_lines)
+        rows = [
+            _split_row(line) for line in block_lines if not _is_separator_line(line)
+        ]
+        if not rows:
+            continue
+        n_cols = max(len(row) for row in rows)
+        if n_cols > 3:
+            continue
+        cells = [cell for row in rows for cell in row if cell.strip()]
+        if not cells:
+            continue
+        if sum(_numeric_cell(cell) for cell in cells) >= _NUMERIC_CELL_GUARD:
+            continue
+        if len(rows) - (1 if has_separator else 0) > _LAYOUT_MAX_BODY_ROWS:
+            continue
+        max_len = max(len(cell) for cell in cells)
+        mean_len = sum(len(cell) for cell in cells) / len(cells)
+        has_br = any(_BR_RE.search(cell) for cell in cells)
+        if not (max_len > _LAYOUT_CELL_MAX_CHARS or has_br or mean_len > _LAYOUT_MEAN_CELL_CHARS):
+            continue
+
+        header = rows[0] if has_separator else []
+        header_labels = [collapse_ws(cell) for cell in header]
+        distinct = [label for label in header_labels if label]
+        usable_header = (
+            bool(distinct)
+            and len(set(label.lower() for label in distinct)) == len(distinct)
+            and all(len(label) <= 60 for label in distinct)
+            and not any(_numeric_cell(label) for label in distinct)
+        )
+        body = rows[1:] if has_separator else rows
+
+        out: list[str] = []
+        if usable_header:
+            for column, label in enumerate(header_labels):
+                if not label:
+                    continue
+                out.append(f"**{label}**")
+                out.append("")
+                for row in body:
+                    if column < len(row) and row[column].strip():
+                        out.extend(_unwrap_cell(row[column]))
+                        out.append("")
+        else:
+            for row in body:
+                for cell in row:
+                    if cell.strip():
+                        out.extend(_unwrap_cell(cell))
+                        out.append("")
+        while out and not out[-1]:
+            out.pop()
+        lines[start:end] = out
+        unwrapped += 1
+    if not unwrapped:
+        return markdown, 0
+    text = re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+    return text + "\n", unwrapped
+
+
+def strip_br_lines(markdown: str) -> str:
+    """Remove ``<br>`` artifacts from non-table lines.
+
+    The repair model spills ``<br>``-joined fragments outside tables
+    (page 27): trailing ``<br>`` tokens are dropped and inline ones become
+    line breaks. Table rows are left alone — ``unwrap_layout_tables`` decides
+    their fate.
+    """
+    out: list[str] = []
+    for line in markdown.splitlines():
+        if line.lstrip().startswith("|") or not _BR_RE.search(line):
+            out.append(line)
+            continue
+        for fragment in _BR_RE.split(line):
+            if fragment.strip():
+                out.append(fragment.rstrip())
+    return "\n".join(out) + ("\n" if markdown.endswith("\n") else "")
+
+
+def drop_empty_header_row(markdown: str) -> tuple[str, int]:
+    """Remove pipe tables that contain no content at all.
+
+    Note: a *blank header + separator + real rows* table (page 23) is the
+    pipeline's canonical headerless form — ``normalize_headerless_pipe_tables``
+    produces it and the repair prompt protects it — so only tables whose every
+    cell is empty are dropped.
+    """
+    lines = markdown.splitlines()
+    drop: set[int] = set()
+    dropped = 0
+    for start, end in _raw_pipe_blocks(lines):
+        rows = [
+            _split_row(line)
+            for line in lines[start:end]
+            if not _is_separator_line(line)
+        ]
+        if rows and all(not cell for row in rows for cell in row):
+            drop.update(range(start, end))
+            dropped += 1
+    if not drop:
+        return markdown, 0
+    kept = "\n".join(line for index, line in enumerate(lines) if index not in drop)
+    return re.sub(r"\n{3,}", "\n\n", kept).strip() + "\n", dropped
+
+
 def _pipe_table_spans(
     lines: list[str],
 ) -> list[tuple[int, int, list[tuple[str, ...]]]]:
@@ -466,6 +695,8 @@ __all__ = [
     "insert_image_references_and_summaries", "image_block",
     "mark_redundant_summaries",
     "standalone_value_line_count", "normalize_pipe_tables", "_pipe_table_spans",
+    "drop_orphan_header_tables", "unwrap_layout_tables", "strip_br_lines",
+    "drop_empty_header_row",
     "_rows_prefix_subset", "drop_duplicate_subset_tables",
     "missing_verified_table_ids", "pipe_row_count",
 ]
