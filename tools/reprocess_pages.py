@@ -41,6 +41,7 @@ from document_extract.layout.furniture import (  # noqa: E402
 )
 from document_extract.markdown.postprocess import (  # noqa: E402
     IMAGE_PLACEHOLDER_LINE_RE,
+    looks_like_toc,
     normalize_furniture_text,
 )
 from document_extract.pipeline.state import (  # noqa: E402
@@ -125,6 +126,8 @@ def replay_page(page: dict, furniture_texts: set[str]) -> tuple[str, dict]:
     state = page["state"]
     records = _records_from_state(state)
     candidates = _candidates_from_state(state)
+    # Old checkpoints predate the page_role field; recompute like prepare does.
+    page_role = state.page_role or ("toc" if looks_like_toc(page["raw"]) else "")
     final, warnings = postprocess_markdown(
         page["raw"],
         page["working"],
@@ -132,6 +135,7 @@ def replay_page(page: dict, furniture_texts: set[str]) -> tuple[str, dict]:
         candidates,
         state.layout_map,
         furniture_texts=furniture_texts,
+        page_role=page_role or None,
     )
     return final, warnings
 

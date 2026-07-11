@@ -99,7 +99,9 @@ def postprocess_markdown(
     table_candidates: list[TableCandidate] | None = None,
     layout_blocks: dict[str, Any] | None = None,
     furniture_texts: set[str] | None = None,
+    page_role: str | None = None,
 ) -> tuple[str, dict[str, Any]]:
+    is_toc = page_role == "toc"
     final = sp.flatten_html_tables(working_markdown)
     final = sp.normalize_bullets_and_headings(final)
     final = sp.demote_datapoint_headings(final)
@@ -133,6 +135,10 @@ def postprocess_markdown(
     final = sp.dedupe_span_header_cells(final)
     final = sp.collapse_banner_rows(final)
     final = apply_list_levels_from_layout(final, layout_blocks)
+    if is_toc:
+        # The VLM flattens TOC section numbers into sequential ordered lists;
+        # restore the real numbers from the raw TOC table.
+        final = sp.restore_toc_section_numbers(final, source_markdown)
     # The refine/repair VLM re-transcribes margin furniture from the page
     # image even when the Docling items were dropped in prepare.
     final = sp.strip_furniture_lines(final, furniture_texts)
@@ -195,12 +201,21 @@ def postprocess_markdown(
     guard_filter_texts = {
         sp.normalize_furniture_text(text) for text in orphan_texts
     } | (furniture_texts or set())
-    final, guard_warnings = apply_completeness_guard(
-        sp.strip_furniture_lines(source_markdown, furniture_texts),
-        final,
-        furniture_texts=guard_filter_texts,
-        extra_lines=uncertain_lines,
-    )
+    if is_toc:
+        # A restructured TOC always diffs against its raw table, so the guard
+        # would re-append the whole raw TOC as unplaced noise. The full TOC
+        # stays available in docling_raw.md.
+        guard_warnings: dict[str, Any] = {
+            "content_loss_guard_triggered": False,
+            "unplaced_suppressed_toc": True,
+        }
+    else:
+        final, guard_warnings = apply_completeness_guard(
+            sp.strip_furniture_lines(source_markdown, furniture_texts),
+            final,
+            furniture_texts=guard_filter_texts,
+            extra_lines=uncertain_lines,
+        )
     warnings.update(guard_warnings)
     footnote_warnings = sp.footnote_consistency(final)
     if footnote_warnings:

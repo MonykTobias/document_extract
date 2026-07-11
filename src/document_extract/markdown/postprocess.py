@@ -866,6 +866,116 @@ def normalize_ocr_artifacts(markdown: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# TOC pages (F7): detection, section-number restoration
+# --------------------------------------------------------------------------- #
+
+_SECTION_NUMBER_RE = re.compile(r"^\d+(?:\.\d+)+$")
+_PAGE_NUMBER_CELL_RE = re.compile(r"^\d{1,3}$")
+_ORDERED_ITEM_RE = re.compile(r"^(\s*)(\d{1,3})[.)]\s+(.+)$")
+_LEADER_LINE_RE = re.compile(r"\S(?:\.{3,}|\s{2,})\d{1,3}\s*$")
+_CONTENTS_HEADING_RE = re.compile(r"^#{1,6}\s*contents\b", re.IGNORECASE)
+
+TOC_MIN_NUMBERED_LINES = 8
+TOC_STRONG_NUMBERED_LINES = 15
+# Small chapter-divider TOCs (page 65) miss both thresholds above, but nearly
+# every table row is a numbered entry; on financial pages at most ~40% are.
+TOC_NUMBERED_ROW_SHARE = 0.8
+
+
+def _toc_row_cells(line: str) -> list[str] | None:
+    stripped = line.strip()
+    if not stripped.startswith("|") or set(stripped) <= set("|-: "):
+        return None
+    return [cell.strip() for cell in stripped.strip("|").split("|")]
+
+
+def looks_like_toc(raw_markdown: str) -> bool:
+    """Is this page a table of contents (per its Docling raw markdown)?
+
+    Docling renders these TOCs as pipe tables whose rows end in a 1-3-digit
+    page number; plain layouts use dotted/space leaders instead. Detection:
+    >= 8 such lines AND (a ``Contents`` heading OR >= 15 such lines).
+    """
+    numbered_lines = 0
+    table_rows = 0
+    has_contents = False
+    for line in raw_markdown.splitlines():
+        stripped = line.strip()
+        if _CONTENTS_HEADING_RE.match(stripped):
+            has_contents = True
+            continue
+        cells = _toc_row_cells(line)
+        if cells is not None:
+            table_rows += 1
+            non_empty = [cell for cell in cells if cell]
+            if (
+                len(non_empty) >= 2
+                and _PAGE_NUMBER_CELL_RE.fullmatch(non_empty[-1])
+                and any(not _PAGE_NUMBER_CELL_RE.fullmatch(cell) for cell in non_empty[:-1])
+            ):
+                numbered_lines += 1
+        elif _LEADER_LINE_RE.search(stripped):
+            numbered_lines += 1
+    if numbered_lines < TOC_MIN_NUMBERED_LINES:
+        return False
+    if has_contents or numbered_lines >= TOC_STRONG_NUMBERED_LINES:
+        return True
+    return table_rows > 0 and numbered_lines / table_rows >= TOC_NUMBERED_ROW_SHARE
+
+
+def _toc_section_map(raw_markdown: str) -> dict[str, str]:
+    """normalized title -> section number, from the raw TOC table rows."""
+    mapping: dict[str, str] = {}
+
+    def _add(number: str, title: str) -> None:
+        key = re.sub(r"\s+", " ", title).strip().lower()
+        if key and key not in mapping:
+            mapping[key] = number
+
+    for line in raw_markdown.splitlines():
+        cells = _toc_row_cells(line)
+        if not cells:
+            continue
+        for index, cell in enumerate(cells):
+            if _SECTION_NUMBER_RE.fullmatch(cell):
+                for title in cells[index + 1 :]:
+                    if title and not _PAGE_NUMBER_CELL_RE.fullmatch(title):
+                        _add(cell, title)
+                        break
+            else:
+                inline = re.match(r"^(\d+(?:\.\d+)+)\s+(\S.*)$", cell)
+                if inline:
+                    _add(inline.group(1), inline.group(2))
+    return mapping
+
+
+def restore_toc_section_numbers(markdown: str, raw_markdown: str) -> str:
+    """Undo the VLM's sequential renumbering of TOC entries.
+
+    The model flattens ``2.1 Business highlights`` into ordered-list items
+    (``2. Business highlights``), and markdown renderers renumber ordered
+    lists anyway. Every ordered item on a TOC page becomes an unordered item;
+    the true section number is restored from the raw TOC table when the title
+    matches, otherwise the fabricated number is dropped (the full TOC remains
+    available in docling_raw.md).
+    """
+    mapping = _toc_section_map(raw_markdown)
+    out: list[str] = []
+    for line in markdown.splitlines():
+        match = _ORDERED_ITEM_RE.match(line)
+        if not match:
+            out.append(line)
+            continue
+        indent, title = match.group(1), match.group(3).strip()
+        number = mapping.get(re.sub(r"\s+", " ", title).lower())
+        if number:
+            out.append(f"{indent}- {number} {title}")
+        else:
+            out.append(f"{indent}- {title}")
+    return "\n".join(out) + ("\n" if markdown.endswith("\n") else "")
+
+
+# --------------------------------------------------------------------------- #
 # HTML entity leaks (F8): "Michel &amp; Augustin" (page 49)
 # --------------------------------------------------------------------------- #
 

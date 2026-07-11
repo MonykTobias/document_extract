@@ -64,6 +64,8 @@ class PageState:
     # Normalized furniture texts detected for this page (running headers,
     # footers, chapter tabs); optional so old checkpoints stay loadable.
     furniture_texts: list[str] = field(default_factory=list)
+    # "toc" for table-of-contents pages, "" otherwise (additive field).
+    page_role: str = ""
     picture_records: list[dict[str, Any]] = field(default_factory=list)
     detection_cells: list[dict[str, Any]] = field(default_factory=list)
     raw_markdown: str = ""

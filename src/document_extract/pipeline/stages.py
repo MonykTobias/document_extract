@@ -28,7 +28,11 @@ from ..layout.prompt_map import (
     detection_cells_from_items,
     detection_cells_from_layout_map,
 )
-from ..markdown.postprocess import normalize_furniture_text, strip_furniture_lines
+from ..markdown.postprocess import (
+    looks_like_toc,
+    normalize_furniture_text,
+    strip_furniture_lines,
+)
 from ..layout.reading_order import extract_divider_segments, reorder_items_for_reading_order
 from ..markdown.formatting import export_page_markdown
 from ..models import PictureRecord, TableCandidate
@@ -230,6 +234,7 @@ def _prepare_page(
         state.reading_order = reading_order_info
         state.has_docling_table = any(is_table_item(item) for item in items)
         state.raw_markdown = raw_markdown
+        state.page_role = "toc" if looks_like_toc(raw_markdown) else ""
         state.block_rows = block_rows_for_page(items, state.page, picture_map)
         _sync_page_state(
             state,
@@ -437,6 +442,7 @@ def _run_page_refine(
             candidates,
             layout_map,
             furniture_texts=set(state.furniture_texts),
+            page_role=state.page_role or None,
         )
         missing_tables = missing_verified_table_ids(final_markdown, candidates)
         if missing_tables:
@@ -521,6 +527,7 @@ def _run_page_repair(
             candidates,
             repair_layout_map,
             furniture_texts=set(state.furniture_texts),
+            page_role=state.page_role or None,
         )
         reject_reasons = repair_regression_reasons(
             state.final_markdown, repaired_final, usage

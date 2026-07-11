@@ -144,6 +144,7 @@ def _manifest_row(state: PageState) -> dict[str, Any]:
         "page_dir": page_dir.name,
         "status": state.status,
         "failure": state.failure,
+        "page_role": state.page_role or None,
         "docling_raw": str(page_dir / "docling_raw.md"),
         "docling_final": str(page_dir / "docling_final.md"),
         "layout_prompt_map": str(page_dir / "layout_prompt_map.json"),
