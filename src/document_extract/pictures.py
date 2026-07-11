@@ -12,9 +12,16 @@ from .docling_adapter import (
     bbox_dict,
     caption_text,
     is_picture_item,
+    is_table_item,
 )
 from .docling_adapter import item_kind
-from .layout.geometry import bbox_area_ratio, bbox_to_normalized_rect, normalized_rect_to_pixel_rect
+from .layout.geometry import (
+    bbox_area_ratio,
+    bbox_to_normalized_rect,
+    normalized_rect_to_pixel_rect,
+    rect_area,
+    rect_overlap_ratio,
+)
 from .llm import ollama as ollama_client
 from .markdown import postprocess as sp
 from .markdown.formatting import normalize_pipe_tables, pipe_row_count
@@ -23,6 +30,7 @@ from .prompts import (
     DEFAULT_PICTURE_CHART_PROMPT,
     DEFAULT_PICTURE_GROUPED_VALUES_PROMPT,
     DEFAULT_PICTURE_PHOTO_PROMPT,
+    DEFAULT_PICTURE_SYMBOL_PROMPT,
     DEFAULT_PICTURE_TABLE_PROMPT,
     DEFAULT_PICTURE_TRIAGE_PROMPT,
     DEFAULT_PICTURE_VALUES_PROMPT,
@@ -38,10 +46,13 @@ TRIAGE_TYPES = {
     "diagram",
     "decorative",
     "unclear",
+    "symbol",
 }
 DECORATIVE_LABELS = {"icon", "logo", "decorative", "stamp", "background"}
 SUMMARY_LABELS = {"chart", "diagram", "figure", "graph", "map", "table", "infographic"}
 PICTURE_MIN_AREA_RATIO = 0.01
+PICTURE_EMBED_OVERLAP_MIN = 0.5
+PICTURE_SYMBOL_MAX_CHARS = 40
 PICTURE_DECORATIVE_MAX_AREA_RATIO = 0.05
 PICTURE_TABLE_MIN_AREA_RATIO = 0.08
 SUMMARY_TYPES = {"photo", "table", "chart", "kpi", "infographic", "map", "diagram"}
@@ -49,6 +60,7 @@ SUMMARY_TABLE_TYPES = {"table", "kpi"}
 SUMMARY_TYPE_RE = re.compile(r"^\s*TYPE:\s*([a-z]+)\s*$", re.IGNORECASE)
 PICTURE_CROP_NEIGHBOR_GAP = 0.03
 PICTURE_CROP_MARGIN = 0.02
+PICTURE_SYMBOL_CROP_MARGIN = 0.005
 
 def classification_text(item: Any) -> str:
     parts: list[str] = []
@@ -70,6 +82,10 @@ def classification_text(item: Any) -> str:
 
 def should_summarize_picture(record: PictureRecord) -> tuple[bool, str]:
     haystack = f"{record.classification} {record.caption}".lower()
+    if record.embedded_in == "picture":
+        return False, "covered_by_parent"
+    if record.embedded_in == "table":
+        return True, "table_embedded"
     if record.area_ratio < PICTURE_MIN_AREA_RATIO:
         return False, "too_small"
     if any(label in haystack for label in DECORATIVE_LABELS) and record.area_ratio < PICTURE_DECORATIVE_MAX_AREA_RATIO:
@@ -89,6 +105,10 @@ def should_visual_triage_picture(record: PictureRecord) -> tuple[bool, str]:
     while still avoiding tiny page furniture and icons.
     """
 
+    if record.embedded_in == "picture":
+        return False, "covered_by_parent"
+    if record.embedded_in == "table":
+        return True, "table_embedded"
     if not record.abs_path:
         return False, "missing_image"
     if record.area_ratio < PICTURE_MIN_AREA_RATIO:
@@ -144,6 +164,14 @@ def picture_vlm_image_path(
     image_path = Path(record.abs_path)
     if page_image_path is None or page_size is None:
         return image_path
+    if record.triage_type == "symbol" or (
+        record.embedded_in == "table" and record.area_ratio < PICTURE_MIN_AREA_RATIO
+    ):
+        return picture_symbol_image_path(
+            record,
+            page_image_path=page_image_path,
+            page_size=page_size,
+        )
     rect = picture_summary_rect(
         bbox_to_normalized_rect(record.bbox, page_size), cells or []
     )
@@ -156,6 +184,40 @@ def picture_vlm_image_path(
     ):
         return crop_path
     return image_path
+
+
+def picture_symbol_image_path(
+    record: PictureRecord,
+    *,
+    page_image_path: Path,
+    page_size: tuple[float, float],
+) -> Path | None:
+    """Crop only an embedded symbol and enlarge tiny badge text for the VLM."""
+
+    if not record.abs_path:
+        return None
+    rect = bbox_to_normalized_rect(record.bbox, page_size)
+    crop_path = Path(record.abs_path).with_name(
+        Path(record.abs_path).stem + "_symbol_vlm.png"
+    )
+    if not save_region_crop(
+        page_image_path=page_image_path,
+        bbox=rect,
+        crop_path=crop_path,
+        margin=PICTURE_SYMBOL_CROP_MARGIN,
+    ):
+        return Path(record.abs_path)
+
+    from PIL import Image  # noqa: PLC0415
+
+    with Image.open(crop_path) as image:
+        if min(image.size) < 64:
+            enlarged = image.resize(
+                (max(1, image.width * 3), max(1, image.height * 3)),
+                Image.Resampling.LANCZOS,
+            )
+            enlarged.save(crop_path)
+    return crop_path
 
 
 def picture_specialist_prompt(record: PictureRecord, generic_prompt: str) -> str:
@@ -194,6 +256,24 @@ def triage_pictures(
         "types": {},
     }
     for record in records:
+        if record.embedded_in == "table" and record.area_ratio < PICTURE_MIN_AREA_RATIO:
+            record.triage_eligible = True
+            record.triage_type = "symbol"
+            record.triage_confidence = 1.0
+            record.triage_warnings = []
+            record.triage_usage = None
+            stats["candidates"] += 1
+            stats["types"]["symbol"] = stats["types"].get("symbol", 0) + 1
+            if args.skip_vlm:
+                record.summarize = False
+                record.triage_action = "skip"
+                record.skip_reason = "skip_vlm"
+                stats["skipped"] += 1
+            else:
+                record.summarize = True
+                record.triage_action = "symbol"
+                record.skip_reason = ""
+            continue
         eligible, reason = should_visual_triage_picture(record)
         record.triage_eligible = eligible
         if not eligible:
@@ -283,6 +363,16 @@ def save_picture_records(
 ) -> dict[int, PictureRecord]:
     images_dir = page_dir / "images"
     records: dict[int, PictureRecord] = {}
+    table_rects = [
+        bbox_to_normalized_rect(bbox_dict(item), page_size)
+        for item in items
+        if is_table_item(item)
+    ]
+    picture_rects = [
+        (id(item), bbox_to_normalized_rect(bbox_dict(item), page_size))
+        for item in items
+        if is_picture_item(item)
+    ]
     picture_index = 0
     for item in items:
         if not is_picture_item(item):
@@ -308,6 +398,29 @@ def save_picture_records(
             classification=classification_text(item),
             caption=caption_text(item),
         )
+        picture_rect = bbox_to_normalized_rect(bbox, page_size)
+        table_overlaps = [
+            rect_overlap_ratio(picture_rect, table_rect)
+            for table_rect in table_rects
+            if table_rect
+        ]
+        table_overlap = max(table_overlaps, default=0.0)
+        if table_overlap >= PICTURE_EMBED_OVERLAP_MIN:
+            record.embedded_in = "table"
+            record.embed_overlap_ratio = round(table_overlap, 3)
+        else:
+            parent_overlaps = [
+                rect_overlap_ratio(picture_rect, other_rect)
+                for other_id, other_rect in picture_rects
+                if other_id != id(item)
+                and other_rect
+                and rect_area(other_rect) > rect_area(picture_rect)
+                and rect_area(other_rect) >= PICTURE_MIN_AREA_RATIO
+            ]
+            parent_overlap = max(parent_overlaps, default=0.0)
+            if parent_overlap >= PICTURE_EMBED_OVERLAP_MIN:
+                record.embedded_in = "picture"
+                record.embed_overlap_ratio = round(parent_overlap, 3)
         record.summarize, record.skip_reason = should_summarize_picture(record)
         record.triage_eligible, _ = should_visual_triage_picture(record)
         records[id(item)] = record
@@ -345,6 +458,8 @@ def summary_shape_ok(summary_type: str, body: str) -> bool:
     """Deterministic per-type shape check for an image transcription."""
     if not body:
         return False
+    if summary_type == "symbol":
+        return "\n" not in body and len(body.strip()) <= PICTURE_SYMBOL_MAX_CHARS
     if summary_type == "photo":
         return len(body) <= 400
     if summary_type in SUMMARY_TABLE_TYPES:
@@ -428,9 +543,12 @@ def summarize_pictures(
             "caption": record.caption,
             "classification": record.classification,
         }
+        is_symbol = record.triage_type == "symbol"
         prompt = picture_specialist_prompt(
             record,
-            prompt_template.format(context=json.dumps(context, ensure_ascii=False)),
+            DEFAULT_PICTURE_SYMBOL_PROMPT
+            if is_symbol
+            else prompt_template.format(context=json.dumps(context, ensure_ascii=False)),
         )
         answer, usage = ollama_client.call_ollama_vlm(
             base_url=args.ollama_base_url,
@@ -443,13 +561,26 @@ def summarize_pictures(
             auto_num_ctx=args.auto_num_ctx,
         )
         record.usage = usage
-        summary_type, body = parse_typed_summary(
-            sp.strip_meta_commentary(ollama_client.strip_markdown_fences(answer))
-        )
+        cleaned_answer = sp.strip_meta_commentary(
+            ollama_client.strip_markdown_fences(answer)
+        ).strip()
+        summary_type, body = parse_typed_summary(cleaned_answer)
+        if is_symbol:
+            summary_type = "symbol"
+            body_lines = body.splitlines()
+            if body_lines and re.match(
+                r"^\s*TYPE:\s*symbol\s*$", body_lines[0], re.IGNORECASE
+            ):
+                body = "\n".join(body.splitlines()[1:]).strip()
         record.summary_type = summary_type
-        if not summary_shape_ok(summary_type, body) and summary_type in SUMMARY_TYPES:
+        if not summary_shape_ok(summary_type, body) and (
+            summary_type in SUMMARY_TYPES or is_symbol
+        ):
             # One focused retry with the type-specific contract.
             retry_prompt = (
+                DEFAULT_PICTURE_SYMBOL_PROMPT
+                if is_symbol
+                else
                 DEFAULT_PICTURE_TABLE_PROMPT
                 if summary_type in SUMMARY_TABLE_TYPES
                 else DEFAULT_PICTURE_VALUES_PROMPT
@@ -474,6 +605,12 @@ def summarize_pictures(
             ).strip()
             if summary_shape_ok(summary_type, retry_body):
                 body = retry_body
+            elif is_symbol:
+                body = ""
+                record.summarize = False
+                record.triage_action = "skip"
+                record.skip_reason = "symbol_shape_failed"
+                record.summary_warnings.append("symbol_shape_failed")
             else:
                 body = retry_body if len(retry_body) > len(body) else body
                 record.summary_warnings.append("summary_shape_failed")
@@ -509,6 +646,7 @@ def save_region_crop(
 
 __all__ = [
     "DECORATIVE_LABELS", "SUMMARY_LABELS", "PICTURE_MIN_AREA_RATIO",
+    "PICTURE_EMBED_OVERLAP_MIN", "PICTURE_SYMBOL_MAX_CHARS",
     "PICTURE_DECORATIVE_MAX_AREA_RATIO", "PICTURE_TABLE_MIN_AREA_RATIO",
     "classification_text", "should_summarize_picture",
     "should_visual_triage_picture", "parse_picture_triage",

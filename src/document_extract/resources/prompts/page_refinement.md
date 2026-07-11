@@ -22,6 +22,7 @@ Rules:
 - For lists, use `- ` bullets.
 - Preserve the supplied `list_level` for list blocks: level 0 is `- ` and level 1 is `  - `.
 - A table with an intentionally blank header row has no source column headers; keep that row blank and do not invent labels.
+- A picture block with a `value` field is a symbol printed inside a table: write its value as plain text in the table cell whose row and column contain the block's bbox. Do not keep an image marker, image link, or image summary for such blocks.
 - Keep heading structure reasonable. Do not turn every isolated number into its own heading.
 - Do not calculate, derive, estimate, or infer missing values.
 - If something is visible but its association is genuinely unclear, keep the content and place it under `## Uncertain mappings` instead of dropping it.

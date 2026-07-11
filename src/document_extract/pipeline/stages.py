@@ -15,6 +15,7 @@ from ..docling_adapter import (
     rasterize_page,
 )
 from ..layout.prompt_map import (
+    annotate_picture_values,
     build_layout_prompt_map,
     detection_cells_from_items,
     detection_cells_from_layout_map,
@@ -274,17 +275,37 @@ def _run_table_extract(
     *, state: PageState, reporter: StatusReporter, args: argparse.Namespace, runtime: dict[str, Any]
 ) -> list[TableCandidate]:
     candidates = runtime.get("candidates") or _candidates_from_state(state)
+    records = runtime.get("records") or _records_from_state(state)
 
     def action() -> dict[str, Any]:
+        symbol_records = [
+            record
+            for record in records
+            if record.triage_type == "symbol" and record.summarize and not record.summary
+        ]
+        if symbol_records:
+            from ..prompts import DEFAULT_IMAGE_SUMMARY_PROMPT
+
+            summarize_pictures(
+                records=symbol_records,
+                prompt_template=DEFAULT_IMAGE_SUMMARY_PROMPT,
+                args=args,
+                page_image_path=Path(state.page_dir) / "page.png",
+                page_size=tuple(state.page_size),
+                cells=state.detection_cells,
+            )
         transcribe_table_candidates(
             candidates=candidates,
             cells=state.detection_cells,
             page_image_path=Path(state.page_dir) / "page.png",
             page_dir=Path(state.page_dir),
             args=args,
+            picture_records=records,
+            page_size=tuple(state.page_size),
         )
         runtime["candidates"] = candidates
-        _sync_page_state(state, candidates=candidates)
+        runtime["records"] = records
+        _sync_page_state(state, records=records, candidates=candidates)
         Path(state.page_dir, "table_candidates.json").write_text(
             json.dumps(table_candidate_rows(candidates), indent=2, ensure_ascii=False),
             encoding="utf-8",
@@ -312,9 +333,21 @@ def _run_page_refine(
     page_dir = Path(state.page_dir)
 
     def action() -> dict[str, Any]:
+        if runtime.get("items") is not None:
+            layout_map = build_layout_prompt_map(
+                items=runtime["items"],
+                page_size=tuple(state.page_size),
+                picture_records=runtime.get("picture_map") or {},
+            )
+        else:
+            layout_map = annotate_picture_values(dict(state.layout_map), records)
+        state.layout_map = layout_map
+        (page_dir / "layout_prompt_map.json").write_text(
+            json.dumps(layout_map, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         refined, usage = refine_page_markdown(
             source_markdown=state.raw_markdown,
-            layout_blocks=state.layout_map,
+            layout_blocks=layout_map,
             table_candidates=candidates,
             page_image_path=page_dir / "page.png",
             prompt_template=prompt,
@@ -325,7 +358,7 @@ def _run_page_refine(
         if usage:
             (page_dir / "page_vlm.md").write_text(refined, encoding="utf-8")
         final_markdown, warnings = postprocess_markdown(
-            state.raw_markdown, refined, records, candidates, state.layout_map
+            state.raw_markdown, refined, records, candidates, layout_map
         )
         missing_tables = missing_verified_table_ids(final_markdown, candidates)
         if missing_tables:
@@ -334,7 +367,12 @@ def _run_page_refine(
         state.warnings = warnings
         state.pre_repair_markdown = final_markdown
         state.pre_repair_warnings = dict(warnings)
-        _sync_page_state(state, records=records, candidates=candidates)
+        _sync_page_state(
+            state,
+            records=records,
+            candidates=candidates,
+            layout_map=layout_map,
+        )
         return {
             "calls": 1 if usage else 0,
             "tokens": (usage or {}).get("total_tokens"),

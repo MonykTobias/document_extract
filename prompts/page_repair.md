@@ -22,6 +22,7 @@ Rules:
 - Keep headings and prose that are already correct.
 - Preserve the supplied `list_level` for list blocks: level 0 is `- ` and level 1 is `  - `.
 - A table with an intentionally blank header row has no source column headers; keep that row blank and do not invent labels.
+- A picture block with a `value` field is a symbol printed inside a table: write its value as plain text in the table cell whose row and column contain the block's bbox. Do not keep an image marker, image link, or image summary for such blocks.
 - Do not calculate, derive, estimate, or infer missing values.
 - Keep every image reference (`![...](...)`) and its following `**Image summary:**` block at its position. Do not add any other image links or HTML tags.
 - Do not write meta-commentary.

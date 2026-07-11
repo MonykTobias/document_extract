@@ -31,6 +31,11 @@ def _records_from_state(state: PageState) -> list[PictureRecord]:
         payload.setdefault("triage_action", "")
         payload.setdefault("triage_warnings", [])
         payload.setdefault("triage_usage", None)
+        payload.setdefault("embedded_in", "")
+        payload.setdefault("embed_overlap_ratio", 0.0)
+        payload.setdefault("summary_warnings", [])
+        payload.setdefault("summary_redundant", False)
+        payload.setdefault("usage", None)
         records.append(PictureRecord(**payload))
     return records
 

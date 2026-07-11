@@ -42,6 +42,8 @@ class ModelConfig:
 @dataclass(frozen=True)
 class PictureConfig:
     min_area_ratio: float = 0.01
+    embed_overlap_min: float = 0.5
+    symbol_max_chars: int = 40
     decorative_max_area_ratio: float = 0.05
     table_min_area_ratio: float = 0.08
     nearby_block_distance: float = 0.12
@@ -205,6 +207,8 @@ def apply_detection_config(config: AppConfig) -> None:
 
     picture_map = {
         "PICTURE_MIN_AREA_RATIO": config.pictures.min_area_ratio,
+        "PICTURE_EMBED_OVERLAP_MIN": config.pictures.embed_overlap_min,
+        "PICTURE_SYMBOL_MAX_CHARS": config.pictures.symbol_max_chars,
         "PICTURE_DECORATIVE_MAX_AREA_RATIO": config.pictures.decorative_max_area_ratio,
         "PICTURE_TABLE_MIN_AREA_RATIO": config.pictures.table_min_area_ratio,
         "PICTURE_CROP_NEIGHBOR_GAP": config.pictures.crop_neighbor_gap,

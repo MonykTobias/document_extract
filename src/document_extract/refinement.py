@@ -116,6 +116,18 @@ def postprocess_markdown(
     warnings: dict[str, Any] = {}
     if flagged_summaries:
         warnings["redundant_image_summaries"] = flagged_summaries
+    unplaced_symbols = [
+        record.placeholder
+        for record in records
+        if record.summary_type == "symbol"
+        and record.summary.strip()
+        and not any(
+            line.strip().startswith("|") and record.summary.strip() in line
+            for line in final.splitlines()
+        )
+    ]
+    if unplaced_symbols:
+        warnings["table_symbols_unplaced"] = unplaced_symbols
     final, dropped_tables = drop_duplicate_subset_tables(final, table_candidates)
     if dropped_tables:
         warnings["duplicate_tables_dropped"] = dropped_tables
@@ -142,6 +154,8 @@ def should_run_repair_pass(
     if warnings.get("content_loss_guard_triggered"):
         return True
     if warnings.get("verified_tables_missing"):
+        return True
+    if warnings.get("table_symbols_unplaced"):
         return True
     table_present = (
         has_docling_table

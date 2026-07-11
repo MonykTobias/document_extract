@@ -27,6 +27,8 @@ class PictureRecord:
     summary_warnings: list[str] = field(default_factory=list)
     summary_redundant: bool = False
     usage: dict[str, Any] | None = None
+    embedded_in: str = ""
+    embed_overlap_ratio: float = 0.0
 
 
 @dataclass

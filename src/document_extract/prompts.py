@@ -195,6 +195,7 @@ DEFAULT_PICTURE_TRIAGE_PROMPT = load_prompt("picture_triage.md")
 DEFAULT_PICTURE_CHART_PROMPT = load_prompt("picture_chart.md")
 DEFAULT_PICTURE_GROUPED_VALUES_PROMPT = load_prompt("picture_grouped_values.md")
 DEFAULT_PICTURE_PHOTO_PROMPT = load_prompt("picture_photo.md")
+DEFAULT_PICTURE_SYMBOL_PROMPT = load_prompt("picture_symbol.md")
 DEFAULT_PAGE_REFINEMENT_PROMPT = load_prompt("page_refinement.md")
 DEFAULT_PAGE_REPAIR_PROMPT = load_prompt("page_repair.md")
 DEFAULT_TABLE_REGION_PROMPT = load_prompt("table_region.md")
@@ -243,6 +244,7 @@ __all__ = [
     "DEFAULT_PICTURE_CHART_PROMPT",
     "DEFAULT_PICTURE_GROUPED_VALUES_PROMPT",
     "DEFAULT_PICTURE_PHOTO_PROMPT",
+    "DEFAULT_PICTURE_SYMBOL_PROMPT",
     "DEFAULT_PAGE_REFINEMENT_PROMPT",
     "DEFAULT_PAGE_REPAIR_PROMPT",
     "DEFAULT_TABLE_REGION_PROMPT",

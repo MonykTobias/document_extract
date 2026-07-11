@@ -578,6 +578,49 @@ def build_table_candidates(
             reason=reason,
         )
 
+    for candidate in candidates:
+        symbols = [
+            record
+            for record in picture_records.values()
+            if record.summary_type == "symbol"
+            and record.summary.strip()
+            and rect_overlap_ratio(
+                picture_record_rect(record, page_size), candidate.bbox
+            ) >= pictures.PICTURE_EMBED_OVERLAP_MIN
+        ]
+        if symbols:
+            candidate.stats = {
+                **(candidate.stats or {}),
+                "symbol_picture_indices": [record.index for record in symbols],
+            }
+
+    # Layout-region detection happens after picture extraction. Upgrade any
+    # tiny picture found inside an accepted region in time for table_extract.
+    for candidate in candidates:
+        if candidate.kind != "layout_region":
+            continue
+        for record in picture_records.values():
+            if record.area_ratio >= pictures.PICTURE_MIN_AREA_RATIO:
+                continue
+            rect = picture_record_rect(record, page_size)
+            overlap = rect_overlap_ratio(rect, candidate.bbox)
+            if overlap < pictures.PICTURE_EMBED_OVERLAP_MIN:
+                continue
+            record.embedded_in = "table"
+            record.embed_overlap_ratio = max(record.embed_overlap_ratio, round(overlap, 3))
+            record.summarize = True
+            record.triage_eligible = True
+            record.triage_type = "symbol"
+            record.triage_action = "symbol"
+            record.skip_reason = ""
+            candidate.stats = {
+                **(candidate.stats or {}),
+                "symbol_picture_indices": sorted(
+                    set((candidate.stats or {}).get("symbol_picture_indices", []))
+                    | {record.index}
+                ),
+            }
+
     return candidates
 
 
@@ -746,6 +789,8 @@ def transcribe_table_candidates(
     page_image_path: Path,
     page_dir: Path,
     args: argparse.Namespace,
+    picture_records: list[PictureRecord] | dict[int, PictureRecord] | None = None,
+    page_size: tuple[float, float] | None = None,
 ) -> None:
     """Crop each accepted layout region, transcribe it with the VLM using the
     region's cell texts as authoritative content, and verify deterministically.
@@ -754,17 +799,44 @@ def transcribe_table_candidates(
     then flows through the pipeline exactly as it would without a candidate.
     """
     cells_by_id = {cell["id"]: cell for cell in cells}
+    if isinstance(picture_records, dict):
+        records_by_index = picture_records
+    else:
+        records_by_index = {
+            record.index: record for record in (picture_records or [])
+        }
     table_dir = page_dir / "table_candidates"
     if table_dir.exists():
         shutil.rmtree(table_dir)
     for candidate in candidates:
-        if candidate.kind != "layout_region":
+        symbol_indices = (candidate.stats or {}).get("symbol_picture_indices", [])
+        if candidate.kind != "layout_region" and not symbol_indices:
             continue
-        region_cells = [
-            cells_by_id[block_id]
-            for block_id in candidate.source_block_ids
-            if block_id in cells_by_id
-        ]
+        if candidate.kind == "layout_region":
+            region_cells = [
+                cells_by_id[block_id]
+                for block_id in candidate.source_block_ids
+                if block_id in cells_by_id
+            ]
+        else:
+            region_cells = [
+                cell
+                for cell in cells
+                if rect_overlap_ratio(cell.get("rect"), candidate.bbox) > 0.1
+            ]
+        pseudo_cells: list[dict[str, Any]] = []
+        for index in symbol_indices:
+            record = records_by_index.get(index)
+            if record is None or not record.summary.strip():
+                continue
+            pseudo_cells.append(
+                {
+                    "id": f"sym{index}",
+                    "rect": picture_record_rect(record, page_size or (1.0, 1.0)),
+                    "text": record.summary.strip(),
+                }
+            )
+        region_cells.extend(cell for cell in pseudo_cells if cell["rect"])
         if not region_cells:
             candidate.warnings.append("missing_region_cells")
             continue

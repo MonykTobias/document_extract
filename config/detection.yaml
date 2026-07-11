@@ -1,5 +1,7 @@
 pictures:
   min_area_ratio: 0.01
+  embed_overlap_min: 0.5
+  symbol_max_chars: 40
   decorative_max_area_ratio: 0.05
   table_min_area_ratio: 0.08
   nearby_block_distance: 0.12

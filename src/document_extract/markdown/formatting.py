@@ -193,13 +193,21 @@ def image_reference(record: PictureRecord) -> str:
 def insert_image_references_and_summaries(
     markdown: str, records: list[PictureRecord]
 ) -> str:
+    def symbol_in_table(record: PictureRecord, text: str) -> bool:
+        value = record.summary.strip()
+        return bool(value) and any(
+            line.strip().startswith("|") and value in line
+            for line in text.splitlines()
+        )
+
     represented: set[str] = set()
     for record in records:
         if re.search(re.escape(f"]({record.rel_path})"), markdown):
             represented.add(record.rel_path)
 
     replacements = [
-        image_block(record)
+        "" if record.summary_type == "symbol" and symbol_in_table(record, markdown)
+        else image_block(record)
         for record in records
         if record.rel_path not in represented
     ]
@@ -214,14 +222,17 @@ def insert_image_references_and_summaries(
 
     out = IMAGE_PLACEHOLDER_RE.sub(replace_match, markdown)
     for record in records:
-        if record.rel_path in represented and record.summary:
+        reference = image_reference(record)
+        if record.rel_path in represented and record.summary_type == "symbol":
+            replacement = (
+                ""
+                if not record.summary.strip() or symbol_in_table(record, out)
+                else record.summary.strip()
+            )
+            out = out.replace(reference, replacement, 1)
+        elif record.rel_path in represented and record.summary:
             if record.summary.strip() not in out:
-                reference = image_reference(record)
-                out = out.replace(
-                    reference,
-                    image_block(record),
-                    1,
-                )
+                out = out.replace(reference, image_block(record), 1)
     if replacements:
         out = out.rstrip() + "\n\n" + "\n\n".join(replacements) + "\n"
     return re.sub(r"\n{3,}", "\n\n", out).strip() + "\n"
@@ -256,6 +267,8 @@ def mark_redundant_summaries(source_markdown: str, records: list[PictureRecord])
 
 
 def image_block(record: PictureRecord) -> str:
+    if record.summary_type == "symbol":
+        return record.summary.strip()
     block = image_reference(record)
     if record.summary and not record.summary_redundant:
         block += f"\n\n**Image summary:** {record.summary.strip()}"

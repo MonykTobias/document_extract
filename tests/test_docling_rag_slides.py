@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import sys
 import tempfile
+import json
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -14,7 +15,7 @@ from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from document_extract import runtime, tables
-from document_extract.artifacts import block_rows_for_page, summarize_token_usage
+from document_extract.artifacts import block_rows_for_page, summarize_token_usage, write_image_summaries
 from document_extract.docling_adapter import (
     infer_list_levels,
     item_text,
@@ -46,7 +47,9 @@ from document_extract.pictures import (
     picture_specialist_prompt,
     picture_summary_rect,
     save_region_crop,
+    save_picture_records,
     should_summarize_picture,
+    should_visual_triage_picture,
     summarize_pictures,
     summary_shape_ok,
     triage_pictures,
@@ -56,6 +59,7 @@ from document_extract.prompts import (
     DEFAULT_PAGE_REFINEMENT_PROMPT,
     DEFAULT_PAGE_REPAIR_PROMPT,
 )
+from document_extract.pipeline.state import _picture_state_rows, _records_from_state
 from document_extract.refinement import (
     apply_completeness_guard,
     format_page_refinement_prompt,
@@ -362,6 +366,138 @@ def test_image_routing() -> None:
     check(summarize and reason == "large_picture", "large image summarized")
 
 
+def test_embedded_picture_routing_and_geometry() -> None:
+    class BBox:
+        def __init__(self, left: float, top: float, right: float, bottom: float):
+            self.l, self.t, self.r, self.b = left, top, right, bottom
+
+    class Prov:
+        def __init__(self, bbox: BBox):
+            self.page_no = 1
+            self.bbox = bbox
+
+    class Picture:
+        label = "picture"
+
+        def __init__(self, bbox: BBox):
+            self.prov = [Prov(bbox)]
+
+    class Table:
+        label = "table"
+
+        def __init__(self, bbox: BBox):
+            self.prov = [Prov(bbox)]
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        page_dir = Path(temp_dir)
+        records = save_picture_records(
+            document=None,
+            items=[Table(BBox(10, 10, 90, 90)), Picture(BBox(20, 20, 25, 25))],
+            page_number=1,
+            page_dir=page_dir,
+            page_size=(100.0, 100.0),
+        )
+        embedded = next(iter(records.values()))
+        check(embedded.embedded_in == "table", "tiny picture inside table is marked embedded")
+        check(embedded.embed_overlap_ratio >= 0.5, "table overlap ratio is recorded")
+        check(should_summarize_picture(embedded) == (True, "table_embedded"), "table symbol bypasses size drop")
+        check(should_visual_triage_picture(embedded) == (True, "table_embedded"), "table symbol is triage-eligible")
+
+        pdf_path = page_dir / "source.pdf"
+        pdf_path.write_bytes(b"pdf")
+        state = runtime.new_page_state(
+            pdf_path=pdf_path,
+            page=1,
+            page_index=1,
+            total_pages=1,
+            dpi=200,
+            page_dir=page_dir,
+            page_size=(100.0, 100.0),
+        )
+        state.picture_records = _picture_state_rows([embedded], page_dir)
+        restored = _records_from_state(runtime.PageState.load(state.save()))[0]
+        check(restored.embedded_in == "table" and restored.embed_overlap_ratio >= 0.5, "symbol embedding survives checkpoint round-trip")
+        summary_path = page_dir / "image_summaries.jsonl"
+        write_image_summaries(summary_path, [restored])
+        summary_row = json.loads(summary_path.read_text(encoding="utf-8"))
+        check(summary_row["embedded_in"] == "table", "image summary artifact records symbol embedding")
+
+        far_records = save_picture_records(
+            document=None,
+            items=[Picture(BBox(95, 95, 98, 98))],
+            page_number=1,
+            page_dir=page_dir,
+            page_size=(100.0, 100.0),
+        )
+        far = next(iter(far_records.values()))
+        check(far.skip_reason == "too_small", "unembedded tiny picture stays skipped")
+
+        parent_records = save_picture_records(
+            document=None,
+            items=[Picture(BBox(10, 10, 90, 90)), Picture(BBox(20, 20, 25, 25))],
+            page_number=1,
+            page_dir=page_dir,
+            page_size=(100.0, 100.0),
+        )
+        child = list(parent_records.values())[1]
+        check(child.skip_reason == "covered_by_parent", "nested tiny picture is covered by parent")
+
+
+def test_symbol_summary_shape_and_markdown_placement() -> None:
+    symbol = make_record(1, area=0.002)
+    symbol.embedded_in = "table"
+    symbol.triage_type = "symbol"
+    symbol.summary_type = "symbol"
+    symbol.summary = "S3"
+    check(summary_shape_ok("symbol", "S3"), "symbol shape accepts a short value")
+    check(not summary_shape_ok("symbol", ""), "symbol shape rejects empty output")
+    check(not summary_shape_ok("symbol", "S3\nS4"), "symbol shape rejects multiple lines")
+    check(not summary_shape_ok("symbol", "x" * 200), "symbol shape rejects long output")
+
+    table_md = "| Scope | Coverage |\n|---|---|\n| 3 | S3 {{DOC_IMAGE_p0026_i001}} |\n"
+    out = insert_image_references_and_summaries(table_md, [symbol])
+    check("S3" in out and "![" not in out and "DOC_IMAGE" not in out, "placed symbol removes its image marker")
+    fallback = insert_image_references_and_summaries(
+        "Before\n\n{{DOC_IMAGE_p0026_i001}}", [symbol]
+    )
+    check("S3" in fallback and "![" not in fallback, "unplaced symbol falls back to bare text")
+    _, warnings = postprocess_markdown(
+        "{{DOC_IMAGE_p0026_i001}}", "{{DOC_IMAGE_p0026_i001}}", [symbol]
+    )
+    check("table_symbols_unplaced" in warnings, "unplaced table symbol is audited")
+    check(
+        should_run_repair_pass(
+            items=[], warnings=warnings, current_markdown="S3", records=[symbol]
+        ),
+        "unplaced table symbol triggers repair",
+    )
+
+
+def test_layout_map_carries_symbol_value() -> None:
+    class FakeBBox:
+        l, t, r, b = 10.0, 10.0, 60.0, 60.0
+
+    class FakeProv:
+        page_no = 1
+        bbox = FakeBBox()
+
+    class FakeItem:
+        label = "picture"
+        prov = [FakeProv()]
+        text = ""
+
+    item = FakeItem()
+    record = make_record(1, area=0.2)
+    record.summary_type = "symbol"
+    record.summary = "S3"
+    layout_map = build_layout_prompt_map(
+        items=[item], page_size=(100.0, 100.0), picture_records={id(item): record}
+    )
+    block = layout_map["blocks"][0]
+    check(block.get("role") == "table_symbol", "symbol role is exposed in layout map")
+    check(block.get("value") == "S3", "symbol value is exposed in layout map")
+
+
 def test_picture_triage_json_contract() -> None:
     kind, confidence, warnings = parse_picture_triage(
         "```json\n{\"type\": \"chart\", \"confidence\": 0.91}\n```"
@@ -413,6 +549,43 @@ def test_picture_triage_routes_specialist_and_decorative() -> None:
         check(not decorative.summarize and decorative.skip_reason == "triage_decorative", "decorative image skipped")
         check(calls[0]["model"] == "fast-model", "triage uses the configured model")
         check(calls[0]["num_predict"] == 64, "triage uses the short output cap")
+    finally:
+        ollama_client.call_ollama_vlm = original_call
+
+
+def test_table_symbol_skips_triage_and_uses_one_symbol_call() -> None:
+    original_call = ollama_client.call_ollama_vlm
+    calls: list[dict] = []
+
+    def fake_call(**kwargs):
+        calls.append(kwargs)
+        return "S3", {"total_tokens": 3}
+
+    ollama_client.call_ollama_vlm = fake_call
+    try:
+        record = make_record(1, area=0.002)
+        record.abs_path = "symbol.png"
+        record.embedded_in = "table"
+        args = SimpleNamespace(
+            skip_vlm=False,
+            skip_picture_triage=False,
+            triage_model="triage-model",
+            triage_num_predict=64,
+            triage_confidence=0.65,
+            photo_summaries=False,
+            photo_skip_confidence=0.8,
+            ollama_base_url="",
+            ollama_model="main-model",
+            temperature=0.0,
+            num_ctx=0,
+            num_predict=64,
+            auto_num_ctx=False,
+        )
+        stats = triage_pictures(records=[record], args=args)
+        check(stats["calls"] == 0 and record.triage_action == "symbol", "table symbol bypasses visual triage")
+        summarize_pictures(records=[record], prompt_template="{context}", args=args)
+        check(len(calls) == 1 and calls[0]["model"] == "main-model", "table symbol uses one extraction call")
+        check(record.summary_type == "symbol" and record.summary == "S3", "symbol value is stored literally")
     finally:
         ollama_client.call_ollama_vlm = original_call
 
@@ -1117,6 +1290,11 @@ def test_verify_region_table() -> None:
     wordy = "| Category | Description |\n| --- | --- |\n| Alpha item | Beta item |\n| Gamma item | |"
     ok, stats = verify_region_table(wordy, wordy_cells)
     check(ok, "numberless table verified via word coverage")
+
+    symbol_ok, symbol_stats = verify_region_table(
+        "| Badge | Coverage |\n|---|---|\n| S3 | S3 |", ["S3"]
+    )
+    check(symbol_ok and not symbol_stats.get("invented_numbers"), "symbol pseudo-cell is covered by verified table")
 
 
 def region_transcribe_env(answers: list[str]):

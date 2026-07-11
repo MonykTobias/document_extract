@@ -217,8 +217,13 @@ def build_layout_prompt_map(
             "bbox": entry["rect"],
         }
         if entry["is_picture"]:
+            if record:
+                block["picture_index"] = record.index
             if entry["caption"]:
                 block["caption"] = truncate_prompt_text(entry["caption"], 240)
+            if record and record.summary_type == "symbol" and record.summary.strip():
+                block["role"] = "table_symbol"
+                block["value"] = record.summary.strip()
             blocks.append(block)
             continue
 
@@ -247,6 +252,25 @@ def build_layout_prompt_map(
         "page_size": [round(page_size[0], 3), round(page_size[1], 3)],
         "blocks": blocks,
     }
+
+
+def annotate_picture_values(
+    layout_map: dict[str, Any], records: list[PictureRecord]
+) -> dict[str, Any]:
+    """Add post-extraction symbol values to a serialized/replayed layout map."""
+
+    by_index = {record.index: record for record in records}
+    for block in layout_map.get("blocks", []):
+        record = by_index.get(block.get("picture_index"))
+        if record is None:
+            continue
+        if record.summary_type == "symbol" and record.summary.strip():
+            block["role"] = "table_symbol"
+            block["value"] = record.summary.strip()
+        else:
+            block.pop("role", None)
+            block.pop("value", None)
+    return layout_map
 
 
 def layout_map_stats(layout_map: dict[str, Any]) -> dict[str, int]:
@@ -320,5 +344,6 @@ __all__ = [
     "prompt_block_type", "truncate_prompt_text", "layout_unplaced_match",
     "timeline_cluster_indices", "nearby_layout_context", "should_include_layout_text",
     "build_layout_prompt_map", "layout_map_stats", "layout_map_prompt_json",
+    "annotate_picture_values",
     "collapse_ws", "detection_cells_from_items", "detection_cells_from_layout_map",
 ]

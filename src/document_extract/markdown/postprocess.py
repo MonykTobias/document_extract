@@ -505,6 +505,8 @@ def ocr_content_lines(ocr_markdown: str) -> list[str]:
         line = raw.strip()
         if not line:
             continue
+        if re.fullmatch(r"!\[[^\]]*\]\([^)]*\)", line):
+            continue
         # Strip markdown table pipes / heading markers / bullets for the content view.
         line = re.sub(r"^[#>\-*|\s]+", "", line)
         line = line.replace("|", " ").strip()
