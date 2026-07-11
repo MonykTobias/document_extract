@@ -866,6 +866,87 @@ def normalize_ocr_artifacts(markdown: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Table hygiene (F5): span labels repeated into every cell by _expand_grid
+# --------------------------------------------------------------------------- #
+
+# A repeated body-row value shorter than this is legitimate data ("- - -"
+# placeholder rows); banner rows are long category titles.
+BANNER_CELL_MIN_CHARS = 20
+
+_TABLE_SEPARATOR_LINE_RE = re.compile(r"^\|[\s:|-]*-[\s:|-]*\|?$")
+
+
+def _table_row_cells(line: str) -> list[str] | None:
+    stripped = line.strip()
+    if not stripped.startswith("|") or _TABLE_SEPARATOR_LINE_RE.match(stripped):
+        return None
+    return [cell.strip() for cell in stripped.strip("|").split("|")]
+
+
+def _render_row(cells: list[str]) -> str:
+    return "| " + " | ".join(cells) + " |"
+
+
+def dedupe_span_header_cells(markdown: str) -> str:
+    """In table *header* rows, blank adjacent repeats of the same label.
+
+    Expanding a colspan repeats its label into every covered cell — right for
+    data cells (each row stays self-contained), noise in the header row
+    ("Year ended December 31" x4-6, pages 46/48/50/86): the first cell keeps
+    the label, the repeats become empty.
+    """
+    lines = markdown.splitlines()
+    for index, line in enumerate(lines):
+        if not _TABLE_SEPARATOR_LINE_RE.match(line.strip()) or index == 0:
+            continue
+        cells = _table_row_cells(lines[index - 1])
+        if not cells:
+            continue
+        changed = False
+        for cell_index in range(len(cells) - 1, 0, -1):
+            if cells[cell_index] and cells[cell_index] == cells[cell_index - 1]:
+                cells[cell_index] = ""
+                changed = True
+        if changed:
+            lines[index - 1] = _render_row(cells)
+    return "\n".join(lines) + ("\n" if markdown.endswith("\n") else "")
+
+
+def collapse_banner_rows(markdown: str) -> str:
+    """Collapse body rows whose every non-empty cell repeats one long value.
+
+    A row-spanning banner ("MAIN COMPANIES CONSOLIDATED FOR THE FIRST TIME
+    DURING THE YEAR" x6, page 43) gets its value once in the first cell, the
+    rest blanked. Short repeated cells ("- | - | -") are legitimate data and
+    are left alone. Column counts never change.
+    """
+    lines = markdown.splitlines()
+    in_body = False
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            in_body = False
+            continue
+        if _TABLE_SEPARATOR_LINE_RE.match(stripped):
+            in_body = True
+            continue
+        if not in_body:
+            continue
+        cells = _table_row_cells(line)
+        if not cells:
+            continue
+        non_empty = [cell for cell in cells if cell]
+        if (
+            len(non_empty) >= 2
+            and len(set(non_empty)) == 1
+            and len(non_empty[0]) >= BANNER_CELL_MIN_CHARS
+        ):
+            value = non_empty[0]
+            lines[index] = _render_row([value] + [""] * (len(cells) - 1))
+    return "\n".join(lines) + ("\n" if markdown.endswith("\n") else "")
+
+
+# --------------------------------------------------------------------------- #
 # Duplicated-content detection and removal (F2)
 # --------------------------------------------------------------------------- #
 

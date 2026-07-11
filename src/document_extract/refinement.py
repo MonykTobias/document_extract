@@ -127,6 +127,8 @@ def postprocess_markdown(
         and (candidate.stats or {}).get("first_row")
     ]
     final = normalize_headerless_pipe_tables(final, headerless_rows)
+    final = sp.dedupe_span_header_cells(final)
+    final = sp.collapse_banner_rows(final)
     final = apply_list_levels_from_layout(final, layout_blocks)
     # The refine/repair VLM re-transcribes margin furniture from the page
     # image even when the Docling items were dropped in prepare.
