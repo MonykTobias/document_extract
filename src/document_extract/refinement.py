@@ -117,6 +117,9 @@ def postprocess_markdown(
     final, kpi_count = sp.convert_kpi_pipe_tables_to_lists(final)
     if kpi_count:
         table_warnings["kpi_tables_converted"] = kpi_count
+    final, kpi_text_pairs = sp.pair_kpi_text_runs(final)
+    if kpi_text_pairs:
+        table_warnings["kpi_text_pairs"] = kpi_text_pairs
     final, orphan_texts = drop_orphan_header_tables(final)
     if orphan_texts:
         table_warnings["orphan_header_tables_dropped"] = len(orphan_texts)

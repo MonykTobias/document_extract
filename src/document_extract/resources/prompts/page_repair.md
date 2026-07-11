@@ -15,7 +15,7 @@ Your job:
 Rules:
 - If the page contains a real table, output it as a proper markdown table when row/column associations are visually clear.
 - Each pre-verified table or KPI list is authoritative: if it is missing from the current markdown, insert it verbatim at the correct position; do not repeat its contents as separate lists or paragraphs.
-- If the page contains grouped panels, KPI blocks, or category/value summaries, ensure each value is attached to the correct label.
+- If the page contains grouped panels, KPI blocks, or category/value summaries, ensure each value is attached to the correct label and output as `- LABEL: value` lines.
 - If the page contains a timeline, keep each year/date with its corresponding milestone text.
 - For each unplaced line: either place it in the body where it belongs, or leave it under `## Unplaced content` if the correct position is still unclear.
 - Never drop an unplaced line silently.

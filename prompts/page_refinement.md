@@ -20,6 +20,7 @@ Rules:
 - For timelines, keep each milestone grouped together. Do not scatter years and descriptions into unrelated sections.
 - Each pre-verified table or KPI list is authoritative: place it verbatim at the correct position in the page flow, and do not repeat its contents again as separate lists, paragraphs, or headings.
 - For charts and KPI panels, output explicit `Label: value` lines or a small markdown table when the mapping is visually clear.
+- If the draft shows display figures and caption labels as separate adjacent lines (for example `+4.5%` on one line and `LIKE-FOR-LIKE SALES GROWTH` on the next) or joined on one line (`98.0% EMPLOYEES COVERED BY B CORP™ CERTIFICATION`), pair them using the image as `- LABEL: value` lines, one KPI per line.
 - If the draft contains a markdown table that is actually a KPI panel (large display figures such as `+4.5%` with short all-caps caption labels in adjacent cells), do not keep the table: rewrite it as `- LABEL: value` lines pairing each figure with its caption.
 - For prose, keep paragraphs.
 - For lists, use `- ` bullets.

@@ -48,41 +48,62 @@ KPI_MIN_VALUE_CELLS = 3
 KPI_MIN_LABEL_CELLS = 2
 KPI_MAX_CELL_CHARS = 120
 KPI_MIN_SIGNAL_RATIO = 0.6
-_KPI_VALUE_ONLY_RE = re.compile(
-    r"^\s*(?:[<>~]?\s*)?(?:\+|-)?(?:[$\u20ac\u00a3]?\s*)?"
-    r"(?:\d[\d,.\s]*)(?:%|pts?|bps?|bn|m|k|yo|yo\.|\u20ac|\$|\u00a3|cumulated)?\s*$",
+_KPI_VALUE_TEXT_RE = re.compile(
+    r"^\s*(?:[~≈<>]\s*)?(?:[+-]\s*)?(?:[$\u20ac\u00a3]\s*)?"
+    r"\d[\d,.\s]*(?:\s*(?:%|x|pts?|bps?|bn|m|k|stars?))?(?:\s*[$\u20ac\u00a3])?"
+    r"\s*(?:\((?:[A-Za-z]|\d{1,2})\))?\s*$",
     re.IGNORECASE,
 )
-_KPI_VALUE_SIGNAL_RE = re.compile(
-    r"(?i)(?:\b(?:19|20)\d{2}\b|\d[\d,.\s]*(?:%|pts?|bps?|bn|m|k|kg|g|t|tons?|"
-    r"tonnes?|co2|co2e|eur|usd|gbp|l|ml|ha|m3)\b|[$\u20ac\u00a3]\s*\d|\d[\d,.\s]*[$\u20ac\u00a3])"
-)
 _KPI_PIPE_SEPARATOR_RE = re.compile(r"^\|?[\s:|-]+\|?$")
+_KPI_RATING_RE = re.compile(r"^[A-Z][a-zA-Z]{0,3}[+-]?\d?$")
+_KPI_RATING_WITH_FOOTNOTE_RE = re.compile(
+    r"^([A-Z][a-zA-Z]{0,3}[+-]?\d?)\s*(\(\w{1,2}\))\s+(.+)$"
+)
+_KPI_YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
 
 # Numeric footnote reference / definition, e.g. ``[1]``.
 _FOOTNOTE_MARKER_RE = re.compile(r"\[(\d{1,3})\]")
 _FOOTNOTE_DEF_LINE_RE = re.compile(r"^\s*\[(\d{1,3})\]\s+\S")
 
 
-def _is_kpi_value_cell(text: str) -> bool:
+def _normalise_kpi_currency(text: str) -> str:
+    """Repair common mojibake only for matching; emitted text stays verbatim."""
+    return text.replace("\u00e2\u201a\u00ac", "\u20ac").replace("\u00c2\u00a3", "\u00a3")
+
+
+def is_value_text(text: str) -> bool:
+    """Whether ``text`` is a short standalone display value, including years."""
     stripped = text.strip()
-    return bool(
-        _KPI_VALUE_ONLY_RE.match(stripped)
-        or (len(stripped) <= 20 and _KPI_VALUE_SIGNAL_RE.search(stripped))
+    return len(stripped) <= 20 and bool(
+        _KPI_VALUE_TEXT_RE.fullmatch(_normalise_kpi_currency(stripped))
+    )
+
+
+def _is_kpi_value_cell(text: str) -> bool:
+    return is_value_text(text)
+
+
+def is_kpi_label_text(text: str) -> bool:
+    """Whether ``text`` is an all-caps-like KPI caption, not ordinary prose."""
+    stripped = text.strip()
+    alpha = [ch for ch in stripped if ch.isalpha()]
+    words = re.findall(r"[^\W\d_]+", stripped, re.UNICODE)
+    return (
+        8 <= len(stripped) <= 90
+        and len(words) >= 2
+        and bool(alpha)
+        and sum(ch.isupper() for ch in alpha) / len(alpha) >= 0.7
+        and (not any(ch.isdigit() for ch in stripped) or len(words) >= 3)
     )
 
 
 def _is_kpi_label_cell(text: str) -> bool:
-    stripped = text.strip()
-    compact = "".join(ch for ch in stripped if not ch.isspace())
-    alpha = sum(ch.isalpha() for ch in compact)
-    return (
-        len(stripped) >= 8
-        and not any(ch.isdigit() for ch in stripped)
-        and bool(compact)
-        and alpha / len(compact) >= 0.6
-        and stripped.upper() == stripped
-    )
+    return is_kpi_label_text(text)
+
+
+def is_letter_rating(text: str) -> bool:
+    """Return True for short credit-rating tokens, never general all-caps text."""
+    return bool(_KPI_RATING_RE.fullmatch(text.strip()))
 
 
 def kpi_panel_stats(rows: list[list[str]]) -> dict[str, object]:
@@ -209,6 +230,194 @@ def convert_kpi_pipe_tables_to_lists(markdown: str) -> tuple[str, int]:
             out.extend(block)
         index = end
     return "\n".join(out) + ("\n" if markdown.endswith("\n") else ""), converted
+
+
+def _split_mixed_kpi_line(text: str) -> tuple[str, str] | None:
+    """Return ``(label, value)`` only for a complete same-line KPI pair."""
+    stripped = text.strip()
+    rating_match = _KPI_RATING_WITH_FOOTNOTE_RE.fullmatch(stripped)
+    if rating_match and is_letter_rating(rating_match.group(1)):
+        label = rating_match.group(3).strip()
+        if is_kpi_label_text(label):
+            return label, f"{rating_match.group(1)} {rating_match.group(2)}"
+
+    words = stripped.split()
+    # Longest-first prevents ``€2.8 bn`` from becoming value ``€2.8`` and
+    # label ``bn FREE CASH FLOW``.
+    for split_at in range(len(words) - 1, 0, -1):
+        value = " ".join(words[:split_at])
+        label = " ".join(words[split_at:])
+        if is_value_text(value) and is_kpi_label_text(label):
+            return label, value
+    for split_at in range(len(words) - 1, 0, -1):
+        label = " ".join(words[:split_at])
+        value = " ".join(words[split_at:])
+        if is_kpi_label_text(label) and is_value_text(value):
+            return label, value
+    return None
+
+
+def _classify_kpi_text_line(text: str) -> tuple[str, tuple[str, str] | None]:
+    """Classify a non-structural line as VALUE, LABEL, MIXED, or OTHER."""
+    content = re.sub(r"^\s*-\s+", "", text).strip()
+    if is_value_text(content):
+        return "VALUE", None
+    # A same-line value + label can also superficially look all-caps-like, so
+    # split it before testing the whole line as a label.
+    mixed = _split_mixed_kpi_line(content)
+    if mixed:
+        return "MIXED", mixed
+    if is_kpi_label_text(content):
+        return "LABEL", None
+    return "OTHER", None
+
+
+def _alternating_kpi_pairs(entries: list[dict[str, object]]) -> list[tuple[int, int]]:
+    """Return a >=2-pair alternating VALUE/LABEL prefix, or no pairs."""
+    prefix: list[dict[str, object]] = []
+    for entry in entries:
+        if entry["kind"] not in {"VALUE", "LABEL"}:
+            break
+        prefix.append(entry)
+    if len(prefix) < 4:
+        return []
+    kinds = [str(entry["kind"]) for entry in prefix]
+    if kinds[0] == kinds[1]:
+        return []
+    expected = (kinds[0], kinds[1])
+    pairs: list[tuple[int, int]] = []
+    for index in range(0, len(prefix) - 1, 2):
+        if (kinds[index], kinds[index + 1]) != expected:
+            break
+        if expected == ("VALUE", "LABEL"):
+            pairs.append((index + 1, index))
+        else:
+            pairs.append((index, index + 1))
+    values = [str(entry["text"]) for entry in entries if entry["kind"] == "VALUE"]
+    if values and all(_KPI_YEAR_RE.fullmatch(value.strip()) for value in values):
+        return []
+    return pairs if len(pairs) >= 2 else []
+
+
+def _kpi_run_replacement(
+    entries: list[dict[str, object]],
+) -> tuple[list[str] | None, int]:
+    """Build conservative bullet output for one candidate text run."""
+    alternating_pairs = _alternating_kpi_pairs(entries)
+    mixed_entries = [entry for entry in entries if entry["kind"] == "MIXED"]
+    use_mixed = len(mixed_entries) >= 2 or bool(alternating_pairs)
+    mixed_pairs = [entry for entry in mixed_entries if use_mixed]
+    pair_count = len(alternating_pairs) + len(mixed_pairs)
+    if pair_count < 2:
+        return None, 0
+
+    emitted: dict[int, str] = {}
+    consumed: set[int] = set()
+    for label_index, value_index in alternating_pairs:
+        label = str(entries[label_index]["text"])
+        value = str(entries[value_index]["text"])
+        emitted[min(label_index, value_index)] = f"- {label}: {value}"
+        consumed.update({label_index, value_index})
+    for entry in mixed_pairs:
+        index = int(entry["entry_index"])
+        label, value = entry["pair"]  # type: ignore[misc]
+        emitted[index] = f"- {label}: {value}"
+        consumed.add(index)
+
+    replacement: list[str] = []
+    for index, entry in enumerate(entries):
+        if index in emitted:
+            replacement.append(emitted[index])
+        elif index not in consumed:
+            # A confirmed run may end with an unmatched value/label. Keeping
+            # it as a bullet avoids recreating a rendered paragraph blob.
+            replacement.append(f"- {entry['text']}")
+    return replacement, pair_count
+
+
+def _is_kpi_text_run_breaker(line: str) -> bool:
+    stripped = line.strip()
+    return bool(
+        stripped.startswith(("#", "|", ">", "![", "<!--"))
+        or stripped.startswith("**Image summary:**")
+        or re.match(r"^\s*-\s+.+:\s+", line)
+        or re.match(r"^\(\w{1,3}\)\s", stripped)
+        or (stripped and set(stripped) <= set("|-: "))
+    )
+
+
+def pair_kpi_text_runs(markdown: str) -> tuple[str, int]:
+    """Convert loose KPI value/label text runs into ``- LABEL: value`` bullets."""
+    lines = markdown.splitlines()
+    replacements: list[tuple[int, int, list[str]]] = []
+    run: list[dict[str, object]] = []
+    pending_blank = False
+
+    def flush() -> None:
+        nonlocal run, pending_blank
+        if not run:
+            pending_blank = False
+            return
+        replacement, pair_count = _kpi_run_replacement(run)
+        if replacement is not None:
+            replacements.append(
+                (int(run[0]["line_index"]), int(run[-1]["line_index"]) + 1, replacement)
+            )
+            pair_counts.append(pair_count)
+        run = []
+        pending_blank = False
+
+    pair_counts: list[int] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        stripped = line.strip()
+        if stripped.startswith("**Image summary:**"):
+            flush()
+            index += 1
+            while index < len(lines) and lines[index].strip():
+                index += 1
+            continue
+        if not stripped:
+            if run:
+                if pending_blank:
+                    flush()
+                else:
+                    pending_blank = True
+            index += 1
+            continue
+        if _is_kpi_text_run_breaker(line):
+            flush()
+            index += 1
+            continue
+        kind, pair = _classify_kpi_text_line(line)
+        if kind == "OTHER":
+            flush()
+            index += 1
+            continue
+        run.append(
+            {
+                "line_index": index,
+                "entry_index": len(run),
+                "kind": kind,
+                "text": re.sub(r"^\s*-\s+", "", line).strip(),
+                "pair": pair,
+            }
+        )
+        pending_blank = False
+        index += 1
+    flush()
+    if not replacements:
+        return markdown, 0
+
+    out: list[str] = []
+    cursor = 0
+    for start, end, replacement in replacements:
+        out.extend(lines[cursor:start])
+        out.extend(replacement)
+        cursor = end
+    out.extend(lines[cursor:])
+    return "\n".join(out) + ("\n" if markdown.endswith("\n") else ""), sum(pair_counts)
 # Models often render footnote markers with unicode superscripts (``[⁵]``); map
 # them back to ASCII digits before analysis.
 _SUPERSCRIPT_MAP = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789")
