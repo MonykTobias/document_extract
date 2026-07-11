@@ -20,6 +20,7 @@ from ..docling_adapter import (
     item_kind,
     item_text,
     list_marker,
+    table_grid_rows,
     table_header_profile,
 )
 from ..models import PictureRecord
@@ -205,6 +206,7 @@ def build_layout_prompt_map(
                 "list_level": list_levels.get(id(item), 0),
                 "list_marker": list_marker(item),
                 "table_header_profile": table_header_profile(item),
+                "table_grid_rows": table_grid_rows(item) if is_table_item(item) else [],
             }
         )
 
@@ -237,6 +239,8 @@ def build_layout_prompt_map(
         if profile["headerless"]:
             block["headerless"] = True
             block["first_row"] = profile["first_row"]
+        if entry["table_grid_rows"]:
+            block["grid_rows"] = entry["table_grid_rows"]
 
         context = nearby_layout_context(index, entries, timeline_indices)
         if not entry["is_list_item"] and should_include_layout_text(

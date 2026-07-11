@@ -40,9 +40,175 @@ _TABLE_BLOCK_RE = re.compile(r"<table\b.*?</table>", re.IGNORECASE | re.DOTALL)
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 _UNCERTAINTY_TITLE_RE = re.compile(r"^\s*#{1,6}\s*uncertain", re.IGNORECASE)
 
+# KPI panels: display values + all-caps captions are not data tables. Keep the
+# classifier here because postprocessing must stay stdlib-only.
+KPI_MAX_ROWS = 8
+KPI_MAX_COLS = 6
+KPI_MIN_VALUE_CELLS = 3
+KPI_MIN_LABEL_CELLS = 2
+KPI_MAX_CELL_CHARS = 120
+KPI_MIN_SIGNAL_RATIO = 0.6
+_KPI_VALUE_ONLY_RE = re.compile(
+    r"^\s*(?:[<>~]?\s*)?(?:\+|-)?(?:[$\u20ac\u00a3]?\s*)?"
+    r"(?:\d[\d,.\s]*)(?:%|pts?|bps?|bn|m|k|yo|yo\.|\u20ac|\$|\u00a3|cumulated)?\s*$",
+    re.IGNORECASE,
+)
+_KPI_VALUE_SIGNAL_RE = re.compile(
+    r"(?i)(?:\b(?:19|20)\d{2}\b|\d[\d,.\s]*(?:%|pts?|bps?|bn|m|k|kg|g|t|tons?|"
+    r"tonnes?|co2|co2e|eur|usd|gbp|l|ml|ha|m3)\b|[$\u20ac\u00a3]\s*\d|\d[\d,.\s]*[$\u20ac\u00a3])"
+)
+_KPI_PIPE_SEPARATOR_RE = re.compile(r"^\|?[\s:|-]+\|?$")
+
 # Numeric footnote reference / definition, e.g. ``[1]``.
 _FOOTNOTE_MARKER_RE = re.compile(r"\[(\d{1,3})\]")
 _FOOTNOTE_DEF_LINE_RE = re.compile(r"^\s*\[(\d{1,3})\]\s+\S")
+
+
+def _is_kpi_value_cell(text: str) -> bool:
+    stripped = text.strip()
+    return bool(
+        _KPI_VALUE_ONLY_RE.match(stripped)
+        or (len(stripped) <= 20 and _KPI_VALUE_SIGNAL_RE.search(stripped))
+    )
+
+
+def _is_kpi_label_cell(text: str) -> bool:
+    stripped = text.strip()
+    compact = "".join(ch for ch in stripped if not ch.isspace())
+    alpha = sum(ch.isalpha() for ch in compact)
+    return (
+        len(stripped) >= 8
+        and not any(ch.isdigit() for ch in stripped)
+        and bool(compact)
+        and alpha / len(compact) >= 0.6
+        and stripped.upper() == stripped
+    )
+
+
+def kpi_panel_stats(rows: list[list[str]]) -> dict[str, object]:
+    """Return deterministic shape signals for a compact KPI display panel."""
+    clean_rows = [[str(cell or "").strip() for cell in row] for row in rows]
+    cells = [cell for row in clean_rows for cell in row if cell]
+    value_flags = [[_is_kpi_value_cell(cell) for cell in row] for row in clean_rows]
+    label_flags = [[_is_kpi_label_cell(cell) for cell in row] for row in clean_rows]
+    value_rows = [
+        bool([cell for cell in row if cell])
+        and all(flag for cell, flag in zip(row, flags) if cell)
+        for row, flags in zip(clean_rows, value_flags)
+    ]
+    label_rows = [
+        bool([cell for cell in row if cell])
+        and all(flag for cell, flag in zip(row, flags) if cell)
+        for row, flags in zip(clean_rows, label_flags)
+    ]
+    alternating = any(
+        (value_rows[index] and label_rows[index + 1])
+        or (label_rows[index] and value_rows[index + 1])
+        for index in range(max(0, len(clean_rows) - 1))
+    )
+    value_cells = sum(flag for row in value_flags for flag in row)
+    label_cells = sum(flag for row in label_flags for flag in row)
+    non_empty = len(cells)
+    return {
+        "n_rows": len(clean_rows),
+        "n_cols": max((len(row) for row in clean_rows), default=0),
+        "non_empty": non_empty,
+        "value_cells": value_cells,
+        "label_cells": label_cells,
+        "long_cells": sum(len(cell) > KPI_MAX_CELL_CHARS for cell in cells),
+        "value_rows": value_rows,
+        "label_rows": label_rows,
+        "alternating": alternating,
+        "signal_ratio": round((value_cells + label_cells) / non_empty, 3)
+        if non_empty
+        else 0.0,
+    }
+
+
+def looks_like_kpi_panel(rows: list[list[str]]) -> tuple[bool, dict[str, object]]:
+    """True only for small alternating display-value / caption grids."""
+    stats = kpi_panel_stats(rows)
+    is_kpi = (
+        stats["n_rows"] <= KPI_MAX_ROWS
+        and stats["n_cols"] <= KPI_MAX_COLS
+        and stats["value_cells"] >= KPI_MIN_VALUE_CELLS
+        and stats["label_cells"] >= KPI_MIN_LABEL_CELLS
+        and stats["signal_ratio"] >= KPI_MIN_SIGNAL_RATIO
+        and stats["long_cells"] == 0
+        and stats["alternating"] is True
+    )
+    return is_kpi, stats
+
+
+def _pipe_table_rows(block: list[str]) -> list[list[str]]:
+    return [
+        [cell.strip() for cell in line.strip().strip("|").split("|")]
+        for line in block
+        if not _KPI_PIPE_SEPARATOR_RE.fullmatch(line.strip())
+    ]
+
+
+def _kpi_list_lines(rows: list[list[str]], stats: dict[str, object]) -> list[str]:
+    value_rows = list(stats["value_rows"])
+    label_rows = list(stats["label_rows"])
+    used: set[tuple[int, int]] = set()
+    lines: list[str] = []
+    row_index = 0
+    while row_index < len(rows) - 1:
+        top_is_value = bool(value_rows[row_index])
+        bottom_is_value = bool(value_rows[row_index + 1])
+        top_is_label = bool(label_rows[row_index])
+        bottom_is_label = bool(label_rows[row_index + 1])
+        if not ((top_is_value and bottom_is_label) or (top_is_label and bottom_is_value)):
+            row_index += 1
+            continue
+        value_row = rows[row_index] if top_is_value else rows[row_index + 1]
+        label_row = rows[row_index] if top_is_label else rows[row_index + 1]
+        width = max(len(value_row), len(label_row))
+        for column in range(width):
+            value = value_row[column].strip() if column < len(value_row) else ""
+            label = label_row[column].strip() if column < len(label_row) else ""
+            if value and label:
+                lines.append(f"- {label}: {value}")
+                used.add((row_index, column))
+                used.add((row_index + 1, column))
+        row_index += 2
+
+    non_empty = sum(1 for row in rows for cell in row if cell.strip())
+    if len(used) < non_empty / 2:
+        return [f"- {cell.strip()}" for row in rows for cell in row if cell.strip()]
+
+    for row_index, row in enumerate(rows):
+        for column, cell in enumerate(row):
+            if cell.strip() and (row_index, column) not in used:
+                lines.append(f"- {cell.strip()}")
+    return lines
+
+
+def convert_kpi_pipe_tables_to_lists(markdown: str) -> tuple[str, int]:
+    """Replace KPI-display pipe tables with semantically paired list lines."""
+    lines = markdown.splitlines()
+    out: list[str] = []
+    converted = 0
+    index = 0
+    while index < len(lines):
+        if not lines[index].strip().startswith("|"):
+            out.append(lines[index])
+            index += 1
+            continue
+        end = index
+        while end < len(lines) and lines[end].strip().startswith("|"):
+            end += 1
+        block = lines[index:end]
+        rows = _pipe_table_rows(block)
+        is_kpi, stats = looks_like_kpi_panel(rows)
+        if is_kpi:
+            out.extend(_kpi_list_lines(rows, stats))
+            converted += 1
+        else:
+            out.extend(block)
+        index = end
+    return "\n".join(out) + ("\n" if markdown.endswith("\n") else ""), converted
 # Models often render footnote markers with unicode superscripts (``[⁵]``); map
 # them back to ASCII digits before analysis.
 _SUPERSCRIPT_MAP = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789")

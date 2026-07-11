@@ -56,7 +56,9 @@ PICTURE_SYMBOL_MAX_CHARS = 40
 PICTURE_DECORATIVE_MAX_AREA_RATIO = 0.05
 PICTURE_TABLE_MIN_AREA_RATIO = 0.08
 SUMMARY_TYPES = {"photo", "table", "chart", "kpi", "infographic", "map", "diagram"}
-SUMMARY_TABLE_TYPES = {"table", "kpi"}
+# KPI panels are content-bearing images, but their correct markdown shape is a
+# label/value list rather than a pipe table.
+SUMMARY_TABLE_TYPES = {"table"}
 SUMMARY_TYPE_RE = re.compile(r"^\s*TYPE:\s*([a-z]+)\s*$", re.IGNORECASE)
 PICTURE_CROP_NEIGHBOR_GAP = 0.03
 PICTURE_CROP_MARGIN = 0.02
@@ -225,7 +227,7 @@ def picture_specialist_prompt(record: PictureRecord, generic_prompt: str) -> str
 
     prompt_by_type = {
         "table": DEFAULT_PICTURE_TABLE_PROMPT,
-        "kpi": DEFAULT_PICTURE_TABLE_PROMPT,
+        "kpi": DEFAULT_PICTURE_GROUPED_VALUES_PROMPT,
         "chart": DEFAULT_PICTURE_CHART_PROMPT,
         "infographic": DEFAULT_PICTURE_GROUPED_VALUES_PROMPT,
         "map": DEFAULT_PICTURE_GROUPED_VALUES_PROMPT,

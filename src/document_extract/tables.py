@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 from dataclasses import asdict
 from pathlib import Path
@@ -40,7 +41,7 @@ from .models import PictureRecord, TableCandidate
 # picture thresholds are visible here; a from-import would freeze the defaults.
 from . import pictures
 from .pictures import save_region_crop
-from .prompts import DEFAULT_TABLE_REGION_PROMPT
+from .prompts import DEFAULT_KPI_PANEL_PROMPT, DEFAULT_TABLE_REGION_PROMPT
 from .docling_adapter import bbox_dict, item_kind
 
 PANEL_X_GUTTER = 0.025
@@ -174,6 +175,25 @@ def is_value_cell(text: str) -> bool:
     if VALUE_ONLY_RE.match(stripped):
         return True
     return len(stripped) <= TABLE_VALUE_CELL_CHARS and bool(VALUE_SIGNAL_RE.search(stripped))
+
+
+def region_grid_rows(cells: list[dict[str, Any]]) -> list[list[str]]:
+    """Cluster region cells into reading-order rows for KPI shape checks."""
+    if not cells:
+        return []
+    row_centers = cluster_axis_values(
+        [(cell["rect"][1] + cell["rect"][3]) / 2 for cell in cells],
+        TABLE_ROW_Y_TOLERANCE,
+    )
+    rows: list[list[dict[str, Any]]] = [[] for _ in row_centers]
+    for cell in cells:
+        center_y = (cell["rect"][1] + cell["rect"][3]) / 2
+        rows[nearest_cluster_index(center_y, row_centers)].append(cell)
+    return [
+        [str(cell.get("text", "")) for cell in sorted(row, key=lambda cell: cell["rect"][0])]
+        for row in rows
+        if row
+    ]
 
 
 def score_table_region(
@@ -516,12 +536,23 @@ def build_table_candidates(
     for block in blocks:
         if block.get("type") != "table":
             continue
-        profile = None
+        candidate_stats: dict[str, Any] = {}
         if block.get("headerless") and block.get("first_row"):
-            profile = {
+            candidate_stats.update({
                 "headerless": True,
                 "first_row": list(block["first_row"]),
-            }
+            })
+        grid_rows = block.get("grid_rows") or []
+        if grid_rows:
+            is_kpi, kpi_stats = sp.looks_like_kpi_panel(grid_rows)
+            if is_kpi:
+                candidate_stats.update(
+                    {
+                        "kpi_panel": True,
+                        "kpi_stats": kpi_stats,
+                        "grid_rows": grid_rows,
+                    }
+                )
         add_table_candidate(
             candidates,
             kind="docling_table",
@@ -529,7 +560,7 @@ def build_table_candidates(
             source_block_ids=[block["id"]],
             confidence=0.95,
             reason="docling_table_item",
-            stats=profile,
+            stats=candidate_stats or None,
         )
 
     scored_regions, _ = evaluate_table_regions(cells)
@@ -541,6 +572,17 @@ def build_table_candidates(
             for candidate in candidates
         ):
             continue
+        candidate_stats = dict(stats)
+        grid_rows = region_grid_rows(region)
+        is_kpi, kpi_stats = sp.looks_like_kpi_panel(grid_rows)
+        if is_kpi:
+            candidate_stats.update(
+                {
+                    "kpi_panel": True,
+                    "kpi_stats": kpi_stats,
+                    "grid_rows": grid_rows,
+                }
+            )
         add_table_candidate(
             candidates,
             kind="layout_region",
@@ -548,7 +590,7 @@ def build_table_candidates(
             source_block_ids=[cell["id"] for cell in region],
             confidence=score,
             reason=reason,
-            stats=stats,
+            stats=candidate_stats,
         )
 
     for record in picture_records.values():
@@ -626,11 +668,20 @@ def build_table_candidates(
 
 def verified_tables_prompt_block(candidates: list[TableCandidate]) -> str:
     """Only verified region tables reach a prompt; everything else is debug-only."""
-    parts = [
-        f"Table for region at bbox {candidate.bbox}:\n{candidate.markdown.strip()}"
-        for candidate in candidates
-        if candidate.verified and candidate.markdown.strip()
-    ]
+    parts: list[str] = []
+    for candidate in candidates:
+        if not (candidate.verified and candidate.markdown.strip()):
+            continue
+        if (candidate.stats or {}).get("format") == "kpi_list":
+            parts.append(
+                "KPI panel at bbox "
+                f"{candidate.bbox} (label/value list — authoritative; keep as list lines, "
+                f"do NOT render as a table):\n{candidate.markdown.strip()}"
+            )
+        else:
+            parts.append(
+                f"Table for region at bbox {candidate.bbox}:\n{candidate.markdown.strip()}"
+            )
     return "\n\n".join(parts) if parts else "(none)"
 
 
@@ -687,6 +738,40 @@ def verify_region_table(
         stats["word_coverage"] = round(coverage, 3)
         if coverage < TABLE_WORD_COVERAGE_MIN:
             stats["fail"] = "missing_words"
+            return False, stats
+    return True, stats
+
+
+def verify_kpi_list(markdown: str, cell_texts: list[str]) -> tuple[bool, dict[str, Any]]:
+    """Accept a faithful KPI label/value list, never a pipe table."""
+    stats: dict[str, Any] = {}
+    lines = markdown.splitlines()
+    if any(line.lstrip().startswith("|") for line in lines):
+        stats["fail"] = "pipe_table"
+        return False, stats
+    list_lines = sum(
+        bool(re.match(r"^\s*-\s+[^:|]{2,80}:\s*\S", line))
+        for line in lines
+    )
+    stats["list_lines"] = list_lines
+    if list_lines < 2:
+        stats["fail"] = "no_kpi_list_structure"
+        return False, stats
+
+    source_numbers = set().union(*(numeric_tokens(text) for text in cell_texts)) if cell_texts else set()
+    list_numbers = numeric_tokens(markdown)
+    invented = sorted(list_numbers - source_numbers)
+    stats["invented_numbers"] = invented
+    if invented:
+        stats["fail"] = "invented_numbers"
+        return False, stats
+    if source_numbers:
+        missing = sorted(source_numbers - list_numbers)
+        coverage = 1 - len(missing) / len(source_numbers)
+        stats["numeric_coverage"] = round(coverage, 3)
+        stats["missing_numbers"] = missing
+        if coverage < TABLE_NUMERIC_COVERAGE_MIN:
+            stats["fail"] = "missing_numbers"
             return False, stats
     return True, stats
 
@@ -810,7 +895,8 @@ def transcribe_table_candidates(
         shutil.rmtree(table_dir)
     for candidate in candidates:
         symbol_indices = (candidate.stats or {}).get("symbol_picture_indices", [])
-        if candidate.kind != "layout_region" and not symbol_indices:
+        is_kpi = bool((candidate.stats or {}).get("kpi_panel"))
+        if candidate.kind != "layout_region" and not symbol_indices and not is_kpi:
             continue
         if candidate.kind == "layout_region":
             region_cells = [
@@ -824,6 +910,18 @@ def transcribe_table_candidates(
                 for cell in cells
                 if rect_overlap_ratio(cell.get("rect"), candidate.bbox) > 0.1
             ]
+        grid_rows = (candidate.stats or {}).get("grid_rows", [])
+        if candidate.kind == "docling_table" and grid_rows:
+            for row_index, row in enumerate(grid_rows):
+                for column_index, text in enumerate(row):
+                    if str(text).strip():
+                        region_cells.append(
+                            {
+                                "id": f"tbl{row_index}c{column_index}",
+                                "rect": candidate.bbox,
+                                "text": str(text).strip(),
+                            }
+                        )
         pseudo_cells: list[dict[str, Any]] = []
         for index in symbol_indices:
             record = records_by_index.get(index)
@@ -851,7 +949,8 @@ def transcribe_table_candidates(
             continue
 
         cell_texts = [cell["text"] for cell in region_cells]
-        prompt = DEFAULT_TABLE_REGION_PROMPT.format(
+        prompt_template = DEFAULT_KPI_PANEL_PROMPT if is_kpi else DEFAULT_TABLE_REGION_PROMPT
+        prompt = prompt_template.format(
             region_blocks=region_blocks_prompt_json(region_cells)
         )
         for attempt in range(2):
@@ -870,13 +969,18 @@ def transcribe_table_candidates(
             if collapse_ws(markdown).upper() == "SKIP":
                 candidate.warnings.append("vlm_skip")
                 break
-            markdown = normalize_pipe_tables(markdown)
-            ok, verify_stats = verify_region_table(markdown, cell_texts)
+            if not is_kpi:
+                markdown = normalize_pipe_tables(markdown)
+            verify = verify_kpi_list if is_kpi else verify_region_table
+            ok, verify_stats = verify(markdown, cell_texts)
             candidate.stats = {**(candidate.stats or {}), "verify": verify_stats}
             if ok:
                 candidate.markdown = markdown
                 candidate.verified = True
-                (table_dir / f"{candidate.candidate_id}_table.md").write_text(
+                if is_kpi:
+                    candidate.stats["format"] = "kpi_list"
+                suffix = "kpi" if is_kpi else "table"
+                (table_dir / f"{candidate.candidate_id}_{suffix}.md").write_text(
                     markdown.rstrip() + "\n", encoding="utf-8"
                 )
                 break
@@ -897,7 +1001,11 @@ def transcribe_table_candidates(
                         + ", ".join(verify_stats["missing_numbers"][:10])
                     )
                 if not feedback:
-                    feedback.append("it was not a well-formed markdown table")
+                    feedback.append(
+                        "it was not a valid KPI label/value list"
+                        if is_kpi
+                        else "it was not a well-formed markdown table"
+                    )
                 prompt = (
                     prompt.rstrip()
                     + "\n\nYour previous attempt was rejected because "
@@ -909,13 +1017,13 @@ def transcribe_table_candidates(
 
 __all__ = [
     "segment_panels", "is_banner_cell", "split_panel_at_banners",
-    "region_grid_cells", "is_value_cell", "score_table_region",
+    "region_grid_cells", "region_grid_rows", "is_value_cell", "score_table_region",
     "add_table_candidate", "picture_record_rect",
     "nearby_table_signal_blocks", "picture_record_is_table_like",
     "regions_horizontally_adjacent", "merge_adjacent_regions",
     "evaluate_table_regions", "build_table_candidates",
     "verified_tables_prompt_block", "numeric_tokens", "word_tokens",
-    "verify_region_table", "table_candidate_rows", "render_layout_overlay",
+    "verify_region_table", "verify_kpi_list", "table_candidate_rows", "render_layout_overlay",
     "render_table_candidates_overlay", "region_blocks_prompt_json",
     "transcribe_table_candidates",
 ]

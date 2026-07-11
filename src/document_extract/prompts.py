@@ -199,6 +199,7 @@ DEFAULT_PICTURE_SYMBOL_PROMPT = load_prompt("picture_symbol.md")
 DEFAULT_PAGE_REFINEMENT_PROMPT = load_prompt("page_refinement.md")
 DEFAULT_PAGE_REPAIR_PROMPT = load_prompt("page_repair.md")
 DEFAULT_TABLE_REGION_PROMPT = load_prompt("table_region.md")
+DEFAULT_KPI_PANEL_PROMPT = load_prompt("kpi_panel.md")
 
 def load_summary_prompt(path: Path | None) -> str:
     if path is None:
@@ -248,6 +249,7 @@ __all__ = [
     "DEFAULT_PAGE_REFINEMENT_PROMPT",
     "DEFAULT_PAGE_REPAIR_PROMPT",
     "DEFAULT_TABLE_REGION_PROMPT",
+    "DEFAULT_KPI_PANEL_PROMPT",
     "DEFAULT_OLLAMA_MODEL",
     "load_prompt",
     "require_placeholders",

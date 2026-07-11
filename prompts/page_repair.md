@@ -4,7 +4,7 @@ Inputs:
 - the full page image
 - the current markdown reconstruction
 - a compact JSON block map with id, type, normalized bbox, and selected text/captions
-- optional pre-verified markdown tables, already transcribed from table-like regions of this page and checked against the extracted text
+- optional pre-verified markdown tables or KPI label/value lists, already transcribed from table-like regions of this page and checked against the extracted text
 - optional unplaced lines that were preserved because the first pass could not place them confidently
 
 Your job:
@@ -14,7 +14,7 @@ Your job:
 
 Rules:
 - If the page contains a real table, output it as a proper markdown table when row/column associations are visually clear.
-- Each pre-verified table is authoritative: if it is missing from the current markdown, insert it verbatim at the correct position; do not repeat its cell contents as separate lists or paragraphs.
+- Each pre-verified table or KPI list is authoritative: if it is missing from the current markdown, insert it verbatim at the correct position; do not repeat its contents as separate lists or paragraphs.
 - If the page contains grouped panels, KPI blocks, or category/value summaries, ensure each value is attached to the correct label.
 - If the page contains a timeline, keep each year/date with its corresponding milestone text.
 - For each unplaced line: either place it in the body where it belongs, or leave it under `## Unplaced content` if the correct position is still unclear.

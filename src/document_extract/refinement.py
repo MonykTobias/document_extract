@@ -114,6 +114,9 @@ def postprocess_markdown(
     final = sp.unescape_html_entities(final)
     final = normalize_pipe_tables(final)
     table_warnings: dict[str, int] = {}
+    final, kpi_count = sp.convert_kpi_pipe_tables_to_lists(final)
+    if kpi_count:
+        table_warnings["kpi_tables_converted"] = kpi_count
     final, orphan_texts = drop_orphan_header_tables(final)
     if orphan_texts:
         table_warnings["orphan_header_tables_dropped"] = len(orphan_texts)

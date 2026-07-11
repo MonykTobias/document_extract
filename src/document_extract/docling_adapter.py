@@ -265,6 +265,32 @@ def table_cell_text(cell: Any, document: Any = None) -> str:
     return ""
 
 
+def table_grid_rows(
+    item: Any,
+    document: Any = None,
+    *,
+    max_rows: int = 12,
+    max_cols: int = 8,
+    max_cell_chars: int = 80,
+) -> list[list[str]]:
+    """Return a bounded plain-text view of a Docling table grid.
+
+    The compact layout map must retain enough table structure to distinguish
+    a real data table from a display-value KPI panel, without serializing the
+    full Docling table object into prompts or checkpoints.
+    """
+    data = getattr(item, "data", None)
+    grid = getattr(data, "grid", None) if data is not None else None
+    rows: list[list[str]] = []
+    for row in list(grid or [])[:max_rows]:
+        values: list[str] = []
+        for cell in list(row or [])[:max_cols]:
+            text = " ".join(table_cell_text(cell, document).split())
+            values.append(text[:max_cell_chars])
+        rows.append(values)
+    return rows
+
+
 def table_header_profile(item: Any, document: Any = None) -> dict[str, Any]:
     """Describe suspicious multi-row Docling headers without changing items."""
     data = getattr(item, "data", None)
@@ -394,7 +420,8 @@ __all__ = [
     "convert_pdf", "iter_doc_items", "item_page_number", "item_kind",
     "item_content_layer", "is_furniture_item", "iter_furniture_items",
     "is_picture_item", "is_table_item", "is_heading_item", "item_text",
-    "list_marker", "infer_list_levels", "table_cell_text", "table_header_profile",
+    "list_marker", "infer_list_levels", "table_cell_text", "table_grid_rows",
+    "table_header_profile",
     "caption_text", "bbox_dict", "export_item_markdown",
     "export_page_markdown_via_docling", "assert_docling_export_surface",
 ]

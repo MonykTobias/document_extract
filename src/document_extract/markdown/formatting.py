@@ -606,7 +606,9 @@ def drop_duplicate_subset_tables(
     verified_rowsets = [
         set(rows)
         for candidate in table_candidates or []
-        if candidate.verified and candidate.markdown
+        if candidate.verified
+        and candidate.markdown
+        and (candidate.stats or {}).get("format") != "kpi_list"
         for rows in [
             [
                 row
@@ -663,9 +665,24 @@ def missing_verified_table_ids(
         for line in current_markdown.splitlines()
         if line.strip().startswith("|")
     }
+    present_kpi_lines = {
+        collapse_ws(line).lower()
+        for line in current_markdown.splitlines()
+        if re.match(r"^\s*-\s+[^:|]{2,80}:\s*\S", line)
+    }
     out: list[str] = []
     for candidate in table_candidates:
         if not (candidate.verified and candidate.markdown):
+            continue
+        if (candidate.stats or {}).get("format") == "kpi_list":
+            kpi_lines = [
+                collapse_ws(line).lower()
+                for line in candidate.markdown.splitlines()
+                if re.match(r"^\s*-\s+[^:|]{2,80}:\s*\S", line)
+            ]
+            hits = sum(line in present_kpi_lines for line in kpi_lines)
+            if not kpi_lines or hits < 0.6 * len(kpi_lines):
+                out.append(candidate.candidate_id)
             continue
         rows = [
             collapse_ws(line)
