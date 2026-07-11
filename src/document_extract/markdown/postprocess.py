@@ -866,6 +866,33 @@ def normalize_ocr_artifacts(markdown: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# HTML entity leaks (F8): "Michel &amp; Augustin" (page 49)
+# --------------------------------------------------------------------------- #
+
+# Ordered so &amp; is decoded LAST: a double-escaped "&amp;lt;" resolves to
+# the literal "&lt;" text rather than "<".
+_HTML_ENTITIES = (
+    ("&lt;", "<"),
+    ("&gt;", ">"),
+    ("&nbsp;", " "),
+    ("&quot;", '"'),
+    ("&#39;", "'"),
+    ("&amp;", "&"),
+)
+
+
+def unescape_html_entities(markdown: str) -> str:
+    """Decode the handful of HTML entities that leak through model passes.
+
+    Plain ampersands in real content (``A&P``, ``R&I``) are untouched — only
+    the escaped forms are decoded.
+    """
+    for entity, char in _HTML_ENTITIES:
+        markdown = markdown.replace(entity, char)
+    return markdown
+
+
+# --------------------------------------------------------------------------- #
 # Table hygiene (F5): span labels repeated into every cell by _expand_grid
 # --------------------------------------------------------------------------- #
 

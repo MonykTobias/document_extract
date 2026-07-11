@@ -107,6 +107,9 @@ def postprocess_markdown(
     final = insert_image_references_and_summaries(final, records)
     final = sp.strip_meta_commentary(final)
     final = sp.normalize_footnotes(final)
+    # After flatten_html_tables (escaped entities must not turn into real
+    # HTML before the table parser runs), before the table/text cleanups.
+    final = sp.unescape_html_entities(final)
     final = normalize_pipe_tables(final)
     table_warnings: dict[str, int] = {}
     final, orphan_texts = drop_orphan_header_tables(final)

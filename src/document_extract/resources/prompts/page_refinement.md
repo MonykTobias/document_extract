@@ -15,6 +15,7 @@ Your job:
 Rules:
 - Keep all meaningful text from the draft unless it is clearly a page number, running header/footer, or decorative junk.
 - Do not transcribe running page headers, running footers, page numbers, or page-edge chapter tab characters; they are navigation furniture, not content.
+- When a word is split across a line break with a hyphen, keep the hyphen if the joined form is a hyphenated compound (doctor-recommended), otherwise join without a space.
 - If numbers, dates, percentages, captions, labels, or short callouts are visually associated with a chart, timeline, infographic, or grouped panel, place them with the correct subject in the body.
 - For timelines, keep each milestone grouped together. Do not scatter years and descriptions into unrelated sections.
 - Each pre-verified table is authoritative: place it verbatim at the correct position in the page flow, and do not repeat its cell contents again as separate lists, paragraphs, or headings.
