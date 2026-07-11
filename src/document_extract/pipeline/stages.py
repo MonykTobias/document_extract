@@ -325,7 +325,7 @@ def _run_page_refine(
         if usage:
             (page_dir / "page_vlm.md").write_text(refined, encoding="utf-8")
         final_markdown, warnings = postprocess_markdown(
-            state.raw_markdown, refined, records, candidates
+            state.raw_markdown, refined, records, candidates, state.layout_map
         )
         missing_tables = missing_verified_table_ids(final_markdown, candidates)
         if missing_tables:
@@ -399,7 +399,7 @@ def _run_page_repair(
             return {"calls": 0, "reason": "skip_vlm"}
         (page_dir / "page_repair.md").write_text(repaired, encoding="utf-8")
         repaired_final, repaired_warnings = postprocess_markdown(
-            state.raw_markdown, repaired, records, candidates
+            state.raw_markdown, repaired, records, candidates, repair_layout_map
         )
         reject_reasons = repair_regression_reasons(
             state.final_markdown, repaired_final, usage

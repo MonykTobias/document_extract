@@ -13,11 +13,14 @@ from typing import Any
 from ..docling_adapter import (
     bbox_dict,
     caption_text,
+    infer_list_levels,
     is_heading_item,
     is_picture_item,
     is_table_item,
     item_kind,
     item_text,
+    list_marker,
+    table_header_profile,
 )
 from ..models import PictureRecord
 from .geometry import bbox_area_ratio, bbox_to_normalized_rect, rect_center, rect_distance
@@ -171,6 +174,7 @@ def build_layout_prompt_map(
     ``id(item)`` (the map returned by ``save_picture_records``), not by
     picture index — caption enrichment silently misses otherwise."""
     entries: list[dict[str, Any]] = []
+    list_levels = infer_list_levels(items)
     for index, item in enumerate(items, start=1):
         bbox = bbox_dict(item)
         text = item_text(item)
@@ -197,6 +201,10 @@ def build_layout_prompt_map(
                 "is_picture": is_picture_item(item),
                 "is_table": is_table_item(item),
                 "is_heading": is_heading_item(item),
+                "is_list_item": kind in {"list_item", "listitem"},
+                "list_level": list_levels.get(id(item), 0),
+                "list_marker": list_marker(item),
+                "table_header_profile": table_header_profile(item),
             }
         )
 
@@ -214,8 +222,19 @@ def build_layout_prompt_map(
             blocks.append(block)
             continue
 
+        if entry["is_list_item"]:
+            block["list_level"] = entry["list_level"]
+            if entry["list_marker"]:
+                block["marker"] = entry["list_marker"]
+            block["text"] = truncate_prompt_text(entry["text"], 500)
+
+        profile = entry["table_header_profile"]
+        if profile["headerless"]:
+            block["headerless"] = True
+            block["first_row"] = profile["first_row"]
+
         context = nearby_layout_context(index, entries, timeline_indices)
-        if should_include_layout_text(
+        if not entry["is_list_item"] and should_include_layout_text(
             entry=entry,
             context=context,
             unplaced_lines=unplaced_lines,

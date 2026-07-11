@@ -15,7 +15,11 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from document_extract import runtime, tables
 from document_extract.artifacts import block_rows_for_page, summarize_token_usage
-from document_extract.docling_adapter import item_text
+from document_extract.docling_adapter import (
+    infer_list_levels,
+    item_text,
+    table_header_profile,
+)
 from document_extract.layout.geometry import bbox_area_ratio, bbox_to_pixel_rect
 from document_extract.layout.prompt_map import build_layout_prompt_map
 from document_extract.layout.reading_order import (
@@ -25,11 +29,14 @@ from document_extract.layout.reading_order import (
 )
 from document_extract.llm import ollama as ollama_client
 from document_extract.markdown.formatting import (
+    apply_list_levels_from_layout,
+    apply_list_levels_to_markdown,
     drop_duplicate_subset_tables,
     export_page_markdown,
     image_block,
     insert_image_references_and_summaries,
     mark_redundant_summaries,
+    normalize_headerless_pipe_tables,
     normalize_pipe_tables,
 )
 from document_extract.models import PictureRecord, TableCandidate
@@ -54,6 +61,7 @@ from document_extract.refinement import (
     format_page_refinement_prompt,
     format_page_repair_prompt,
     missing_verified_table_ids,
+    postprocess_markdown,
     refine_page_markdown,
     repair_page_markdown,
     repair_regression_reasons,
@@ -105,6 +113,28 @@ def test_image_placeholder_replacement_order() -> None:
         "image refs preserve placeholder order",
     )
     check(out.count("**Image summary:**") == 2, "summaries inserted under refs")
+
+
+def test_image_insertion_is_idempotent() -> None:
+    record = make_record(1, summary="A chart summary with unique values.")
+    first = insert_image_references_and_summaries(
+        "Before\n\n{{DOC_IMAGE_p0026_i001}}\n\nAfter", [record]
+    )
+    second = insert_image_references_and_summaries(first, [record])
+    check(second == first, "image insertion is idempotent")
+    check(second.count("**Image summary:**") == 1, "existing summary is not duplicated")
+
+
+def test_image_insertion_mixes_existing_and_missing_records() -> None:
+    first = make_record(1, summary="First summary.")
+    second = make_record(2, summary="Second summary.")
+    existing = image_block(first)
+    out = insert_image_references_and_summaries(
+        existing + "\n\n{{DOC_IMAGE_p0026_i002}}", [first, second]
+    )
+    check(out.count("picture_p0026_i001.png") == 1, "existing image is kept once")
+    check(out.count("picture_p0026_i002.png") == 1, "missing image is inserted once")
+    check(out.count("**Image summary:**") == 2, "mixed image summaries stay aligned")
 
 
 def test_redundant_image_summary_suppressed() -> None:
@@ -830,6 +860,44 @@ def test_normalize_pipe_tables() -> None:
     check("|---|---|" in out and "| 1 | 2 |" in out, "well-formed table survives")
 
 
+def test_headerless_docling_table_keeps_first_row_as_data() -> None:
+    def cell(text: str, header: bool) -> SimpleNamespace:
+        return SimpleNamespace(text=text, column_header=header)
+
+    item = SimpleNamespace(
+        data=SimpleNamespace(
+            grid=[
+                [cell("Strategic risks", True), cell("strong", True), cell("Risk one", True)],
+                [cell("Strategic risks", True), cell("strong", True), cell("Risk two", True)],
+                [cell("Operational risks", False), cell("medium", False), cell("Risk three", False)],
+            ]
+        )
+    )
+    profile = table_header_profile(item)
+    check(profile["headerless"], "repeated multi-row Docling header is classified as headerless")
+
+    source = (
+        "| Strategic risks | strong | Risk one |\n"
+        "|---|---|---|\n"
+        "| Strategic risks | strong | Risk two |\n"
+        "| Operational risks | medium | Risk three |\n"
+    )
+    out = normalize_headerless_pipe_tables(
+        source, [tuple(profile["first_row"])]
+    )
+    lines = out.splitlines()
+    check(lines[0] == "|  |  |  |", "headerless table receives an empty header row")
+    check(lines[2].startswith("| Strategic risks | strong |"), "first row remains data")
+    check(normalize_headerless_pipe_tables(out, [tuple(profile["first_row"])]) == out,
+          "headerless table normalization is idempotent")
+
+
+def test_real_table_header_is_not_removed() -> None:
+    source = "| Label | Value |\n|---|---|\n| Revenue | 42 |\n"
+    out = normalize_headerless_pipe_tables(source, [("Other", "Header")])
+    check(out == source, "real table header remains unchanged")
+
+
 def test_parse_typed_summary() -> None:
     kind, body = parse_typed_summary("TYPE: table\n| A | B |\n|---|---|\n| 1 | 2 |")
     check(kind == "table" and body.startswith("| A | B |"), "TYPE line parsed and stripped")
@@ -1372,6 +1440,49 @@ def test_reading_order_identity_for_plain_columns() -> None:
         reading_order_permutation(cells, {"h": [], "v": []}) is None,
         "plain two-column page keeps Docling order",
     )
+
+
+def test_reading_order_narrow_gutter_for_list_panels() -> None:
+    cells = [
+        ro_cell(0, [0.084, 0.20, 0.49, 0.24], kind="list_item"),
+        ro_cell(1, [0.514, 0.20, 0.92, 0.24], kind="list_item"),
+        ro_cell(2, [0.084, 0.25, 0.49, 0.29], kind="list_item"),
+        ro_cell(3, [0.533, 0.25, 0.92, 0.29], kind="list_item"),
+        ro_cell(4, [0.084, 0.30, 0.49, 0.34], kind="list_item"),
+        ro_cell(5, [0.533, 0.30, 0.92, 0.34], kind="list_item"),
+        ro_cell(6, [0.084, 0.35, 0.49, 0.39], kind="list_item"),
+        ro_cell(7, [0.533, 0.35, 0.92, 0.39], kind="list_item"),
+    ]
+    order = reading_order_permutation(cells, {"h": [], "v": []})
+    check(order == [0, 2, 4, 6, 1, 3, 5, 7],
+          "list-heavy narrow gutter groups the left panel before the right panel")
+
+
+def test_docling_list_markers_restore_nested_bullets() -> None:
+    parent = SimpleNamespace(cref="#/groups/0")
+    top = fake_item(text="■ Parent item", label="list_item")
+    child = fake_item(text="Child item", label="list_item")
+    top.parent = parent
+    child.parent = parent
+    child.marker = "·"
+    levels = infer_list_levels([top, child])
+    out = apply_list_levels_to_markdown(
+        "- ■ Parent item\n- Child item\n", [top, child], levels
+    )
+    check(out == "- ■ Parent item\n  - Child item\n",
+          "Docling sub-bullet marker becomes Markdown indentation")
+
+
+def test_layout_map_carries_list_levels() -> None:
+    parent = SimpleNamespace(cref="#/groups/0")
+    top = fake_item(text="■ Parent item", label="list_item", bbox=(10, 10, 50, 20))
+    child = fake_item(text="Child item", label="list_item", bbox=(15, 22, 50, 32))
+    top.parent = parent
+    child.parent = parent
+    child.marker = "·"
+    layout = build_layout_prompt_map([top, child], (100.0, 100.0), {})
+    levels = [block.get("list_level") for block in layout["blocks"]]
+    check(levels == [0, 1], "layout map exposes authoritative list levels")
 
 
 def test_divider_segments_from_drawings() -> None:

@@ -166,6 +166,91 @@ def item_text(item: Any) -> str:
     return ""
 
 
+def list_marker(item: Any) -> str:
+    """Return Docling's list marker without assuming a concrete item class."""
+    value = getattr(item, "marker", "")
+    return str(value or "").strip()
+
+
+def _list_parent_key(item: Any) -> str:
+    parent = getattr(item, "parent", None)
+    if parent is None:
+        return "__no_parent__"
+    cref = getattr(parent, "cref", None)
+    return str(cref or parent)
+
+
+def infer_list_levels(items: list[Any]) -> dict[int, int]:
+    """Infer one-level nested lists from Docling markers and parent groups.
+
+    Docling commonly leaves all items in one ListGroup but uses a distinct
+    marker (for example ``·``) for visual sub-bullets.  A marker is treated as
+    nested only when the same parent group also contains unmarked items, which
+    avoids indenting ordinary single-level lists.
+    """
+    groups: dict[str, list[Any]] = {}
+    for item in items:
+        if item_kind(item) not in {"list_item", "listitem"}:
+            continue
+        groups.setdefault(_list_parent_key(item), []).append(item)
+
+    levels: dict[int, int] = {}
+    for group in groups.values():
+        has_unmarked = any(not list_marker(item) for item in group)
+        if not has_unmarked:
+            continue
+        for item in group:
+            levels[id(item)] = 1 if list_marker(item) else 0
+    return levels
+
+
+def table_cell_text(cell: Any, document: Any = None) -> str:
+    value = getattr(cell, "text", "")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    getter = getattr(cell, "_get_text", None)
+    if callable(getter):
+        try:
+            value = getter(doc=document)
+            if isinstance(value, str):
+                return value.strip()
+        except Exception:
+            pass
+    return ""
+
+
+def table_header_profile(item: Any, document: Any = None) -> dict[str, Any]:
+    """Describe suspicious multi-row Docling headers without changing items."""
+    data = getattr(item, "data", None)
+    grid = getattr(data, "grid", None) if data is not None else None
+    rows = list(grid or [])
+    if len(rows) < 2 or not rows or not rows[0]:
+        return {"headerless": False, "first_row": [], "header_rows": 0}
+
+    first_row = [table_cell_text(cell, document) for cell in rows[0]]
+    header_rows = 0
+    for row in rows:
+        if any(bool(getattr(cell, "column_header", False)) for cell in row):
+            header_rows += 1
+        else:
+            break
+
+    later_values = {
+        table_cell_text(cell, document)
+        for row in rows[1:]
+        for cell in row
+        if table_cell_text(cell, document)
+    }
+    repeated_cells = sum(
+        bool(value) and value in later_values for value in first_row
+    )
+    return {
+        "headerless": header_rows > 1 and repeated_cells >= 2,
+        "first_row": first_row,
+        "header_rows": header_rows,
+    }
+
+
 def caption_text(item: Any) -> str:
     for attr in ("caption_text", "caption"):
         value = getattr(item, attr, None)
@@ -262,6 +347,7 @@ __all__ = [
     "make_rapidocr_options", "make_table_options", "configure_cuda_accelerator",
     "convert_pdf", "iter_doc_items", "item_page_number", "item_kind",
     "is_picture_item", "is_table_item", "is_heading_item", "item_text",
+    "list_marker", "infer_list_levels", "table_cell_text", "table_header_profile",
     "caption_text", "bbox_dict", "export_item_markdown",
     "export_page_markdown_via_docling", "assert_docling_export_surface",
 ]

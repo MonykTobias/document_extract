@@ -20,6 +20,8 @@ Rules:
 - For charts and KPI panels, output explicit `Label: value` lines or a small markdown table when the mapping is visually clear.
 - For prose, keep paragraphs.
 - For lists, use `- ` bullets.
+- Preserve the supplied `list_level` for list blocks: level 0 is `- ` and level 1 is `  - `.
+- A table with an intentionally blank header row has no source column headers; keep that row blank and do not invent labels.
 - Keep heading structure reasonable. Do not turn every isolated number into its own heading.
 - Do not calculate, derive, estimate, or infer missing values.
 - If something is visible but its association is genuinely unclear, keep the content and place it under `## Uncertain mappings` instead of dropping it.

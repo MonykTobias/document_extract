@@ -20,6 +20,8 @@ Rules:
 - For each unplaced line: either place it in the body where it belongs, or leave it under `## Unplaced content` if the correct position is still unclear.
 - Never drop an unplaced line silently.
 - Keep headings and prose that are already correct.
+- Preserve the supplied `list_level` for list blocks: level 0 is `- ` and level 1 is `  - `.
+- A table with an intentionally blank header row has no source column headers; keep that row blank and do not invent labels.
 - Do not calculate, derive, estimate, or infer missing values.
 - Keep every image reference (`![...](...)`) and its following `**Image summary:**` block at its position. Do not add any other image links or HTML tags.
 - Do not write meta-commentary.

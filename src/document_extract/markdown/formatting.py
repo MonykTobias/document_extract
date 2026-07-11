@@ -8,11 +8,13 @@ from typing import Any
 from ..docling_adapter import (
     export_item_markdown,
     export_page_markdown_via_docling,
+    infer_list_levels,
     is_heading_item,
     is_picture_item,
     is_table_item,
     item_kind,
     item_text,
+    table_header_profile,
 )
 from ..layout.prompt_map import collapse_ws, VALUE_ONLY_RE
 from ..models import PictureRecord, TableCandidate
@@ -25,7 +27,12 @@ IMAGE_PLACEHOLDER_RE = re.compile(
 SUMMARY_DUP_MIN_TOKENS = 12
 SUMMARY_DUP_COVERAGE = 0.9
 
-def item_to_markdown(item: Any, document: Any, picture_records: dict[int, PictureRecord]) -> str:
+def item_to_markdown(
+    item: Any,
+    document: Any,
+    picture_records: dict[int, PictureRecord],
+    list_levels: dict[int, int] | None = None,
+) -> str:
     if is_picture_item(item):
         # Same placeholder as the Docling serializer path, so the refine
         # prompt's "keep <!-- image --> markers" contract holds either way.
@@ -40,7 +47,8 @@ def item_to_markdown(item: Any, document: Any, picture_records: dict[int, Pictur
         level = heading_level(item)
         return f"{'#' * level} {text}"
     if item_kind(item) in {"list_item", "listitem"}:
-        return f"- {text}"
+        level = (list_levels or {}).get(id(item), 0)
+        return f"{'  ' * level}- {text}"
     return text
 
 
@@ -60,6 +68,90 @@ def heading_level(item: Any) -> int:
     return 2
 
 
+def _list_line_text(line: str) -> str:
+    stripped = line.lstrip()
+    match = re.match(r"^(?:[-*+]\s+)(.*)$", stripped)
+    return collapse_ws(match.group(1)) if match else ""
+
+
+def _apply_list_level_specs(
+    markdown: str, specs: list[tuple[str, int]]
+) -> str:
+    if not specs:
+        return markdown
+    lines = markdown.splitlines()
+    used: set[int] = set()
+    for index, line in enumerate(lines):
+        content = _list_line_text(line)
+        if not content:
+            continue
+        exact = [
+            spec_index
+            for spec_index, (text, _) in enumerate(specs)
+            if spec_index not in used and content == collapse_ws(text)
+        ]
+        if len(exact) != 1:
+            continue
+        spec_index = exact[0]
+        used.add(spec_index)
+        level = max(0, min(int(specs[spec_index][1]), 2))
+        lines[index] = f"{'  ' * level}- {content}"
+    return "\n".join(lines) + ("\n" if markdown.endswith("\n") else "")
+
+
+def apply_list_levels_to_markdown(
+    markdown: str, items: list[Any], list_levels: dict[int, int]
+) -> str:
+    specs = [
+        (item_text(item), list_levels.get(id(item), 0))
+        for item in items
+        if item_kind(item) in {"list_item", "listitem"} and item_text(item)
+    ]
+    return _apply_list_level_specs(markdown, specs)
+
+
+def apply_list_levels_from_layout(
+    markdown: str, layout_map: dict[str, Any] | None
+) -> str:
+    specs = [
+        (str(block.get("text") or ""), int(block.get("list_level", 0)))
+        for block in (layout_map or {}).get("blocks", [])
+        if block.get("type") == "list_item" and block.get("text")
+    ]
+    return _apply_list_level_specs(markdown, specs)
+
+
+def normalize_headerless_pipe_tables(
+    markdown: str, first_rows: list[tuple[str, ...]]
+) -> str:
+    """Add an empty Markdown header to confirmed headerless tables."""
+    wanted = {
+        tuple(collapse_ws(cell).lower() for cell in row)
+        for row in first_rows
+        if row
+    }
+    if not wanted:
+        return markdown
+
+    lines = markdown.splitlines()
+    for start, end, rows in reversed(_pipe_table_spans(lines)):
+        if not rows or tuple(rows[0]) not in wanted:
+            continue
+        raw_lines = lines[start:end]
+        data_lines = [
+            line
+            for line in raw_lines
+            if not set(line.strip()) <= set("|-: ")
+        ]
+        width = max(
+            len(line.strip().strip("|").split("|")) for line in data_lines
+        )
+        blank = "| " + " | ".join([""] * width) + " |"
+        separator = "|" + "---|" * width
+        lines[start:end] = [blank, separator, *data_lines]
+    return "\n".join(lines) + ("\n" if markdown.endswith("\n") else "")
+
+
 def export_page_markdown(
     document: Any,
     page_number: int,
@@ -68,18 +160,28 @@ def export_page_markdown(
     *,
     use_docling_order: bool = True,
 ) -> str:
+    list_levels = infer_list_levels(items)
+    headerless_rows = [
+        tuple(profile["first_row"])
+        for item in items
+        for profile in [table_header_profile(item, document)]
+        if profile["headerless"] and profile["first_row"]
+    ]
     # Docling's serializer emits its own reading order; when the divider-aware
     # pass reordered the items, serialize from the reordered list instead.
     if use_docling_order:
         docling_markdown = export_page_markdown_via_docling(document, page_number)
         if docling_markdown:
-            return docling_markdown
+            docling_markdown = apply_list_levels_to_markdown(
+                docling_markdown, items, list_levels
+            )
+            return normalize_headerless_pipe_tables(docling_markdown, headerless_rows)
 
     parts: list[str] = []
     for item in items:
-        markdown = item_to_markdown(item, document, picture_records)
+        markdown = item_to_markdown(item, document, picture_records, list_levels)
         if markdown:
-            parts.append(markdown.strip())
+            parts.append(markdown.rstrip())
     return "\n\n".join(parts).strip() + "\n"
 
 
@@ -91,14 +193,35 @@ def image_reference(record: PictureRecord) -> str:
 def insert_image_references_and_summaries(
     markdown: str, records: list[PictureRecord]
 ) -> str:
-    replacements = [image_block(record) for record in records]
+    represented: set[str] = set()
+    for record in records:
+        if re.search(re.escape(f"]({record.rel_path})"), markdown):
+            represented.add(record.rel_path)
 
-    def replace_match(_: re.Match[str]) -> str:
+    replacements = [
+        image_block(record)
+        for record in records
+        if record.rel_path not in represented
+    ]
+
+    def replace_match(match: re.Match[str]) -> str:
+        token = match.group(0)
+        if token.lstrip().startswith("!["):
+            return token
         if not replacements:
             return ""
         return replacements.pop(0)
 
     out = IMAGE_PLACEHOLDER_RE.sub(replace_match, markdown)
+    for record in records:
+        if record.rel_path in represented and record.summary:
+            if record.summary.strip() not in out:
+                reference = image_reference(record)
+                out = out.replace(
+                    reference,
+                    image_block(record),
+                    1,
+                )
     if replacements:
         out = out.rstrip() + "\n\n" + "\n\n".join(replacements) + "\n"
     return re.sub(r"\n{3,}", "\n\n", out).strip() + "\n"
@@ -324,7 +447,9 @@ def pipe_row_count(markdown: str) -> int:
 
 __all__ = [
     "IMAGE_PLACEHOLDER_RE", "item_to_markdown", "heading_level",
-    "export_page_markdown", "image_reference",
+    "export_page_markdown", "apply_list_levels_to_markdown",
+    "apply_list_levels_from_layout", "normalize_headerless_pipe_tables",
+    "image_reference",
     "insert_image_references_and_summaries", "image_block",
     "mark_redundant_summaries",
     "standalone_value_line_count", "normalize_pipe_tables", "_pipe_table_spans",

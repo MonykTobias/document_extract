@@ -516,6 +516,12 @@ def build_table_candidates(
     for block in blocks:
         if block.get("type") != "table":
             continue
+        profile = None
+        if block.get("headerless") and block.get("first_row"):
+            profile = {
+                "headerless": True,
+                "first_row": list(block["first_row"]),
+            }
         add_table_candidate(
             candidates,
             kind="docling_table",
@@ -523,6 +529,7 @@ def build_table_candidates(
             source_block_ids=[block["id"]],
             confidence=0.95,
             reason="docling_table_item",
+            stats=profile,
         )
 
     scored_regions, _ = evaluate_table_regions(cells)

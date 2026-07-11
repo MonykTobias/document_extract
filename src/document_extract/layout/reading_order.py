@@ -32,6 +32,7 @@ READING_H_DIVIDER_MIN_SPAN = 0.6  # h-rule must span this fraction of region wid
 READING_V_DIVIDER_MIN_SPAN = 0.35  # v-rule must span this fraction of region height
 READING_BAND_GAP = 0.05  # whitespace-only horizontal band cut
 READING_COLUMN_GUTTER = 0.035  # whitespace-only vertical column cut
+READING_STRUCTURED_COLUMN_GUTTER = 0.02  # narrow gutter for list-heavy panels
 READING_BANNER_WIDE_RATIO = 0.5
 READING_BANNER_GAP = 0.028  # clearance a banner needs above it
 READING_RULE_HEADING_GAP = 0.03  # a rule adopts a heading sitting this close above
@@ -267,6 +268,24 @@ def _vertical_boundaries(
             continue
         bounds.append(pos)
     bounds.extend(axis_gaps(cells, 0, READING_COLUMN_GUTTER))
+    if not bounds:
+        for boundary in axis_gaps(cells, 0, READING_STRUCTURED_COLUMN_GUTTER):
+            left = [
+                cell for cell in cells
+                if (cell["rect"][0] + cell["rect"][2]) / 2 < boundary
+            ]
+            right = [
+                cell for cell in cells
+                if (cell["rect"][0] + cell["rect"][2]) / 2 > boundary
+            ]
+            left_lists = sum(
+                cell.get("kind") in {"list_item", "listitem"} for cell in left
+            )
+            right_lists = sum(
+                cell.get("kind") in {"list_item", "listitem"} for cell in right
+            )
+            if left_lists >= 2 and right_lists >= 2:
+                bounds.append(boundary)
     return _clean_boundaries(bounds, cells, 0, region)
 
 

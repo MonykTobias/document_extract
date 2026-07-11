@@ -75,6 +75,7 @@ class ReadingOrderConfig:
     v_divider_min_span: float = 0.35
     band_gap: float = 0.05
     column_gutter: float = 0.035
+    structured_column_gutter: float = 0.02
 
 
 @dataclass(frozen=True)
@@ -230,6 +231,7 @@ def apply_detection_config(config: AppConfig) -> None:
         "READING_V_DIVIDER_MIN_SPAN": config.reading_order.v_divider_min_span,
         "READING_BAND_GAP": config.reading_order.band_gap,
         "READING_COLUMN_GUTTER": config.reading_order.column_gutter,
+        "READING_STRUCTURED_COLUMN_GUTTER": config.reading_order.structured_column_gutter,
     }
     for key, value in picture_map.items():
         setattr(pictures, key, value)

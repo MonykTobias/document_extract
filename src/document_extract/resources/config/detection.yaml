@@ -27,3 +27,4 @@ reading_order:
   v_divider_min_span: 0.35
   band_gap: 0.05
   column_gutter: 0.035
+  structured_column_gutter: 0.02

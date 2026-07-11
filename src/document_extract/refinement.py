@@ -13,10 +13,12 @@ from .llm import ollama as ollama_client
 from .markdown import postprocess as sp
 from .markdown.formatting import (
     IMAGE_PLACEHOLDER_RE,
+    apply_list_levels_from_layout,
     drop_duplicate_subset_tables,
     insert_image_references_and_summaries,
     mark_redundant_summaries,
     missing_verified_table_ids,
+    normalize_headerless_pipe_tables,
     normalize_pipe_tables,
     pipe_row_count,
     standalone_value_line_count,
@@ -91,6 +93,7 @@ def postprocess_markdown(
     working_markdown: str,
     records: list[PictureRecord],
     table_candidates: list[TableCandidate] | None = None,
+    layout_blocks: dict[str, Any] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     final = sp.flatten_html_tables(working_markdown)
     final = sp.normalize_bullets_and_headings(final)
@@ -100,6 +103,15 @@ def postprocess_markdown(
     final = sp.strip_meta_commentary(final)
     final = sp.normalize_footnotes(final)
     final = normalize_pipe_tables(final)
+    headerless_rows = [
+        tuple((candidate.stats or {}).get("first_row", []))
+        for candidate in (table_candidates or [])
+        if candidate.kind == "docling_table"
+        and (candidate.stats or {}).get("headerless")
+        and (candidate.stats or {}).get("first_row")
+    ]
+    final = normalize_headerless_pipe_tables(final, headerless_rows)
+    final = apply_list_levels_from_layout(final, layout_blocks)
 
     warnings: dict[str, Any] = {}
     if flagged_summaries:
