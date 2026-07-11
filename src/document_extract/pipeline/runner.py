@@ -40,10 +40,8 @@ from ..tables import table_candidate_rows
 
 # Pages per Docling convert() call, which is also the prefetch unit: the next
 # chunk is converted in a persistent worker process while the current chunk's
-# pages go through the VLM stages. Each call re-parses the whole PDF (~20-70s
-# fixed cost regardless of range), so larger chunks amortize the parse while
-# smaller chunks give earlier first-page output and a lower memory footprint.
-CONVERT_CHUNK_PAGES = 16
+# pages go through the VLM stages.
+CONVERT_CHUNK_PAGES = 32
 
 # Persistent Docling worker process. docling-parse holds the GIL for the whole
 # PDF-parse phase, so prefetching in a background *thread* stalls the foreground
