@@ -118,6 +118,29 @@ def postprocess_markdown(
     final = sp.strip_furniture_lines(final, furniture_texts)
 
     warnings: dict[str, Any] = {}
+    # Route the model's `## Uncertain mappings` block to a sidecar warning
+    # instead of the final markdown. Image references inside it return to the
+    # body (images are never sidecar content); its text lines re-enter the
+    # unplaced flow below so genuinely uncertain content is not lost.
+    final, uncertain_sidecar = sp.extract_uncertainty(final)
+    uncertain_lines: list[str] = []
+    if uncertain_sidecar:
+        warnings["uncertain_mappings"] = uncertain_sidecar
+        uncertain_images: list[str] = []
+        for line in uncertain_sidecar.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if sp.IMAGE_PLACEHOLDER_LINE_RE.match(stripped):
+                uncertain_images.append(stripped)
+                continue
+            content = re.sub(r"^[-*]\s+", "", stripped)
+            # Bare chapter-tab transcriptions ("1", "4") are junk, not content.
+            if re.fullmatch(r"\d{1,2}|[A-Z]", content):
+                continue
+            uncertain_lines.append(content)
+        if uncertain_images:
+            final = final.rstrip() + "\n\n" + "\n\n".join(uncertain_images) + "\n"
     if flagged_summaries:
         warnings["redundant_image_summaries"] = flagged_summaries
     unplaced_symbols = [
@@ -147,7 +170,10 @@ def postprocess_markdown(
     # prepare-stage filter existed still carry furniture in raw_markdown, and
     # the guard must not re-append it as "missing" content.
     final, guard_warnings = apply_completeness_guard(
-        sp.strip_furniture_lines(source_markdown, furniture_texts), final
+        sp.strip_furniture_lines(source_markdown, furniture_texts),
+        final,
+        furniture_texts=furniture_texts,
+        extra_lines=uncertain_lines,
     )
     warnings.update(guard_warnings)
     footnote_warnings = sp.footnote_consistency(final)
@@ -266,19 +292,31 @@ def repair_regression_reasons(
 
 
 def apply_completeness_guard(
-    raw_markdown: str, final_markdown: str
+    raw_markdown: str,
+    final_markdown: str,
+    furniture_texts: set[str] | None = None,
+    extra_lines: list[str] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     warnings: dict[str, Any] = {}
     raw_for_diff = IMAGE_PLACEHOLDER_RE.sub("", raw_markdown)
     final_for_diff = IMAGE_PLACEHOLDER_RE.sub("", final_markdown)
     missing = sp.completeness_diff(raw_for_diff, final_for_diff)
-    if missing:
-        final = sp.merge_unplaced_content(final_markdown, missing)
+    seen = {re.sub(r"\s+", " ", line).strip().lower() for line in missing}
+    for line in extra_lines or []:
+        normalized = re.sub(r"\s+", " ", line).strip().lower()
+        if normalized not in seen:
+            seen.add(normalized)
+            missing.append(line)
+    kept, dropped = sp.filter_unplaced_lines(missing, final_markdown, furniture_texts)
+    if kept:
+        final = sp.merge_unplaced_content(final_markdown, kept)
         warnings["content_loss_guard_triggered"] = True
-        warnings["unplaced_content_lines"] = missing
+        warnings["unplaced_content_lines"] = kept
     else:
         final = final_markdown
         warnings["content_loss_guard_triggered"] = False
+    if dropped:
+        warnings["unplaced_lines_filtered"] = dropped
     return final, warnings
 
 __all__ = [

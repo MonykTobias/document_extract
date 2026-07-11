@@ -522,6 +522,27 @@ def ocr_content_lines(ocr_markdown: str) -> list[str]:
     return lines
 
 
+def _body_windows(
+    flattened_text: str, window: int = 3
+) -> list[tuple[set[str], set[str]]]:
+    """Per-line ``(significant_words, numeric_tokens)`` unions over a sliding
+    window of adjacent lines. Shared by the completeness diff (is a raw line
+    missing from the body?) and the unplaced filter (is an unplaced line in
+    fact present?) — the two are near-inverse tests."""
+    lines = [ln.strip() for ln in flattened_text.splitlines() if ln.strip()]
+    line_words = [set(_significant_words(ln)) for ln in lines]
+    line_nums = [_numeric_tokens(ln) for ln in lines]
+    windows: list[tuple[set[str], set[str]]] = []
+    for i in range(len(line_words)):
+        words: set[str] = set()
+        nums: set[str] = set()
+        for j in range(i, min(i + window, len(line_words))):
+            words |= line_words[j]
+            nums |= line_nums[j]
+        windows.append((words, nums))
+    return windows
+
+
 def completeness_diff(
     ocr_markdown: str,
     refined_markdown: str,
@@ -540,17 +561,7 @@ def completeness_diff(
     matches survives unchanged.
     """
     refined_flat = _flatten_for_text(refined_markdown)
-    refined_lines = [ln.strip() for ln in refined_flat.splitlines() if ln.strip()]
-    line_words = [set(_significant_words(ln)) for ln in refined_lines]
-    line_nums = [_numeric_tokens(ln) for ln in refined_lines]
-    windows: list[tuple[set[str], set[str]]] = []
-    for i in range(len(line_words)):
-        words: set[str] = set()
-        nums: set[str] = set()
-        for j in range(i, min(i + window, len(line_words))):
-            words |= line_words[j]
-            nums |= line_nums[j]
-        windows.append((words, nums))
+    windows = _body_windows(refined_flat, window)
     refined_lower = refined_flat.lower()
 
     missing: list[str] = []
@@ -585,6 +596,83 @@ def completeness_diff(
 # --------------------------------------------------------------------------- #
 
 UNPLACED_TITLE = "## Unplaced content"
+
+# Coverage a part's alphabetic tokens need inside one body window to count as
+# already present (stricter than the 0.6 the completeness diff uses to call a
+# line missing, so the two tests cannot flap).
+UNPLACED_PRESENT_COVERAGE = 0.85
+
+
+def _part_present(
+    part: str,
+    windows: list[tuple[set[str], set[str]]],
+    body_lower: str,
+) -> bool:
+    """Is one whitespace-column part of an unplaced line present in the body?"""
+    alpha = {
+        word
+        for word in _significant_words(part)
+        if not any(ch.isdigit() for ch in word)
+    }
+    nums = _numeric_tokens(part)
+    if alpha:
+        for words, window_nums in windows:
+            if nums and not nums <= window_nums:
+                continue
+            if len(alpha & words) / len(alpha) >= UNPLACED_PRESENT_COVERAGE:
+                return True
+        return False
+    if nums:
+        # Numeric-ish parts ("2024", "A-2"): require the literal text, so a
+        # value the table extraction dropped is never declared present.
+        return re.sub(r"\s+", " ", part.lower()).strip() in body_lower
+    return True  # punctuation-only separators ("-") never block a drop
+
+
+def filter_unplaced_lines(
+    lines: list[str],
+    final_markdown: str,
+    furniture_texts: set[str] | None = None,
+) -> tuple[list[str], list[str]]:
+    """Split completeness-guard lines into (kept, dropped).
+
+    The guard's diff has false negatives on reformatted content: tables get
+    flattened and TOCs restructured, so their raw lines look "missing" and get
+    re-appended as noise. Dropped are:
+
+    - repeated-phrase fragments: the line is one phrase repeated >= 2 times
+      across wide-space columns ("Year ended December 31" x6, page 86);
+    - already-present lines: every wide-space-separated part is covered by
+      some 3-line body window (labels of a KPI panel each sit next to their
+      own value, page 5) — numeric parts must appear literally;
+    - page-furniture lines (running headers/footers, WP1 signatures).
+
+    Everything else is kept: real data the table extraction lost must survive
+    (page 58's ``Rating - A-2`` line is the only place A-2 exists).
+    """
+    flattened = _flatten_for_text(final_markdown)
+    windows = _body_windows(flattened)
+    body_lower = re.sub(r"\s+", " ", flattened.lower())
+    furniture = {t for t in (furniture_texts or set()) if t}
+
+    kept: list[str] = []
+    dropped: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        parts = [part.strip() for part in re.split(r"\s{2,}", stripped) if part.strip()]
+        if len(parts) >= 2 and len(set(parts)) == 1:
+            dropped.append(line)
+            continue
+        if normalize_furniture_text(stripped) in furniture:
+            dropped.append(line)
+            continue
+        if parts and all(_part_present(part, windows, body_lower) for part in parts):
+            dropped.append(line)
+            continue
+        kept.append(line)
+    return kept, dropped
 
 
 def merge_unplaced_content(markdown: str, missing_lines: list[str]) -> str:
