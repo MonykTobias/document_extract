@@ -403,6 +403,247 @@ def test_right_edge_dash_run_but_lone_dash_kept() -> None:
 
 
 # --------------------------------------------------------------------------- #
+# Phase 1: multiple symbol labels join in visual order, comma-separated
+# --------------------------------------------------------------------------- #
+
+
+def _policy_grid_with_coverage():
+    rows = [
+        ["Danone's Policies", "Key contents", "ESRS coverage"],
+        ["FOOD WASTE REPORTING GUIDELINES", "version 1.0 of June 2016", ""],
+        ["HUMAN RIGHTS POLICY", "10 Principles", ""],
+    ]
+    bands = [(0.10, 0.13), (0.30, 0.41), (0.45, 0.55)]
+    return _structured_grid(rows, header_rows=1, row_bands=bands)
+
+
+def test_multiple_symbols_join_in_visual_reading_order() -> None:
+    # Page 185 shape: a badge cluster in one coverage cell. Arrival (picture-index)
+    # order is scrambled (E1, E3, E2 -- the old space-joined bug); the placed cell
+    # must read in visual order (top->bottom, left->right), comma-separated.
+    grid = _policy_grid_with_coverage()
+    table_bbox = [0.05, 0.08, 0.99, 0.58]
+    _, e1 = _picture(1, [0.88, 0.31, 0.92, 0.34], "E1")  # top-left
+    _, e3 = _picture(2, [0.94, 0.37, 0.98, 0.40], "E3")  # bottom-right
+    _, e2 = _picture(3, [0.88, 0.37, 0.92, 0.40], "E2")  # bottom-left
+    candidate = _detect_and_render(grid, table_bbox, {1: e1, 2: e3, 3: e2})
+    check((candidate.stats or {}).get("format") == "regular_table", "symbol-bearing regular table renders")
+    row = [ln for ln in candidate.markdown.splitlines() if ln.startswith("| FOOD WASTE")]
+    check(
+        bool(row) and row[0].rstrip().endswith("E1, E2, E3 |"),
+        "badges join comma-separated in visual reading order, not picture-index order",
+    )
+    check("symbols_unplaced_geometry" not in (candidate.stats or {}), "all three badges are placed")
+
+
+def test_repeated_symbol_value_is_de_duplicated() -> None:
+    grid = _policy_grid_with_coverage()
+    _, a = _picture(1, [0.88, 0.33, 0.92, 0.36], "S1")
+    _, b = _picture(2, [0.94, 0.33, 0.98, 0.36], "S1")  # same value, same row
+    candidate = _detect_and_render(grid, [0.05, 0.08, 0.99, 0.58], {1: a, 2: b})
+    row = [ln for ln in candidate.markdown.splitlines() if ln.startswith("| FOOD WASTE")]
+    check(bool(row) and row[0].rstrip().endswith("S1 |"), "a duplicated symbol value appears once")
+    check("S1, S1" not in candidate.markdown, "repeated values are de-duplicated, not comma-doubled")
+
+
+def test_single_symbol_gains_no_delimiter() -> None:
+    grid = _policy_grid_with_coverage()
+    _, sym = _picture(1, [0.90, 0.34, 0.96, 0.37], "E5")
+    candidate = _detect_and_render(grid, [0.05, 0.08, 0.99, 0.58], {1: sym})
+    row = [ln for ln in candidate.markdown.splitlines() if ln.startswith("| FOOD WASTE")]
+    coverage = row[0].split("|")[-2] if row else ""
+    check(coverage.strip() == "E5", "a lone symbol value carries no comma delimiter")
+
+
+def test_comma_joined_coverage_symbols_count_as_placed() -> None:
+    # The unplaced-symbol guard (refinement.py) treats a symbol as placed when its
+    # value is a substring of a pipe-table line; commas between joined values must
+    # not hide any of them from that check.
+    final = "| Policy | ESRS coverage |\n|---|---|\n| FOOD WASTE GUIDELINES | E1, E2, E3 |\n"
+    for value in ("E1", "E2", "E3"):
+        placed = any(
+            line.strip().startswith("|") and value in line for line in final.splitlines()
+        )
+        check(placed, f"{value} in a comma-joined coverage cell is recognized as placed")
+
+
+# --------------------------------------------------------------------------- #
+# Phase 2: bullet lists inside body cells + lifted 400-char truncation
+# --------------------------------------------------------------------------- #
+
+
+def test_black_square_bullets_are_preserved() -> None:
+    # U+25A0 BLACK SQUARE (the glyph the real Danone document uses) must split.
+    rows = [
+        ["", "Type", "ESRS coverage"],
+        ["Poor animal welfare", "", ""],
+        ["Overcrowding harms welfare: ■ injury ■ disease ■ stress", "Negative impact", ""],
+        ["Public engagement", "", ""],
+        ["A lack of policy hinders progress.", "Negative impact", ""],
+    ]
+    bands = [(0.20, 0.23), (0.24, 0.27), (0.27, 0.34), (0.36, 0.39), (0.39, 0.46)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    norm = normalize_table_grid(grid)
+    cell0 = norm["records"][0]["cells"][0]
+    check(
+        "<br>- injury" in cell0 and "<br>- disease" in cell0 and "<br>- stress" in cell0,
+        "U+25A0 bullets split into <br>- items",
+    )
+    check(cell0.startswith("Poor animal welfare<br>Overcrowding harms welfare:"), "lead prose retained")
+
+
+def test_regular_table_body_cells_get_bullet_lists() -> None:
+    # Pages 183-185 shape: bulleted lists live in ordinary regular-table body cells,
+    # not only in title/detail detail-cells. Every column must bullet.
+    rows = [
+        ["Stakeholder", "Engagement channels", "Example initiatives"],
+        [
+            "Farmers",
+            "■ Strategic partnerships ■ Co-design of projects",
+            "■ Regenerative agriculture ■ Soil health programs",
+        ],
+        [
+            "Employees",
+            "■ Annual survey ■ Works councils",
+            "■ Training ■ Safety campaigns",
+        ],
+    ]
+    bands = [(0.10, 0.13), (0.20, 0.30), (0.32, 0.42)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    norm = normalize_table_grid(grid)
+    check(norm is not None and norm["classification"] == "regular_table", "stakeholder grid stays a regular_table")
+    check(len(norm["records"]) == 2, "row count unchanged after bulleting")
+    check(all(len(record["cells"]) == 3 for record in norm["records"]), "column count unchanged")
+    check(
+        norm["records"][0]["cells"][1] == "- Strategic partnerships<br>- Co-design of projects",
+        "a leading-bullet cell becomes a <br>-joined - item list",
+    )
+    check(
+        norm["records"][0]["cells"][2].startswith("- Regenerative agriculture<br>- Soil health programs"),
+        "the second bulleted column is converted too",
+    )
+
+
+def test_double_glyph_collapses_to_one_item() -> None:
+    rows = [
+        ["Topic", "Notes", "ESRS coverage"],
+        ["Welfare", "■ ■ Single surviving item", ""],
+        ["Other", "Plain note", ""],
+    ]
+    bands = [(0.10, 0.13), (0.20, 0.23), (0.24, 0.27)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    norm = normalize_table_grid(grid)
+    check(norm["records"][0]["cells"][1] == "- Single surviving item", "a double glyph collapses to one item")
+
+
+def test_single_mid_text_glyph_is_left_alone() -> None:
+    rows = [
+        ["Metric", "Value", "ESRS coverage"],
+        ["Pro· forma revenue", "1,234", ""],
+        ["Net income", "567", ""],
+    ]
+    bands = [(0.10, 0.13), (0.20, 0.23), (0.24, 0.27)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    norm = normalize_table_grid(grid)
+    cell = norm["records"][0]["cells"][0]
+    check(cell == "Pro· forma revenue", "a lone mid-text glyph does not create a fake list")
+    check("<br>" not in cell and not cell.startswith("- "), "no bullet markup is introduced")
+
+
+class _FakeGridCell:
+    def __init__(self, text: str, header: bool = False) -> None:
+        self.text = text
+        self.bbox = None
+        self.column_header = header
+
+
+class _FakeGridData:
+    def __init__(self, grid: list[list[_FakeGridCell]]) -> None:
+        self.grid = grid
+
+
+class _FakeTableItem:
+    def __init__(self, grid: list[list[_FakeGridCell]]) -> None:
+        self.data = _FakeGridData(grid)
+
+
+def test_long_cell_survives_uncapped_end_to_end() -> None:
+    from document_extract.docling_adapter import table_grid_structured
+
+    long_text = (
+        "Danone works to equip dairy farmer partners with the knowledge and tools needed "
+        "to transition toward regenerative agriculture across the value chain. "
+    ) * 4
+    long_text = " ".join(long_text.split())
+    check(len(long_text) > 400, "the fixture cell is longer than the old 400-char cap")
+
+    item = _FakeTableItem(
+        [
+            [_FakeGridCell("Topic", header=True), _FakeGridCell("Type", header=True), _FakeGridCell("ESRS coverage", header=True)],
+            [_FakeGridCell("Farmer support"), _FakeGridCell(""), _FakeGridCell("")],
+            [_FakeGridCell(long_text), _FakeGridCell("Positive impact"), _FakeGridCell("")],
+            [_FakeGridCell("Water stewardship"), _FakeGridCell(""), _FakeGridCell("")],
+            [_FakeGridCell("Protecting shared water resources."), _FakeGridCell("Positive impact"), _FakeGridCell("")],
+        ]
+    )
+    structured = table_grid_structured(item)
+    check(len(structured["rows"][2][0]) > 400, "table_grid_structured no longer truncates a cell at 400 chars")
+    check(structured["rows"][2][0] == long_text, "the full cell text round-trips through the grid")
+
+    candidates = build_table_candidates(
+        cells=[],
+        page_size=(1.0, 1.0),
+        picture_records={},
+        layout_map={
+            "blocks": [
+                {"id": "b0001", "type": "table", "bbox": [0.05, 0.2, 0.99, 0.7], "_table_grid": structured}
+            ]
+        },
+    )
+    candidate = candidates[0]
+    render_deterministic_docling_table(candidate, {}, (1.0, 1.0))
+    check((candidate.stats or {}).get("format") == "title_detail_table", "the long-cell title/detail table renders")
+    check(long_text in candidate.markdown, "the un-truncated cell survives rendering")
+
+    raw_twin = _raw_twin_markdown(structured["rows"], header_rows=1)
+    out, enforced = replace_deterministic_tables("## Impacts\n\n" + raw_twin, [candidate])
+    check(enforced == [candidate.candidate_id], "the long-cell table splices over its raw twin")
+    check(long_text in out, "the un-truncated cell is present after the splice")
+
+
+BULLET_IMPACT_ROWS = [
+    ["", "Type", "ESRS coverage"],
+    ["Animal welfare", "", ""],
+    ["Poor conditions harm animals: ■ injury ■ disease", "Negative impact", ""],
+    ["Community relations", "", ""],
+    ["Weak ties reduce trust.", "Negative impact", ""],
+]
+BULLET_IMPACT_BANDS = [(0.20, 0.23), (0.24, 0.27), (0.27, 0.34), (0.36, 0.39), (0.39, 0.46)]
+
+
+def test_bullet_cell_survives_postprocess_end_to_end() -> None:
+    grid = _structured_grid(BULLET_IMPACT_ROWS, header_rows=1, row_bands=BULLET_IMPACT_BANDS)
+    candidate = _detect_and_render(grid, [0.05, 0.18, 0.99, 0.5], {})
+    check((candidate.stats or {}).get("format") == "title_detail_table", "bullet title/detail renders deterministically")
+    source = "## Impacts\n\n" + _raw_twin_markdown(BULLET_IMPACT_ROWS, header_rows=1)
+    final, warnings = postprocess_markdown(
+        source,
+        source,
+        [],
+        [candidate],
+        {"page_size": [1.0, 1.0], "blocks": []},
+        furniture_texts=set(),
+        page_role=None,
+    )
+    check(warnings.get("deterministic_tables_enforced") == 1, "enforcement warning recorded")
+    check(
+        "Poor conditions harm animals:<br>- injury<br>- disease" in final,
+        "the in-cell bullet list survives full postprocess",
+    )
+    check(not warnings.get("duplicate_tables_dropped"), "the bulleted table is not dropped as a duplicate")
+
+
+# --------------------------------------------------------------------------- #
 # B1: deterministic splice for regular/title_detail verified tables
 # --------------------------------------------------------------------------- #
 
@@ -584,6 +825,18 @@ def _run_all() -> None:
     test_right_edge_navigation_image_is_omitted_content_image_kept()
     test_placed_coverage_value_is_not_reported_unplaced()
     test_right_edge_dash_run_but_lone_dash_kept()
+    # Phase 1: multiple symbol labels join in visual order, comma-separated
+    test_multiple_symbols_join_in_visual_reading_order()
+    test_repeated_symbol_value_is_de_duplicated()
+    test_single_symbol_gains_no_delimiter()
+    test_comma_joined_coverage_symbols_count_as_placed()
+    # Phase 2: bullet lists inside body cells + lifted 400-char truncation
+    test_black_square_bullets_are_preserved()
+    test_regular_table_body_cells_get_bullet_lists()
+    test_double_glyph_collapses_to_one_item()
+    test_single_mid_text_glyph_is_left_alone()
+    test_long_cell_survives_uncapped_end_to_end()
+    test_bullet_cell_survives_postprocess_end_to_end()
     # B1: deterministic splice for regular/title_detail verified tables
     test_deterministic_title_detail_replaces_raw_twin()
     test_deterministic_regular_table_with_symbols_replaces_twin()

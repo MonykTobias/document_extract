@@ -78,7 +78,10 @@ GRID_MIN_CONTENT_COLUMNS = 2
 GRID_TITLE_DETAIL_MIN_PAIRS = 2
 GRID_HEADER_CELL_MAX_CHARS = 60
 GRID_SYMBOL_ROW_TOLERANCE = 0.006
-GRID_BULLET_CHARS = "•●▪◦‣·∙"
+# Delimiter for several symbol values sharing one coverage cell (``E1, E2, S3``).
+GRID_SYMBOL_JOIN = ", "
+# Includes U+25A0 BLACK SQUARE (■), the glyph the Danone document actually uses.
+GRID_BULLET_CHARS = "•●▪◦‣·∙■"
 _GRID_BULLET_SPLIT_RE = re.compile(rf"[{GRID_BULLET_CHARS}]")
 
 def segment_panels(cells: list[dict[str, Any]], depth: int = 0) -> list[list[dict[str, Any]]]:
@@ -596,13 +599,22 @@ def _grid_is_detail(cells: list[str]) -> bool:
     return bool(cells) and bool(cells[0].strip()) and any(c.strip() for c in cells[1:])
 
 
-def _detail_with_bullets(detail: str) -> str:
-    """Preserve inline bullets in a detail cell as ``<br>- item`` fragments."""
-    detail = detail.strip()
-    if not any(ch in detail for ch in GRID_BULLET_CHARS):
-        return detail
-    parts = [part.strip() for part in _GRID_BULLET_SPLIT_RE.split(detail)]
-    leading_bullet = any(detail.lstrip().startswith(ch) for ch in GRID_BULLET_CHARS)
+def _cell_with_bullets(cell: str) -> str:
+    """Preserve inline bullets in any table cell as ``<br>- item`` fragments.
+
+    Only fires on a genuine list: a cell that starts with a bullet glyph, or one
+    carrying two or more bullet glyphs. A lone mid-sentence glyph (a stray
+    separator or a ``·`` inside a word/number) is left verbatim. Empty fragments
+    — e.g. a ``■ ■`` double glyph — collapse to a single item.
+    """
+    cell = cell.strip()
+    bullet_count = sum(cell.count(ch) for ch in GRID_BULLET_CHARS)
+    if bullet_count == 0:
+        return cell
+    leading_bullet = any(cell.startswith(ch) for ch in GRID_BULLET_CHARS)
+    if bullet_count < 2 and not leading_bullet:
+        return cell
+    parts = [part.strip() for part in _GRID_BULLET_SPLIT_RE.split(cell)]
     out: list[str] = []
     for index, part in enumerate(parts):
         if not part:
@@ -611,13 +623,17 @@ def _detail_with_bullets(detail: str) -> str:
             out.append(part)
         else:
             out.append(f"- {part}")
-    return "<br>".join(out) if out else detail
+    return "<br>".join(out) if out else cell
+
+
+# Backwards-compatible alias for the pre-generalization name.
+_detail_with_bullets = _cell_with_bullets
 
 
 def _merge_title_detail_cell(title: str, detail: str) -> str:
     """First cell of a merged title/detail record: ``title<br>detail``."""
     title = title.strip()
-    detail_md = _detail_with_bullets(detail)
+    detail_md = _cell_with_bullets(detail)
     if not detail_md:
         return title
     if not title:
@@ -673,14 +689,21 @@ def normalize_table_grid(structured: dict[str, Any] | None) -> dict[str, Any] | 
         current = body[index]
         following = body[index + 1] if index + 1 < len(body) else None
         if _grid_is_title_only(current) and following is not None and _grid_is_detail(following):
-            merged = [_merge_title_detail_cell(current[0], following[0])] + list(following[1:])
+            merged = [_merge_title_detail_cell(current[0], following[0])] + [
+                _cell_with_bullets(cell) for cell in following[1:]
+            ]
             records.append(
                 {"cells": merged, "source_rows": [header_rows + index, header_rows + index + 1]}
             )
             pair_merges += 1
             index += 2
         else:
-            records.append({"cells": list(current), "source_rows": [header_rows + index]})
+            records.append(
+                {
+                    "cells": [_cell_with_bullets(cell) for cell in current],
+                    "source_rows": [header_rows + index],
+                }
+            )
             index += 1
 
     if len(records) < GRID_MIN_RECORDS:
@@ -730,6 +753,32 @@ def _record_y_band(
     return (min(tops), max(bottoms))
 
 
+def _order_symbols_reading(symbols: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Sort symbols sharing one cell into reading order: top-to-bottom by row
+    (rows separated by half a badge height), then left-to-right within a row.
+
+    Rects are normalized top-origin ``[l, t, r, b]``. Geometry-less symbols (which
+    the caller has already routed to ``unplaced``, so unusual here) keep their
+    arrival order after the placed ones.
+    """
+    with_rect = [symbol for symbol in symbols if symbol.get("rect")]
+    without_rect = [symbol for symbol in symbols if not symbol.get("rect")]
+    if not with_rect:
+        return symbols
+    heights = sorted(symbol["rect"][3] - symbol["rect"][1] for symbol in with_rect)
+    tolerance = heights[len(heights) // 2] / 2
+    rows: list[list[dict[str, Any]]] = []
+    for symbol in sorted(with_rect, key=lambda s: s["rect"][1]):
+        if rows and symbol["rect"][1] - rows[-1][0]["rect"][1] <= tolerance:
+            rows[-1].append(symbol)
+        else:
+            rows.append([symbol])
+    ordered: list[dict[str, Any]] = []
+    for row in rows:
+        ordered.extend(sorted(row, key=lambda s: s["rect"][0]))
+    return ordered + without_rect
+
+
 def place_grid_symbols(
     normalized: dict[str, Any],
     symbols: list[dict[str, Any]],
@@ -740,12 +789,21 @@ def place_grid_symbols(
 
     A symbol is placed only when its vertical center falls inside exactly one
     record's row band; ambiguous or geometry-less symbols are returned unplaced
-    (never assigned by sequence), per the escalation rule.
+    (never assigned by sequence), per the escalation rule. Several symbols sharing
+    one cell are ordered by visual reading order and joined with ``GRID_SYMBOL_JOIN``
+    (``E1, E2, S3``), de-duplicating repeated values.
     """
     records = normalized["records"]
     target = _grid_coverage_column(normalized["header"], records, normalized["num_cols"])
-    bands = [(_record_y_band(record, cell_rects_by_row), record) for record in records]
+    bands = [
+        (_record_y_band(record, cell_rects_by_row), record_index)
+        for record_index, record in enumerate(records)
+    ]
     unplaced: list[int] = []
+    # Collect matched symbols per record first, so several symbols sharing one
+    # cell can be visually ordered and comma-joined rather than appended in
+    # arrival order with a single space.
+    matched_by_record: dict[int, list[dict[str, Any]]] = {}
     for symbol in symbols:
         rect = symbol.get("rect")
         value = str(symbol.get("value", "")).strip()
@@ -754,19 +812,29 @@ def place_grid_symbols(
             continue
         center = (rect[1] + rect[3]) / 2
         matches = [
-            record
-            for band, record in bands
+            record_index
+            for band, record_index in bands
             if band
             and band[0] - GRID_SYMBOL_ROW_TOLERANCE <= center <= band[1] + GRID_SYMBOL_ROW_TOLERANCE
         ]
         if len(matches) != 1:
             unplaced.append(symbol["index"])
             continue
-        cells = matches[0]["cells"]
+        matched_by_record.setdefault(matches[0], []).append(symbol)
+    for record_index, matched in matched_by_record.items():
+        cells = records[record_index]["cells"]
         while len(cells) <= target:
             cells.append("")
         existing = cells[target].strip()
-        cells[target] = f"{existing} {value}".strip() if existing else value
+        values: list[str] = []
+        seen: set[str] = set()
+        for value in ([existing] if existing else []) + [
+            str(symbol.get("value", "")).strip() for symbol in _order_symbols_reading(matched)
+        ]:
+            if value and value not in seen:
+                seen.add(value)
+                values.append(value)
+        cells[target] = GRID_SYMBOL_JOIN.join(values)
     return unplaced
 
 

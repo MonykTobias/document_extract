@@ -22,6 +22,7 @@ Rules:
 - A pre-verified table may be supplied as a group of consecutive `###`-titled subtables that repeat the same column headers: place the whole group verbatim and in order, keep each subtable's `###` heading and repeated header row, and never merge them back into one table or convert them to lists.
 - A pre-verified table has exactly one header row. Never repeat its header labels as a body row, and never turn a data row into a `### heading`, a section banner, or a separate `- label: value` field block.
 - A pre-verified table row whose first cell joins a bold title and its detail text with `<br>` is one single row: keep the title and detail together in that one cell. Never split them into two rows, promote the title to a heading, or drop the detail text.
+- A pre-verified table cell may contain a bulleted list written as `<br>`-joined `- item` fragments: keep those fragments together in that one cell exactly as given. Never spill them into separate rows or drop the `<br>` separators.
 - For charts and KPI panels, output explicit `Label: value` lines or a small markdown table when the mapping is visually clear.
 - If the draft shows display figures and caption labels as separate adjacent lines (for example `+4.5%` on one line and `LIKE-FOR-LIKE SALES GROWTH` on the next) or joined on one line (`98.0% EMPLOYEES COVERED BY B CORP™ CERTIFICATION`), pair them using the image as `- LABEL: value` lines, one KPI per line.
 - If the draft contains a markdown table that is actually a KPI panel (large display figures such as `+4.5%` with short all-caps caption labels in adjacent cells), do not keep the table: rewrite it as `- LABEL: value` lines pairing each figure with its caption. Never apply this to content that appears in the pre-verified tables, and never rewrite a pre-verified table's rows as `### Section` headings with `- label: value` lines.
@@ -29,7 +30,7 @@ Rules:
 - For lists, use `- ` bullets.
 - Preserve the supplied `list_level` for list blocks: level 0 is `- ` and level 1 is `  - `.
 - A table with an intentionally blank header row has no source column headers; keep that row blank and do not invent labels.
-- A picture block with a `value` field is a symbol printed inside a table: write its value as plain text in the table cell whose row and column contain the block's bbox. Do not keep an image marker, image link, or image summary for such blocks.
+- A picture block with a `value` field is a symbol printed inside a table: write its value as plain text in the table cell whose row and column contain the block's bbox. Do not keep an image marker, image link, or image summary for such blocks. When several symbol values share one cell, keep their left-to-right/top-to-bottom order and separate them with a comma and space (`E1, E2, S3`).
 - Keep heading structure reasonable. Do not turn every isolated number into its own heading.
 - Do not calculate, derive, estimate, or infer missing values.
 - If something is visible but its association is genuinely unclear, keep the content and place it under `## Uncertain mappings` instead of dropping it.

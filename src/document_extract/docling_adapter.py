@@ -329,7 +329,7 @@ def table_grid_structured(
     *,
     max_rows: int = 200,
     max_cols: int = 32,
-    max_cell_chars: int = 400,
+    max_cell_chars: int = 2000,
 ) -> dict[str, Any]:
     """Full serializable view of a Docling table grid for deterministic rendering.
 
