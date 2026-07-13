@@ -20,12 +20,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from document_extract.layout.prompt_map import build_layout_prompt_map
 from document_extract.markdown.formatting import (
     insert_image_references_and_summaries,
+    replace_deterministic_tables,
 )
 from document_extract.markdown.postprocess import (
     filter_unplaced_lines,
     split_sectioned_grid,
 )
 from document_extract.models import PictureRecord, TableCandidate
+from document_extract.refinement import postprocess_markdown
 from document_extract.tables import (
     build_table_candidates,
     normalize_table_grid,
@@ -400,6 +402,173 @@ def test_right_edge_dash_run_but_lone_dash_kept() -> None:
     check("- a real bullet item" in kept, "a real list bullet is never stripped")
 
 
+# --------------------------------------------------------------------------- #
+# B1: deterministic splice for regular/title_detail verified tables
+# --------------------------------------------------------------------------- #
+
+
+def _raw_twin_markdown(rows: list[list[str]], header_rows: int) -> str:
+    """The raw Docling grid as one pipe table (what --skip-vlm leaves in place)."""
+    lines = ["| " + " | ".join(cell for cell in row) + " |" for row in rows]
+    lines.insert(header_rows, "|" + "---|" * len(rows[0]))
+    return "\n".join(lines) + "\n"
+
+
+def test_deterministic_title_detail_replaces_raw_twin() -> None:
+    grid = _structured_grid(IMPACT_ROWS, header_rows=2, row_bands=IMPACT_BANDS)
+    candidate = _detect_and_render(grid, [0.05, 0.20, 0.99, 0.66], {})
+    check(
+        candidate.verified and (candidate.stats or {}).get("format") == "title_detail_table",
+        "the title/detail candidate is deterministically rendered",
+    )
+    source = "## Human rights impacts\n\n" + _raw_twin_markdown(IMPACT_ROWS, header_rows=2)
+    out, enforced = replace_deterministic_tables(source, [candidate])
+    check(enforced == [candidate.candidate_id], "the raw twin is reported as enforced")
+    check(
+        "Working hours and adequate rest<br>Excessive working hours can harm health." in out,
+        "the merged title/detail cell replaces the split title/detail rows",
+    )
+    check(
+        "| Working hours and adequate rest |  |  |  |  |  |" not in out,
+        "the standalone title-only row is gone",
+    )
+    header = "| Location in the value chain | Type | Upstream | Own operations | Downstream | ESRS coverage |"
+    check(out.count(header) == 1, "the merged header appears exactly once")
+    check("## Human rights impacts" in out, "unrelated heading preserved")
+
+
+def test_deterministic_regular_table_with_symbols_replaces_twin() -> None:
+    rows = [
+        ["Danone's Policies", "Key contents", "Scope", "ESRS coverage"],
+        ["FOOD WASTE REPORTING GUIDELINES", "version 1.0 of June 2016", "Own operations", ""],
+        ["HUMAN RIGHTS POLICY", "10 Principles of the UN Global Compact", "Own operations", ""],
+    ]
+    bands = [(0.10, 0.13), (0.20, 0.28), (0.30, 0.38)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    _, sym = _picture(1, [0.90, 0.22, 0.98, 0.26], "E5")  # centered on record 0 band
+    candidate = _detect_and_render(grid, [0.05, 0.05, 0.99, 0.42], {1: sym})
+    check(
+        (candidate.stats or {}).get("format") == "regular_table",
+        "the symbol-bearing regular table is deterministically rendered",
+    )
+    source = _raw_twin_markdown(rows, header_rows=1)
+    out, enforced = replace_deterministic_tables(source, [candidate])
+    check(enforced == [candidate.candidate_id], "the regular twin is enforced")
+    food_row = [ln for ln in out.splitlines() if ln.startswith("| FOOD WASTE")]
+    check(bool(food_row) and food_row[0].rstrip().endswith("E5 |"), "the placed E5 symbol survives the splice")
+
+
+def test_deterministic_table_missing_is_not_appended() -> None:
+    grid = _structured_grid(IMPACT_ROWS, header_rows=2, row_bands=IMPACT_BANDS)
+    candidate = _detect_and_render(grid, [0.05, 0.20, 0.99, 0.66], {})
+    unrelated = "## Some other page\n\nA paragraph with no table here.\n"
+    out, enforced = replace_deterministic_tables(unrelated, [candidate])
+    check(enforced == [], "a table with no twin in the markdown is not enforced")
+    check(out == unrelated, "unrelated markdown is left untouched (never duplicated in)")
+
+
+def test_deterministic_table_postprocess_end_to_end() -> None:
+    grid = _structured_grid(IMPACT_ROWS, header_rows=2, row_bands=IMPACT_BANDS)
+    candidate = _detect_and_render(grid, [0.05, 0.20, 0.99, 0.66], {})
+    source = "## Human rights impacts\n\n" + _raw_twin_markdown(IMPACT_ROWS, header_rows=2)
+    # --skip-vlm: the working markdown is the raw source markdown unchanged.
+    final, warnings = postprocess_markdown(
+        source,
+        source,
+        [],  # records
+        [candidate],
+        {"page_size": [1.0, 1.0], "blocks": []},
+        furniture_texts=set(),
+        page_role=None,
+    )
+    check(warnings.get("deterministic_tables_enforced") == 1, "enforcement warning recorded")
+    check(
+        "Working hours and adequate rest<br>Excessive working hours can harm health." in final,
+        "the merged title/detail cell is present after full postprocess",
+    )
+    check(
+        "| Working hours and adequate rest |  |  |  |  |  |" not in final,
+        "the split title-only row does not survive postprocess",
+    )
+    check(not warnings.get("duplicate_tables_dropped"), "the merged table is not a duplicate subset")
+
+
+# --------------------------------------------------------------------------- #
+# B2: structural invariants in the VLM fallback verifier (grid-bearing crops)
+# --------------------------------------------------------------------------- #
+
+
+POLICY_GRID = {
+    "rows": [
+        ["Danone's Policies", "Key contents", "Scope", "ESRS coverage"],
+        ["FOOD WASTE REPORTING GUIDELINES", "version 1.0 of June 2016", "Own operations", "E5"],
+        ["HUMAN RIGHTS POLICY", "10 Principles", "Own operations", "S1"],
+        ["SUSTAINABILITY PRINCIPLES", "Social standards", "Value chain", "G1"],
+    ],
+    "num_cols": 4,
+    "header_rows": 1,
+    "cells": [],
+}
+POLICY_CELL_TEXTS = [cell for row in POLICY_GRID["rows"] for cell in row]
+
+
+def test_grid_verifier_accepts_faithful_transcription() -> None:
+    markdown = (
+        "| Danone's Policies | Key contents | Scope | ESRS coverage |\n|---|---|---|---|\n"
+        "| FOOD WASTE REPORTING GUIDELINES | version 1.0 of June 2016 | Own operations | E5 |\n"
+        "| HUMAN RIGHTS POLICY | 10 Principles | Own operations | S1 |\n"
+        "| SUSTAINABILITY PRINCIPLES | Social standards | Value chain | G1 |\n"
+    )
+    ok, stats = verify_region_table(markdown, POLICY_CELL_TEXTS, grid=POLICY_GRID)
+    check(ok, "a shape-faithful docling-table transcription verifies")
+    check(stats.get("source_columns") == 4 and stats.get("table_columns") == 4, "column counts recorded")
+
+
+def test_grid_verifier_rejects_wrong_column_count() -> None:
+    markdown = (
+        "| Danone's Policies | Key contents | ESRS coverage |\n|---|---|---|\n"
+        "| FOOD WASTE REPORTING GUIDELINES | version 1.0 of June 2016 | E5 |\n"
+        "| HUMAN RIGHTS POLICY | 10 Principles | S1 |\n"
+        "| SUSTAINABILITY PRINCIPLES | Social standards | G1 |\n"
+    )
+    ok, stats = verify_region_table(markdown, POLICY_CELL_TEXTS, grid=POLICY_GRID)
+    check(not ok and stats.get("fail") == "column_count_mismatch", "a table missing a source column is rejected")
+
+
+def test_grid_verifier_rejects_repeated_header_in_body() -> None:
+    markdown = (
+        "| Danone's Policies | Key contents | Scope | ESRS coverage |\n|---|---|---|---|\n"
+        "| FOOD WASTE REPORTING GUIDELINES | version 1.0 of June 2016 | Own operations | E5 |\n"
+        "| Danone's Policies | Key contents | Scope | ESRS coverage |\n"
+        "| HUMAN RIGHTS POLICY | 10 Principles | Own operations | S1 |\n"
+    )
+    ok, stats = verify_region_table(markdown, POLICY_CELL_TEXTS, grid=POLICY_GRID)
+    check(not ok and stats.get("fail") == "repeated_header_in_body", "a header repeated in the body is rejected")
+
+
+def test_grid_verifier_rejects_dropped_rows() -> None:
+    markdown = (
+        "| Danone's Policies | Key contents | Scope | ESRS coverage |\n|---|---|---|---|\n"
+        "| FOOD WASTE REPORTING GUIDELINES | version 1.0 of June 2016 | Own operations | E5 |\n"
+    )
+    ok, stats = verify_region_table(markdown, POLICY_CELL_TEXTS, grid=POLICY_GRID)
+    check(not ok and stats.get("fail") == "record_count_mismatch", "a transcription that drops records is rejected")
+
+
+def test_grid_verifier_untouched_without_grid() -> None:
+    # A region/KPI crop passes grid=None: the structural checks never run, so a
+    # narrower-than-source table with faithful numbers still verifies.
+    markdown = (
+        "| Danone's Policies | Key contents | ESRS coverage |\n|---|---|---|\n"
+        "| FOOD WASTE REPORTING GUIDELINES | version 1.0 of June 2016 | E5 |\n"
+        "| HUMAN RIGHTS POLICY | 10 Principles | S1 |\n"
+        "| SUSTAINABILITY PRINCIPLES | Social standards | G1 |\n"
+    )
+    ok, stats = verify_region_table(markdown, POLICY_CELL_TEXTS)
+    check(ok, "without a grid the region verifier keeps its numeric/word-only contract")
+    check("source_columns" not in stats, "no structural stats are recorded for a gridless crop")
+
+
 def _run_all() -> None:
     test_picture_blocks_keep_their_own_index_and_value()
     test_full_grid_reaches_stats_and_verifier()
@@ -415,6 +584,17 @@ def _run_all() -> None:
     test_right_edge_navigation_image_is_omitted_content_image_kept()
     test_placed_coverage_value_is_not_reported_unplaced()
     test_right_edge_dash_run_but_lone_dash_kept()
+    # B1: deterministic splice for regular/title_detail verified tables
+    test_deterministic_title_detail_replaces_raw_twin()
+    test_deterministic_regular_table_with_symbols_replaces_twin()
+    test_deterministic_table_missing_is_not_appended()
+    test_deterministic_table_postprocess_end_to_end()
+    # B2: structural invariants in the VLM fallback verifier
+    test_grid_verifier_accepts_faithful_transcription()
+    test_grid_verifier_rejects_wrong_column_count()
+    test_grid_verifier_rejects_repeated_header_in_body()
+    test_grid_verifier_rejects_dropped_rows()
+    test_grid_verifier_untouched_without_grid()
     print("test_policy_table_regressions: all checks passed")
 
 

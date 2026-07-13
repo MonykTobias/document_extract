@@ -1059,14 +1059,38 @@ def word_tokens(text: str) -> set[str]:
     return {token.lower() for token in WORD_TOKEN_RE.findall(text or "")}
 
 
+def _grid_expected_shape(grid: dict[str, Any]) -> tuple[int, list[str], int, int]:
+    """(num_cols, flat header labels, min logical records, raw body rows) for a grid.
+
+    ``min logical records`` is the count after title/detail merging (0 when the
+    grid does not classify as a real table); ``raw body rows`` is the unmerged
+    count. A faithful transcription lands between the two.
+    """
+    rows = [[str(cell).strip() for cell in row] for row in (grid.get("rows") or [])]
+    num_cols = int(grid.get("num_cols") or max((len(row) for row in rows), default=0))
+    header_rows = _grid_header_row_count(grid)
+    header = _merge_grid_header(rows, header_rows, num_cols) if header_rows else []
+    header_labels = [collapse_ws(cell).lower() for cell in header if cell.strip()]
+    normalized = normalize_table_grid(grid)
+    min_records = len(normalized["records"]) if normalized else 0
+    raw_body = max(len(rows) - header_rows, 0)
+    return num_cols, header_labels, min_records, raw_body
+
+
 def verify_region_table(
-    markdown: str, cell_texts: list[str]
+    markdown: str, cell_texts: list[str], grid: dict[str, Any] | None = None
 ) -> tuple[bool, dict[str, Any]]:
     """Deterministic acceptance check for a VLM-transcribed region table.
 
     The table must be structurally a pipe table, must not contain numbers
     absent from the source cells, and must cover (nearly) all source numbers —
     or, for numberless tables, most of the source words.
+
+    When a Docling ``grid`` is supplied (only for docling-table crops that fell
+    through to the VLM after the deterministic renderer declined), it must also
+    match the source shape: a single header block, the source column count, no
+    header labels repeated in a body row, and a body-row count between the merged
+    and raw record counts. Region/KPI crops pass ``grid=None`` and are unaffected.
     """
     stats: dict[str, Any] = {}
     rows = [
@@ -1078,6 +1102,39 @@ def verify_region_table(
     if len(rows) < 2:
         stats["fail"] = "no_table_structure"
         return False, stats
+
+    if grid:
+        row_cells = [
+            [collapse_ws(cell) for cell in row.strip("|").split("|")] for row in rows
+        ]
+        num_cols, header_labels, min_records, raw_body = _grid_expected_shape(grid)
+        table_cols = max((len(cells) for cells in row_cells), default=0)
+        stats["source_columns"] = num_cols
+        stats["table_columns"] = table_cols
+        separator_blocks = sum(
+            1
+            for line in markdown.splitlines()
+            if line.strip().startswith("|")
+            and set(line.strip()) <= set("|-: ")
+            and any(ch in "-:" for ch in line)
+        )
+        if separator_blocks > 1:
+            stats["fail"] = "multiple_header_blocks"
+            return False, stats
+        if num_cols and table_cols != num_cols:
+            stats["fail"] = "column_count_mismatch"
+            return False, stats
+        if header_labels:
+            for cells in row_cells[1:]:
+                present = {cell.lower() for cell in cells if cell}
+                if present and set(header_labels) <= present:
+                    stats["fail"] = "repeated_header_in_body"
+                    return False, stats
+        body_rows = max(len(row_cells) - 1, 0)
+        stats["logical_records"] = body_rows
+        if min_records and not (min_records <= body_rows <= max(raw_body, min_records)):
+            stats["fail"] = "record_count_mismatch"
+            return False, stats
 
     source_numbers = set().union(*(numeric_tokens(text) for text in cell_texts)) if cell_texts else set()
     table_numbers = numeric_tokens(markdown)
@@ -1354,8 +1411,19 @@ def transcribe_table_candidates(
                 break
             if not is_kpi:
                 markdown = normalize_pipe_tables(markdown)
-            verify = verify_kpi_list if is_kpi else verify_region_table
-            ok, verify_stats = verify(markdown, cell_texts)
+            if is_kpi:
+                ok, verify_stats = verify_kpi_list(markdown, cell_texts)
+            else:
+                # Only docling-table crops carry a grid to check the shape against;
+                # region crops pass None and keep the numeric/word-coverage check.
+                grid_for_verify = (
+                    (candidate.stats or {}).get("grid")
+                    if candidate.kind == "docling_table"
+                    else None
+                )
+                ok, verify_stats = verify_region_table(
+                    markdown, cell_texts, grid=grid_for_verify
+                )
             candidate.stats = {**(candidate.stats or {}), "verify": verify_stats}
             if ok:
                 candidate.markdown = markdown
@@ -1383,6 +1451,17 @@ def transcribe_table_candidates(
                         "it dropped these numbers from the blocks: "
                         + ", ".join(verify_stats["missing_numbers"][:10])
                     )
+                structural_feedback = {
+                    "column_count_mismatch": (
+                        "the table must have exactly "
+                        f"{verify_stats.get('source_columns')} columns"
+                    ),
+                    "repeated_header_in_body": "it repeated the header row inside the body",
+                    "multiple_header_blocks": "it must be one single table, not several",
+                    "record_count_mismatch": "it dropped or added table rows",
+                }.get(verify_stats.get("fail"))
+                if structural_feedback:
+                    feedback.append(structural_feedback)
                 if not feedback:
                     feedback.append(
                         "it was not a valid KPI label/value list"

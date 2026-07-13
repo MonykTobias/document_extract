@@ -768,6 +768,131 @@ def replace_sectioned_tables(
     return markdown, enforced
 
 
+# Formats produced only by the transcription-time grid renderer
+# (render_deterministic_docling_table); sectioned tables have their own path.
+_DETERMINISTIC_FORMATS = {"regular_table", "title_detail_table"}
+
+
+def _deterministic_anchor_texts(candidate: TableCandidate) -> set[str]:
+    """Normalized cell texts that mark this deterministic table in the markdown.
+
+    Two sources so the table is found however it survived: the raw Docling grid
+    cells (what ``--skip-vlm`` leaves in the source markdown as the unmerged
+    twin) and the candidate's own rendered rows, including the atomic pieces of a
+    merged ``title<br>detail`` cell (what a degraded VLM re-emits as a heading or
+    list item).
+    """
+    texts: set[str] = set()
+    grid = (candidate.stats or {}).get("grid") or {}
+    for row in grid.get("rows") or []:
+        for cell in row:
+            value = collapse_ws(str(cell)).lower()
+            if value:
+                texts.add(value)
+    for _, _, rows in _pipe_table_spans(candidate.markdown.splitlines()):
+        for row in rows:
+            for cell in row:
+                if not cell:
+                    continue
+                texts.add(cell)
+                for piece in _BR_RE.split(cell):
+                    fragment = re.sub(r"^-\s+", "", piece).strip()
+                    if fragment:
+                        texts.add(fragment)
+    return texts
+
+
+def _enforce_deterministic_candidate(
+    markdown: str, candidate: TableCandidate
+) -> str | None:
+    """Splice one deterministic docling table (regular/title_detail) in verbatim.
+
+    Locates the candidate's raw Docling twin — or a VLM-degraded remnant of it
+    (a title turned into a heading, rows spilled into a list) — by cell overlap
+    and replaces that contiguous region with the authoritative rendered table.
+    Returns ``None`` when no trace of the table is found: genuine loss is left to
+    the completeness guard / repair pass and never appended, so a deterministic
+    table is never duplicated.
+    """
+    texts = _deterministic_anchor_texts(candidate)
+    if not texts:
+        return None
+    lines = markdown.splitlines()
+
+    anchor_pipe: set[int] = set()
+    for start, end, rows in _pipe_table_spans(lines):
+        cells = [cell for row in rows for cell in row if cell]
+        if not cells:
+            continue
+        matched = sum(1 for cell in cells if cell in texts)
+        if matched >= 2 and matched >= 0.6 * len(cells):
+            anchor_pipe.update(range(start, end))
+
+    def anchor_of(index: int) -> bool | None:
+        stripped = lines[index].strip()
+        if not stripped:
+            return None  # blank line: neutral, may sit inside the region
+        if index in anchor_pipe:
+            return True
+        heading = re.match(r"^#{1,6}\s+(.+)$", stripped)
+        if heading and collapse_ws(heading.group(1)).lower() in texts:
+            return True
+        listed = re.match(r"^[-*]\s+(.+)$", stripped)
+        if listed:
+            content = listed.group(1)
+            label = content.split(":", 1)[0] if ":" in content else content
+            if collapse_ws(label).lower() in texts:
+                return True
+        return False
+
+    flags = [anchor_of(index) for index in range(len(lines))]
+    anchors = [index for index, flag in enumerate(flags) if flag is True]
+    if not anchors:
+        return None
+    lo, hi = min(anchors), max(anchors)
+    table_lines = candidate.markdown.rstrip("\n").splitlines()
+    if all(flags[index] is not False for index in range(lo, hi + 1)):
+        # Clean region: nothing but the table's own rows/degraded remnants.
+        return _apply_span_edits(lines, [(lo, hi + 1, ["", *table_lines, ""])])
+    # Unrelated content is interleaved: drop only the anchor lines and splice the
+    # authoritative table at the first of them, leaving everything else in place.
+    out: list[str] = []
+    inserted = False
+    for index, line in enumerate(lines):
+        if lo <= index <= hi and flags[index] is True:
+            if not inserted:
+                out.extend(["", *table_lines, ""])
+                inserted = True
+            continue
+        out.append(line)
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() + "\n"
+
+
+def replace_deterministic_tables(
+    markdown: str, table_candidates: list[TableCandidate] | None
+) -> tuple[str, list[str]]:
+    """Ensure every deterministically rendered regular/title_detail table lands verbatim.
+
+    Runs in the same slot as ``replace_sectioned_tables`` (before
+    ``drop_duplicate_subset_tables`` and the completeness guard). These tables
+    are rendered from the Docling grid at transcription time; without this the
+    merged table only reaches the refine VLM prompt, so under ``--skip-vlm`` (or
+    when the VLM degrades it) the raw twin would survive in its place. Returns
+    (markdown, enforced_candidate_ids).
+    """
+    enforced: list[str] = []
+    for candidate in table_candidates or []:
+        if not (candidate.verified and candidate.markdown):
+            continue
+        if (candidate.stats or {}).get("format") not in _DETERMINISTIC_FORMATS:
+            continue
+        updated = _enforce_deterministic_candidate(markdown, candidate)
+        if updated is not None and updated != markdown:
+            markdown = updated
+            enforced.append(candidate.candidate_id)
+    return markdown, enforced
+
+
 def drop_duplicate_subset_tables(
     markdown: str, table_candidates: list[TableCandidate] | None
 ) -> tuple[str, int]:
@@ -890,5 +1015,6 @@ __all__ = [
     "drop_orphan_header_tables", "unwrap_layout_tables", "strip_br_lines",
     "drop_empty_header_row",
     "_rows_prefix_subset", "drop_duplicate_subset_tables", "replace_sectioned_tables",
+    "replace_deterministic_tables",
     "missing_verified_table_ids", "pipe_row_count",
 ]

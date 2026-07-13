@@ -23,6 +23,7 @@ from .markdown.formatting import (
     normalize_headerless_pipe_tables,
     normalize_pipe_tables,
     pipe_row_count,
+    replace_deterministic_tables,
     replace_sectioned_tables,
     standalone_value_line_count,
     strip_br_lines,
@@ -148,6 +149,12 @@ def postprocess_markdown(
     final, enforced_sectioned = replace_sectioned_tables(final, table_candidates)
     if enforced_sectioned:
         table_warnings["sectioned_tables_enforced"] = len(enforced_sectioned)
+    # Same guarantee for regular/title_detail tables rendered from the grid at
+    # transcription time: splice the authoritative table over its raw Docling
+    # twin (or a VLM-degraded remnant) so it lands verbatim even under --skip-vlm.
+    final, enforced_deterministic = replace_deterministic_tables(final, table_candidates)
+    if enforced_deterministic:
+        table_warnings["deterministic_tables_enforced"] = len(enforced_deterministic)
     final = apply_list_levels_from_layout(final, layout_blocks)
     if is_toc:
         # The VLM flattens TOC section numbers into sequential ordered lists;
