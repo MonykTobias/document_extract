@@ -80,8 +80,15 @@ GRID_HEADER_CELL_MAX_CHARS = 60
 GRID_SYMBOL_ROW_TOLERANCE = 0.006
 # Delimiter for several symbol values sharing one coverage cell (``E1, E2, S3``).
 GRID_SYMBOL_JOIN = ", "
-# Includes U+25A0 BLACK SQUARE (■), the glyph the Danone document actually uses.
-GRID_BULLET_CHARS = "•●▪◦‣·∙■"
+# Strong glyphs are unambiguous bullets. Weak glyphs (middle dots) are bullets
+# only in leading position; mid-text they stay literal so ``12·000`` and
+# ``CuSO4·5H2O`` are never shredded into a list.
+# GRID_BULLET_CHARS_STRONG includes U+25A0 BLACK SQUARE (■), the glyph the Danone
+# document actually uses.
+GRID_BULLET_CHARS_STRONG = "•●▪◦‣■"
+GRID_BULLET_CHARS_WEAK = "·∙"
+GRID_BULLET_CHARS = GRID_BULLET_CHARS_STRONG + GRID_BULLET_CHARS_WEAK
+_GRID_STRONG_SPLIT_RE = re.compile(rf"[{GRID_BULLET_CHARS_STRONG}]")
 _GRID_BULLET_SPLIT_RE = re.compile(rf"[{GRID_BULLET_CHARS}]")
 
 def segment_panels(cells: list[dict[str, Any]], depth: int = 0) -> list[list[dict[str, Any]]]:
@@ -602,19 +609,23 @@ def _grid_is_detail(cells: list[str]) -> bool:
 def _cell_with_bullets(cell: str) -> str:
     """Preserve inline bullets in any table cell as ``<br>- item`` fragments.
 
-    Only fires on a genuine list: a cell that starts with a bullet glyph, or one
-    carrying two or more bullet glyphs. A lone mid-sentence glyph (a stray
-    separator or a ``·`` inside a word/number) is left verbatim. Empty fragments
-    — e.g. a ``■ ■`` double glyph — collapse to a single item.
+    Only fires on a genuine list: a cell that starts with a bullet glyph (strong
+    or weak), or one carrying two or more *strong* glyphs. Weak glyphs (``·``/``∙``
+    middle dots) never contribute to that count, and mid-text weak glyphs stay
+    literal — a strong-triggered item keeps ``CuSO4·5H2O`` intact, and a cell such
+    as ``12·000 · EUR net`` is returned verbatim. Empty fragments — e.g. a ``■ ■``
+    double glyph — collapse to a single item.
     """
     cell = cell.strip()
-    bullet_count = sum(cell.count(ch) for ch in GRID_BULLET_CHARS)
-    if bullet_count == 0:
+    strong_count = sum(cell.count(ch) for ch in GRID_BULLET_CHARS_STRONG)
+    leading_bullet = bool(cell) and cell[0] in GRID_BULLET_CHARS
+    if strong_count < 2 and not leading_bullet:
         return cell
-    leading_bullet = any(cell.startswith(ch) for ch in GRID_BULLET_CHARS)
-    if bullet_count < 2 and not leading_bullet:
-        return cell
-    parts = [part.strip() for part in _GRID_BULLET_SPLIT_RE.split(cell)]
+    # A weak-led cell (``· a · b``) is a weak-bulleted list, so split on weak too;
+    # otherwise split on strong only, leaving mid-text weak glyphs literal.
+    leading_weak = bool(cell) and cell[0] in GRID_BULLET_CHARS_WEAK
+    split_re = _GRID_BULLET_SPLIT_RE if leading_weak else _GRID_STRONG_SPLIT_RE
+    parts = [part.strip() for part in split_re.split(cell)]
     out: list[str] = []
     for index, part in enumerate(parts):
         if not part:
@@ -626,8 +637,14 @@ def _cell_with_bullets(cell: str) -> str:
     return "<br>".join(out) if out else cell
 
 
-# Backwards-compatible alias for the pre-generalization name.
-_detail_with_bullets = _cell_with_bullets
+def _became_bullet_list(before: str, after: str) -> bool:
+    """True when ``_cell_with_bullets`` turned a cell into a genuine bullet list.
+
+    Distinguishes a real takeover (a bullet-glyph cell rewritten as
+    ``- item<br>- item``) from a cell that already began with a source ``- `` dash
+    and was returned unchanged — the latter must not trigger deterministic render.
+    """
+    return after != before.strip() and (after.startswith("- ") or "<br>- " in after)
 
 
 def _merge_title_detail_cell(title: str, detail: str) -> str:
@@ -684,25 +701,33 @@ def normalize_table_grid(structured: dict[str, Any] | None) -> dict[str, Any] | 
 
     records: list[dict[str, Any]] = []
     pair_merges = 0
+    bulleted = False
     index = 0
     while index < len(body):
         current = body[index]
         following = body[index + 1] if index + 1 < len(body) else None
         if _grid_is_title_only(current) and following is not None and _grid_is_detail(following):
-            merged = [_merge_title_detail_cell(current[0], following[0])] + [
-                _cell_with_bullets(cell) for cell in following[1:]
-            ]
+            detail = following[0]
+            bulleted |= _became_bullet_list(detail, _cell_with_bullets(detail))
+            rest: list[str] = []
+            for cell in following[1:]:
+                transformed = _cell_with_bullets(cell)
+                bulleted |= _became_bullet_list(cell, transformed)
+                rest.append(transformed)
+            merged = [_merge_title_detail_cell(current[0], detail)] + rest
             records.append(
                 {"cells": merged, "source_rows": [header_rows + index, header_rows + index + 1]}
             )
             pair_merges += 1
             index += 2
         else:
+            cells: list[str] = []
+            for cell in current:
+                transformed = _cell_with_bullets(cell)
+                bulleted |= _became_bullet_list(cell, transformed)
+                cells.append(transformed)
             records.append(
-                {
-                    "cells": [_cell_with_bullets(cell) for cell in current],
-                    "source_rows": [header_rows + index],
-                }
+                {"cells": cells, "source_rows": [header_rows + index]}
             )
             index += 1
 
@@ -719,6 +744,7 @@ def normalize_table_grid(structured: dict[str, Any] | None) -> dict[str, Any] | 
         "records": records,
         "num_cols": num_cols,
         "header_rows": header_rows,
+        "bulleted": bulleted,
     }
 
 
@@ -1028,9 +1054,11 @@ def render_deterministic_docling_table(
     in-cell symbols by row geometry. Returns True when the candidate was rendered.
 
     Runs at transcription time (not detection) so the table's coverage symbols
-    are already summarized. Scoped to the title/detail signature and to regular
-    tables that carry in-cell symbols (the ESRS impact/policy tables), leaving
-    existing regular/headerless/KPI/sectioned handling untouched.
+    are already summarized. Scoped to the title/detail signature, to regular
+    tables that carry in-cell symbols (the ESRS impact/policy tables), and to
+    regular tables whose normalization produced genuine ``- item<br>- item``
+    bullet cells, leaving existing regular/headerless/KPI/sectioned handling
+    untouched.
     """
     stats = candidate.stats or {}
     if candidate.kind != "docling_table" or candidate.verified:
@@ -1053,7 +1081,11 @@ def render_deterministic_docling_table(
             picture_record_rect(record, page_size), candidate.bbox
         ) >= pictures.PICTURE_EMBED_OVERLAP_MIN
     ]
-    if normalized["classification"] == "regular_table" and not symbols:
+    if (
+        normalized["classification"] == "regular_table"
+        and not symbols
+        and not normalized.get("bulleted")
+    ):
         return False
     cell_rects_by_row: dict[int, list[list[float]]] = {}
     for cell in (stats.get("grid") or {}).get("cells", []):

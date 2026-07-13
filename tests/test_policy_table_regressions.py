@@ -29,6 +29,7 @@ from document_extract.markdown.postprocess import (
 from document_extract.models import PictureRecord, TableCandidate
 from document_extract.refinement import postprocess_markdown
 from document_extract.tables import (
+    _cell_with_bullets,
     build_table_candidates,
     normalize_table_grid,
     render_deterministic_docling_table,
@@ -810,6 +811,120 @@ def test_grid_verifier_untouched_without_grid() -> None:
     check("source_columns" not in stats, "no structural stats are recorded for a gridless crop")
 
 
+# --------------------------------------------------------------------------- #
+# Follow-up v2: deterministic bullets for symbol-free regular tables +
+# leading-only middle-dot rule
+# --------------------------------------------------------------------------- #
+
+
+def test_symbol_free_regular_table_renders_bullets_end_to_end() -> None:
+    # Pages 183-185: a regular table whose body cells carry ■-lists but that has
+    # NO coverage badge. Bullet normalization must now drive a deterministic
+    # render; previously this table was dropped (verified=False, markdown="").
+    rows = [
+        ["Stakeholder", "Engagement channels", "Example initiatives"],
+        ["Farmers", "■ Strategic partnerships ■ Co-design", "Regenerative agriculture"],
+        ["Employees", "■ Annual survey ■ Works councils", "Training programs"],
+    ]
+    bands = [(0.10, 0.13), (0.20, 0.30), (0.32, 0.42)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    norm = normalize_table_grid(grid)
+    check(norm["classification"] == "regular_table" and norm["bulleted"] is True, "grid normalizes as a bulleted regular_table")
+    candidate = _detect_and_render(grid, [0.05, 0.05, 0.99, 0.5], {})
+    check(candidate.verified, "a symbol-free bulleted regular table is now deterministically rendered")
+    check((candidate.stats or {}).get("format") == "regular_table", "it is stamped regular_table")
+    check(
+        "- Strategic partnerships<br>- Co-design" in candidate.markdown,
+        "its black-square list body cell renders as a <br>-joined - item list",
+    )
+    source = _raw_twin_markdown(rows, header_rows=1)
+    out, enforced = replace_deterministic_tables(source, [candidate])
+    check(enforced == [candidate.candidate_id], "the bulleted regular table splices over its raw twin")
+    check("- Strategic partnerships<br>- Co-design" in out, "the bulleted cell is present after the splice")
+
+
+def test_regular_table_with_symbol_and_bullets() -> None:
+    # Combined path: a placed coverage badge AND a multi-item ■ cell in the same
+    # regular table. Both must survive — the coverage cell shows the symbol and
+    # the engagement cell renders a - item list.
+    rows = [
+        ["Stakeholder", "Engagement channels", "Scope", "ESRS coverage"],
+        ["Farmers", "■ Strategic partnerships ■ Co-design", "Value chain", ""],
+        ["Employees", "■ Annual survey ■ Works councils", "Own operations", ""],
+    ]
+    bands = [(0.10, 0.13), (0.20, 0.30), (0.32, 0.42)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    _, sym = _picture(1, [0.90, 0.23, 0.98, 0.27], "E5")  # centered on record 0 band
+    candidate = _detect_and_render(grid, [0.05, 0.05, 0.99, 0.5], {1: sym})
+    check((candidate.stats or {}).get("format") == "regular_table", "symbol+bullet regular table renders deterministically")
+    farmers = [ln for ln in candidate.markdown.splitlines() if ln.startswith("| Farmers")]
+    check(bool(farmers) and farmers[0].rstrip().endswith("E5 |"), "the coverage badge lands in the Farmers coverage cell")
+    check(
+        "- Strategic partnerships<br>- Co-design" in farmers[0],
+        "the same row's engagement cell still renders a - item list",
+    )
+    check("symbols_unplaced_geometry" not in (candidate.stats or {}), "the badge is placed")
+
+
+def test_bullet_free_regular_table_without_symbols_still_deferred() -> None:
+    # Regression guard: a plain numeric regular table with neither bullets nor
+    # symbols must stay deferred to the existing flow (bulleted flag stays False).
+    rows = [
+        ["Metric", "2024", "2025"],
+        ["Sales", "27,376", "27,283"],
+        ["Net income", "2,021", "1,825"],
+    ]
+    bands = [(0.1, 0.13), (0.2, 0.23), (0.24, 0.27)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    norm = normalize_table_grid(grid)
+    check(norm["classification"] == "regular_table" and norm["bulleted"] is False, "a numeric grid gains no bullet flag")
+    candidate = _detect_and_render(grid, [0.05, 0.05, 0.95, 0.4], {})
+    check(not candidate.verified, "it is not deterministically rendered")
+    check((candidate.stats or {}).get("format") is None, "no deterministic format is stamped on it")
+
+
+def test_source_dash_list_does_not_trigger_takeover() -> None:
+    # A cell that already begins with a source ``- `` dash is returned unchanged by
+    # _cell_with_bullets, so the bulleted flag must stay False (no accidental
+    # capture of a non-grid dash-list table).
+    check(_cell_with_bullets("- already a list") == "- already a list", "a source dash cell is untouched")
+    rows = [
+        ["Item", "Notes", "Owner"],
+        ["Alpha", "- already a list", "Team A"],
+        ["Beta", "- another list", "Team B"],
+    ]
+    bands = [(0.1, 0.13), (0.2, 0.23), (0.24, 0.27)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    norm = normalize_table_grid(grid)
+    check(norm["bulleted"] is False, "a pre-dashed cell does not set the bulleted flag")
+
+
+def test_repeated_strong_bullets_still_split() -> None:
+    for glyph in "•▪◦‣■":
+        cell = f"{glyph} a {glyph} b"
+        check(_cell_with_bullets(cell) == "- a<br>- b", f"a repeated strong bullet U+{ord(glyph):04X} still splits")
+
+
+def test_leading_weak_glyph_is_a_bullet() -> None:
+    check(_cell_with_bullets("· Foo · Bar") == "- Foo<br>- Bar", "a leading middle-dot (U+00B7) marks a weak-bulleted list")
+    check(_cell_with_bullets("∙ Alpha ∙ Beta") == "- Alpha<br>- Beta", "a leading bullet-operator (U+2219) marks a weak-bulleted list")
+
+
+def test_multiple_midtext_middot_unchanged() -> None:
+    check(_cell_with_bullets("12·000 · EUR net") == "12·000 · EUR net", "mid-text middle dots never make a fake list")
+    check(
+        _cell_with_bullets("CuSO4·5H2O and MgSO4·7H2O") == "CuSO4·5H2O and MgSO4·7H2O",
+        "chemical formulae with middle dots are left verbatim",
+    )
+
+
+def test_strong_list_preserves_midtext_weak() -> None:
+    check(
+        _cell_with_bullets("■ x ■ CuSO4·5H2O") == "- x<br>- CuSO4·5H2O",
+        "a strong-triggered item keeps its mid-text weak glyph literal",
+    )
+
+
 def _run_all() -> None:
     test_picture_blocks_keep_their_own_index_and_value()
     test_full_grid_reaches_stats_and_verifier()
@@ -848,6 +963,16 @@ def _run_all() -> None:
     test_grid_verifier_rejects_repeated_header_in_body()
     test_grid_verifier_rejects_dropped_rows()
     test_grid_verifier_untouched_without_grid()
+    # Follow-up v2: deterministic bullets for symbol-free regular tables +
+    # leading-only middle-dot rule
+    test_symbol_free_regular_table_renders_bullets_end_to_end()
+    test_regular_table_with_symbol_and_bullets()
+    test_bullet_free_regular_table_without_symbols_still_deferred()
+    test_source_dash_list_does_not_trigger_takeover()
+    test_repeated_strong_bullets_still_split()
+    test_leading_weak_glyph_is_a_bullet()
+    test_multiple_midtext_middot_unchanged()
+    test_strong_list_preserves_midtext_weak()
     print("test_policy_table_regressions: all checks passed")
 
 
