@@ -23,10 +23,17 @@ from ..docling_adapter import (
     table_grid_rows,
     table_header_profile,
 )
+from ..markdown.postprocess import render_sectioned_tables, split_sectioned_grid
 from ..models import PictureRecord
 from .geometry import bbox_area_ratio, bbox_to_normalized_rect, rect_center, rect_distance
 
 NON_CELL_KINDS = {"footnote", "page_footer", "page_header"}
+# Uncapped view of a Docling table grid used only for sectioned-table detection
+# (the prompt-facing ``grid_rows`` stays truncated). Bounds guard against a
+# pathological grid; real report tables are far smaller.
+TABLE_SECTIONED_MAX_ROWS = 200
+TABLE_SECTIONED_MAX_COLS = 32
+TABLE_SECTIONED_MAX_CELL_CHARS = 300
 NEARBY_BLOCK_DISTANCE = 0.12
 NUMERIC_TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)*")
 WORD_TOKEN_RE = re.compile(r"[^\W\d_]{4,}", re.UNICODE)
@@ -241,6 +248,27 @@ def build_layout_prompt_map(
             block["first_row"] = profile["first_row"]
         if entry["table_grid_rows"]:
             block["grid_rows"] = entry["table_grid_rows"]
+        if entry["is_table"] and not profile["headerless"]:
+            # Detect spanning section-header rows on the FULL grid (grid_rows is
+            # truncated) and, when found, attach the deterministic split under a
+            # private key: it round-trips through page_state.json for replay but
+            # layout_map_prompt_json strips it, so it never bloats the prompt.
+            full_grid = table_grid_rows(
+                entry["item"],
+                max_rows=TABLE_SECTIONED_MAX_ROWS,
+                max_cols=TABLE_SECTIONED_MAX_COLS,
+                max_cell_chars=TABLE_SECTIONED_MAX_CELL_CHARS,
+            )
+            split = split_sectioned_grid(full_grid, header_rows=profile["header_rows"])
+            if split:
+                block["_sectioned_table"] = {
+                    "markdown": render_sectioned_tables(split),
+                    "section_titles": split["section_titles"],
+                    "section_qualifiers": split["section_qualifiers"],
+                    "section_kinds": split["section_kinds"],
+                    "data_row_count": split["data_row_count"],
+                    "source_row_count": len(full_grid),
+                }
 
         context = nearby_layout_context(index, entries, timeline_indices)
         if not entry["is_list_item"] and should_include_layout_text(
@@ -288,7 +316,14 @@ def layout_map_stats(layout_map: dict[str, Any]) -> dict[str, int]:
 
 
 def layout_map_prompt_json(layout_map: dict[str, Any]) -> str:
-    return json.dumps(layout_map, ensure_ascii=False, separators=(",", ":"))
+    # Private block keys (``_sectioned_table`` and any future underscore key)
+    # are internal state, never prompt content — strip them from every block.
+    blocks = [
+        {key: value for key, value in block.items() if not key.startswith("_")}
+        for block in layout_map.get("blocks", [])
+    ]
+    payload = {**layout_map, "blocks": blocks}
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
 
 def collapse_ws(text: str) -> str:

@@ -19,9 +19,10 @@ Rules:
 - If numbers, dates, percentages, captions, labels, or short callouts are visually associated with a chart, timeline, infographic, or grouped panel, place them with the correct subject in the body.
 - For timelines, keep each milestone grouped together. Do not scatter years and descriptions into unrelated sections.
 - Each pre-verified table or KPI list is authoritative: place it verbatim at the correct position in the page flow, and do not repeat its contents again as separate lists, paragraphs, or headings.
+- A pre-verified table may be supplied as a group of consecutive `###`-titled subtables that repeat the same column headers: place the whole group verbatim and in order, keep each subtable's `###` heading and repeated header row, and never merge them back into one table or convert them to lists.
 - For charts and KPI panels, output explicit `Label: value` lines or a small markdown table when the mapping is visually clear.
 - If the draft shows display figures and caption labels as separate adjacent lines (for example `+4.5%` on one line and `LIKE-FOR-LIKE SALES GROWTH` on the next) or joined on one line (`98.0% EMPLOYEES COVERED BY B CORP™ CERTIFICATION`), pair them using the image as `- LABEL: value` lines, one KPI per line.
-- If the draft contains a markdown table that is actually a KPI panel (large display figures such as `+4.5%` with short all-caps caption labels in adjacent cells), do not keep the table: rewrite it as `- LABEL: value` lines pairing each figure with its caption.
+- If the draft contains a markdown table that is actually a KPI panel (large display figures such as `+4.5%` with short all-caps caption labels in adjacent cells), do not keep the table: rewrite it as `- LABEL: value` lines pairing each figure with its caption. Never apply this to content that appears in the pre-verified tables, and never rewrite a pre-verified table's rows as `### Section` headings with `- label: value` lines.
 - For prose, keep paragraphs.
 - For lists, use `- ` bullets.
 - Preserve the supplied `list_level` for list blocks: level 0 is `- ` and level 1 is `  - `.

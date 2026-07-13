@@ -23,6 +23,7 @@ from .markdown.formatting import (
     normalize_headerless_pipe_tables,
     normalize_pipe_tables,
     pipe_row_count,
+    replace_sectioned_tables,
     standalone_value_line_count,
     strip_br_lines,
     unwrap_layout_tables,
@@ -140,6 +141,13 @@ def postprocess_markdown(
     final = normalize_headerless_pipe_tables(final, headerless_rows)
     final = sp.dedupe_span_header_cells(final)
     final = sp.collapse_banner_rows(final)
+    # Deterministically guarantee section-banded docling tables appear as their
+    # pre-split subtables (splicing them in if the VLM degraded them into
+    # headings + lists). Must precede drop_duplicate_subset_tables and the
+    # completeness guard.
+    final, enforced_sectioned = replace_sectioned_tables(final, table_candidates)
+    if enforced_sectioned:
+        table_warnings["sectioned_tables_enforced"] = len(enforced_sectioned)
     final = apply_list_levels_from_layout(final, layout_blocks)
     if is_toc:
         # The VLM flattens TOC section numbers into sequential ordered lists;

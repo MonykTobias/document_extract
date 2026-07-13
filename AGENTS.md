@@ -1,3 +1,84 @@
+# Planning workflow
+
+For planning requests, remain read-only unless implementation is explicitly
+requested.
+
+## Orchestrator responsibilities
+
+The main model owns:
+
+- requirement interpretation
+- architectural decisions
+- conflict resolution
+- validation of subagent findings
+- final plan quality
+
+Subagents gather evidence only. Their output is not authoritative.
+
+## Exploration policy
+
+Use `local_explorer` first for bounded repository research, including:
+
+- locating files and symbols
+- tracing callers and imports
+- finding tests
+- identifying configuration
+- mapping an execution path
+
+Give every explorer:
+
+- one narrow question
+- likely directories when known
+- a concise output limit
+- a requirement to cite paths and symbols
+
+Do not send the explorer the entire conversation when a narrower task is
+sufficient.
+
+Use no more than two exploration tasks per planning request unless the task is
+exceptionally broad.
+
+Because local inference resources are limited, prefer sequential local
+exploration over concurrent local generations.
+
+## Cloud fallback policy
+
+Use `cloud_explorer` only when:
+
+- `local_explorer` reports meaningful uncertainty
+- its result lacks repository evidence
+- findings are contradictory
+- it misses an expected execution path
+- the question requires subtle cross-module reasoning
+- a load-bearing claim cannot be cheaply verified by the orchestrator
+
+Do not automatically ask both agents the same question.
+
+## Plan output
+
+Write the approved plan to `PLAN.md`.
+
+The plan must be self-contained for an implementation model that has no access
+to the planning conversation.
+
+Include:
+
+- objective
+- non-goals
+- current behavior
+- desired behavior
+- architectural decisions and rationale
+- exact files and symbols involved
+- ordered implementation milestones
+- tests for each milestone
+- exact validation commands
+- invariants
+- risks
+- stop-and-escalate conditions
+
+Do not include raw subagent reports in `PLAN.md`.
+Do not begin implementation while operating in planning mode.
+
 # Repository Guidelines
 
 ## Project Structure & Module Organization

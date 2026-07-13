@@ -24,6 +24,7 @@ from ..layout.geometry import bbox_to_normalized_rect
 from ..layout.prompt_map import layout_map_stats
 from ..prompts import load_page_repair_prompt, load_page_refinement_prompt, load_summary_prompt
 from ..runtime import (
+    CHECKPOINT_FILENAME,
     REPLAY_STAGES,
     STAGES,
     PageState,
@@ -197,6 +198,41 @@ def _warn_stale_page_dirs(output_root: Path, states: list[PageState]) -> list[st
     return stale
 
 
+def _write_all_outputs(output_root: Path) -> None:
+    """Rebuild manifest, blocks, and combined Markdown from every page_* dir on disk.
+
+    Covers pages outside the current run's page range so a partial run never
+    replaces the document-wide aggregates with a subset.
+    """
+    all_page_dirs = sorted(
+        (d for d in output_root.glob("page_*") if d.is_dir()),
+        key=lambda d: int(d.name.split("_", 1)[1]) if d.name.split("_", 1)[1].isdigit() else 0,
+    )
+    all_out = output_root / "all"
+    all_out.mkdir(exist_ok=True)
+
+    all_states: list[PageState] = []
+    for page_dir in all_page_dirs:
+        checkpoint = page_dir / CHECKPOINT_FILENAME
+        if not checkpoint.exists():
+            continue
+        try:
+            state = PageState.load(checkpoint)
+        except Exception:  # noqa: BLE001
+            continue
+        all_states.append(state)
+
+    (all_out / "manifest_all.json").write_text(
+        json.dumps([_manifest_row(state) for state in all_states], indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    write_jsonl(
+        all_out / "blocks_all.jsonl",
+        [row for state in all_states if state.status == "completed" for row in state.block_rows],
+    )
+    combine_markdown(all_page_dirs, all_out / "combined_docling_final_all.md", "docling_final.md")
+
+
 def _write_run_outputs(output_root: Path, states: list[PageState]) -> None:
     ordered = sorted(states, key=lambda state: state.page)
     manifest = [_manifest_row(state) for state in ordered]
@@ -214,6 +250,7 @@ def _write_run_outputs(output_root: Path, states: list[PageState]) -> None:
     )
     combine_markdown(raw_dirs, output_root / "combined_docling_raw.md", "docling_raw.md")
     combine_markdown(final_dirs, output_root / "combined_docling_final.md", "docling_final.md")
+    _write_all_outputs(output_root)
     _warn_stale_page_dirs(output_root, ordered)
 
 

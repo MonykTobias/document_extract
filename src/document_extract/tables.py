@@ -542,18 +542,34 @@ def build_table_candidates(
                 "headerless": True,
                 "first_row": list(block["first_row"]),
             })
-        grid_rows = block.get("grid_rows") or []
-        if grid_rows:
-            is_kpi, kpi_stats = sp.looks_like_kpi_panel(grid_rows)
-            if is_kpi:
-                candidate_stats.update(
-                    {
-                        "kpi_panel": True,
-                        "kpi_stats": kpi_stats,
-                        "grid_rows": grid_rows,
-                    }
-                )
-        add_table_candidate(
+        sectioned = block.get("_sectioned_table") or {}
+        if sectioned.get("markdown"):
+            # A section-banded table (page 154 / page 43): pre-split into labeled
+            # subtables deterministically. This wins over the KPI check — a
+            # >=3-col, multi-row section table is never a KPI panel — and needs
+            # no VLM call, so it stays authoritative even under --skip-vlm.
+            candidate_stats.update(
+                {
+                    "format": "sectioned_table",
+                    "section_titles": list(sectioned.get("section_titles", [])),
+                    "section_qualifiers": list(sectioned.get("section_qualifiers", [])),
+                    "section_kinds": list(sectioned.get("section_kinds", [])),
+                    "sectioned_source_rows": sectioned.get("source_row_count"),
+                }
+            )
+        else:
+            grid_rows = block.get("grid_rows") or []
+            if grid_rows:
+                is_kpi, kpi_stats = sp.looks_like_kpi_panel(grid_rows)
+                if is_kpi:
+                    candidate_stats.update(
+                        {
+                            "kpi_panel": True,
+                            "kpi_stats": kpi_stats,
+                            "grid_rows": grid_rows,
+                        }
+                    )
+        candidate = add_table_candidate(
             candidates,
             kind="docling_table",
             bbox=block.get("bbox"),
@@ -562,6 +578,9 @@ def build_table_candidates(
             reason="docling_table_item",
             stats=candidate_stats or None,
         )
+        if sectioned.get("markdown"):
+            candidate.markdown = sectioned["markdown"]
+            candidate.verified = True
 
     scored_regions, _ = evaluate_table_regions(cells)
     for score, stats, region, reason in scored_regions[:TABLE_REGIONS_MAX_PER_PAGE]:
@@ -672,11 +691,20 @@ def verified_tables_prompt_block(candidates: list[TableCandidate]) -> str:
     for candidate in candidates:
         if not (candidate.verified and candidate.markdown.strip()):
             continue
-        if (candidate.stats or {}).get("format") == "kpi_list":
+        candidate_format = (candidate.stats or {}).get("format")
+        if candidate_format == "kpi_list":
             parts.append(
                 "KPI panel at bbox "
                 f"{candidate.bbox} (label/value list — authoritative; keep as list lines, "
                 f"do NOT render as a table):\n{candidate.markdown.strip()}"
+            )
+        elif candidate_format == "sectioned_table":
+            parts.append(
+                f"Table at bbox {candidate.bbox}, pre-split into `###`-titled subtables "
+                "that repeat the same column headers (authoritative; place ALL subtables "
+                "verbatim and in order, as markdown tables — do NOT merge them back into "
+                "one table, convert them to lists, drop the repeated header rows, or turn "
+                f"a section title into anything other than its `###` heading):\n{candidate.markdown.strip()}"
             )
         else:
             parts.append(
@@ -894,6 +922,12 @@ def transcribe_table_candidates(
     if table_dir.exists():
         shutil.rmtree(table_dir)
     for candidate in candidates:
+        # A sectioned docling table is already deterministically transcribed and
+        # verified at build time; never let a VLM pass overwrite it (a symbol
+        # picture overlapping it would otherwise reach the transcription below).
+        # In-cell symbols instead surface via the table_symbols_unplaced warning.
+        if candidate.verified and (candidate.stats or {}).get("format") == "sectioned_table":
+            continue
         symbol_indices = (candidate.stats or {}).get("symbol_picture_indices", [])
         is_kpi = bool((candidate.stats or {}).get("kpi_panel"))
         if candidate.kind != "layout_region" and not symbol_indices and not is_kpi:

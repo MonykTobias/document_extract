@@ -562,6 +562,189 @@ def _grid_to_pipe_table(grid: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
+# --------------------------------------------------------------------------- #
+# Sectioned tables: a single Docling table whose body carries spanning "section
+# header" rows — either only the first cell filled (page 154's five-year note)
+# or one value repeated across the whole row (page 43's colspan banners). The
+# VLM tends to degrade these into `### Section` headings + `- label: value`
+# lists, orphaning the column header. Splitting deterministically into one
+# labeled subtable per section keeps a well-formed table with every column's
+# header context preserved.
+# --------------------------------------------------------------------------- #
+
+SECTIONED_MIN_COLS = 3          # label column + >= 2 value columns
+SECTIONED_MIN_ROWS = 4          # header + section + >= 2 data rows
+SECTIONED_MIN_DATA_ROWS = 2
+SECTIONED_MAX_TITLE_CHARS = 120
+SECTIONED_HEADER_CELL_MAX_CHARS = 40   # heuristic header-row fallback
+
+
+def _sectioned_section_title(cells: list[str]) -> str | None:
+    """Section title if this body row spans the table as a group header.
+
+    Two shapes: only the first cell filled, or a single value expanded across
+    the row by Docling's colspan handling. Returns ``None`` for ordinary data
+    rows (including the all-``-`` placeholder row on page 43).
+    """
+    stripped = [cell.strip() for cell in cells]
+    non_empty = [cell for cell in stripped if cell]
+    if not non_empty:
+        return None
+    first = stripped[0]
+    if first and not any(stripped[1:]):
+        return first if len(first) <= SECTIONED_MAX_TITLE_CHARS else None
+    if (
+        len(non_empty) >= 2
+        and len(set(non_empty)) == 1
+        and any(ch.isalpha() for ch in non_empty[0])
+        and BANNER_CELL_MIN_CHARS <= len(non_empty[0]) <= SECTIONED_MAX_TITLE_CHARS
+    ):
+        return non_empty[0]
+    return None
+
+
+def _sectioned_header_row_ok(row: list[str], header_rows: int | None) -> bool:
+    """Whether grid row 0 is a usable single column-header row.
+
+    Only body rows (``grid[1:]``) are ever treated as section headers, so a
+    genuine stacked/multi-row header stays intact: its second row is data-like,
+    never a section row, and the table simply is not split.
+    """
+    if _sectioned_section_title(row) is not None:
+        return False
+    if header_rows and header_rows >= 1:
+        return True
+    # header_rows in (0, None): Docling did not flag a header row. Accept row 0
+    # as the header when it is a plausible header line — mostly filled with
+    # short cells — whether or not its label cell is blank (page 154 leaves it
+    # blank; page 43 fills it with "(in percentage)"). The real gate is the
+    # presence of body section rows, which ordinary tables never have.
+    stripped = [cell.strip() for cell in row]
+    non_empty = [cell for cell in stripped if cell]
+    if not stripped or len(non_empty) * 2 < len(stripped):
+        return False
+    return all(len(cell) <= SECTIONED_HEADER_CELL_MAX_CHARS for cell in non_empty)
+
+
+def _sectioned_is_qualifier(title: str) -> bool:
+    """A parenthetical unit note ("(in € millions)") attached to a section head,
+    not a section of its own."""
+    return title.strip().startswith("(")
+
+
+def split_sectioned_grid(
+    grid: list[list[str]], *, header_rows: int | None = None
+) -> dict[str, object] | None:
+    """Split a section-banded Docling grid into labeled subtables.
+
+    Returns ``None`` (leave the table alone) unless the grid has a single header
+    row and at least one titled section that owns data rows. A spanning row with
+    no data rows before the next spanning row is kept as a *group header* (a
+    parent category such as page 145's "SUBSIDIARIES"), rendered as a bare
+    heading above its child sections.
+    """
+    rows = [[str(cell).strip() for cell in row] for row in grid]
+    if len(rows) < SECTIONED_MIN_ROWS:
+        return None
+    n_cols = max((len(row) for row in rows), default=0)
+    if n_cols < SECTIONED_MIN_COLS:
+        return None
+    header = rows[0] + [""] * (n_cols - len(rows[0]))
+    if not _sectioned_header_row_ok(header, header_rows):
+        return None
+
+    sections: list[dict[str, object]] = [{"title": None, "qualifiers": [], "rows": []}]
+    for row in rows[1:]:
+        padded = row + [""] * (n_cols - len(row))
+        title = _sectioned_section_title(padded)
+        if title is not None:
+            current = sections[-1]
+            if (
+                _sectioned_is_qualifier(title)
+                and current["title"] is not None
+                and not current["rows"]
+            ):
+                # "(in € millions)" directly under a just-opened section heading.
+                current["qualifiers"].append(title)  # type: ignore[union-attr]
+            else:
+                sections.append({"title": title, "qualifiers": [], "rows": []})
+        else:
+            sections[-1]["rows"].append(padded)  # type: ignore[union-attr]
+
+    # Drop the empty untitled lead section and any dangling trailing banner(s)
+    # that never received data rows.
+    sections = [s for s in sections if s["title"] is not None or s["rows"]]
+    while sections and sections[-1]["title"] is not None and not sections[-1]["rows"]:
+        sections.pop()
+    for section in sections:
+        section["is_group"] = section["title"] is not None and not section["rows"]
+
+    if not any(s["title"] is not None and s["rows"] for s in sections):
+        return None  # need at least one titled section that carries data
+    data_row_count = sum(len(s["rows"]) for s in sections)  # type: ignore[arg-type]
+    if data_row_count < SECTIONED_MIN_DATA_ROWS:
+        return None
+
+    return {
+        "header": header,
+        "n_cols": n_cols,
+        "sections": sections,
+        "section_titles": [s["title"] for s in sections if s["title"] is not None],
+        "section_qualifiers": [
+            qualifier
+            for s in sections
+            for qualifier in s["qualifiers"]  # type: ignore[union-attr]
+        ],
+        # One "group"/"data" entry per titled section, in order — lets the
+        # enforcement pass assign consistent heading levels.
+        "section_kinds": [
+            "group" if s["is_group"] else "data"
+            for s in sections
+            if s["title"] is not None
+        ],
+        "data_row_count": data_row_count,
+    }
+
+
+def sectioned_heading_line(title: str, qualifiers: list[str], level: int) -> str:
+    heading = title
+    if qualifiers:
+        heading = heading + " " + " ".join(qualifiers)
+    return "#" * max(1, min(level, 6)) + " " + heading
+
+
+def render_sectioned_tables(split: dict[str, object], base_level: int = 3) -> str:
+    """Render a :func:`split_sectioned_grid` result as titled pipe subtables.
+
+    Each data subtable repeats the original column header verbatim under its
+    ``###`` heading; a group header renders as a bare heading above its
+    children. ``base_level`` sets the depth: group headers sit at
+    ``base_level``, data sections one deeper when any group header exists (so
+    sibling sub-categories share one level), otherwise at ``base_level``.
+    """
+    header = list(split["header"])  # type: ignore[arg-type]
+    n_cols = int(split["n_cols"])  # type: ignore[call-overload]
+    kinds = list(split.get("section_kinds", []))  # type: ignore[union-attr]
+    group_level = base_level
+    data_level = base_level + 1 if "group" in kinds else base_level
+    blocks: list[str] = []
+    for section in split["sections"]:  # type: ignore[union-attr]
+        title = section["title"]
+        if title is not None:
+            level = group_level if section.get("is_group") else data_level
+            blocks.append(
+                sectioned_heading_line(str(title), [str(q) for q in section["qualifiers"]], level)
+            )
+        if section["rows"]:
+            grid = [header, *section["rows"]]
+            escaped = [
+                [cell.replace("|", "\\|") for cell in (row + [""] * (n_cols - len(row)))]
+                for row in grid
+            ]
+            blocks.append(_grid_to_pipe_table(escaped))
+    return "\n\n".join(blocks)
+
+
 def flatten_html_tables(markdown: str) -> str:
     """Replace every ``<table>`` block with a rowspan/colspan-expanded pipe table.
 

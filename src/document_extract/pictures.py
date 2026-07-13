@@ -258,6 +258,7 @@ def triage_pictures(
         "types": {},
     }
     for record in records:
+        # Tiny icons embedded in a table cell skip VLM triage — they are "symbols" and treated like such
         if record.embedded_in == "table" and record.area_ratio < PICTURE_MIN_AREA_RATIO:
             record.triage_eligible = True
             record.triage_type = "symbol"
@@ -266,7 +267,7 @@ def triage_pictures(
             record.triage_usage = None
             stats["candidates"] += 1
             stats["types"]["symbol"] = stats["types"].get("symbol", 0) + 1
-            if args.skip_vlm:
+            if args.skip_vlm: # for testing without vlm
                 record.summarize = False
                 record.triage_action = "skip"
                 record.skip_reason = "skip_vlm"
@@ -276,6 +277,9 @@ def triage_pictures(
                 record.triage_action = "symbol"
                 record.skip_reason = ""
             continue
+
+        # Cheap pre-filter: drop images that are too small, decorative, or
+        # missing a file on disk before spending any VLM budget.
         eligible, reason = should_visual_triage_picture(record)
         record.triage_eligible = eligible
         if not eligible:
@@ -287,6 +291,9 @@ def triage_pictures(
 
         stats["candidates"] += 1
         legacy_summarize, legacy_reason = should_summarize_picture(record)
+
+        # --skip-picture-triage: bypass the VLM entirely and use the old
+        # metadata-only heuristic to decide whether to summarize.
         if args.skip_picture_triage:
             record.summarize = legacy_summarize
             record.skip_reason = legacy_reason
@@ -295,6 +302,8 @@ def triage_pictures(
             if not legacy_summarize:
                 stats["skipped"] += 1
             continue
+
+        # --skip-vlm: no model calls at all this run.
         if args.skip_vlm:
             record.summarize = False
             record.triage_action = "skip"
@@ -302,6 +311,8 @@ def triage_pictures(
             stats["skipped"] += 1
             continue
 
+        # Build the best crop available for the triage VLM (expanded to include
+        # adjacent text cells so the model sees axis labels, titles, etc.).
         image_path = picture_vlm_image_path(
             record,
             page_image_path=page_image_path,
@@ -314,6 +325,9 @@ def triage_pictures(
             record.skip_reason = "missing_image"
             stats["skipped"] += 1
             continue
+
+        # Single cheap VLM call that classifies the image and returns a
+        # confidence score — this drives every downstream routing decision.
         prompt = DEFAULT_PICTURE_TRIAGE_PROMPT
         answer, usage = ollama_client.call_ollama_vlm(
             base_url=args.ollama_base_url,
@@ -334,6 +348,10 @@ def triage_pictures(
         record.triage_usage = usage
         record.triage_warnings = warnings
         stats["types"][kind] = stats["types"].get(kind, 0) + 1
+
+        # Route on the triage result: decorative and low-value photos are
+        # dropped; everything else proceeds to extraction with either a
+        # type-specific specialist prompt (high confidence) or the generic one.
         if kind == "decorative" and confidence >= args.triage_confidence:
             record.summarize = False
             record.triage_action = "skip"

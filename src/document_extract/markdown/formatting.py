@@ -593,6 +593,160 @@ def _rows_prefix_subset(
     return hits >= 0.8 * len(subset_rows)
 
 
+def _apply_span_edits(
+    lines: list[str], edits: list[tuple[int, int, list[str] | None]]
+) -> str:
+    """Apply (start, end, replacement|None-to-delete) span edits over ``lines``."""
+    for start, end, replacement in sorted(edits, key=lambda edit: edit[0], reverse=True):
+        lines[start:end] = replacement if replacement is not None else []
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip() + "\n"
+
+
+def _sectioned_candidate_rows(candidate: TableCandidate) -> set[tuple[str, ...]]:
+    return {
+        row
+        for _, _, rows in _pipe_table_spans(candidate.markdown.splitlines())
+        for row in rows
+    }
+
+
+def _matches_section_title(text: str, titles: set[str]) -> bool:
+    """A heading text that is a section title, optionally with a parenthetical
+    qualifier appended by the renderer ("OPERATIONS … (in € millions)")."""
+    normalized = collapse_ws(text).lower()
+    return any(
+        normalized == title or normalized.startswith(title + " (")
+        for title in titles
+    )
+
+
+def _sectioned_base_level(lines: list[str], pos: int, titles: set[str]) -> int:
+    """Heading depth for a sectioned table's own headings: one deeper than the
+    nearest preceding heading that is not itself one of the table's sections."""
+    for index in range(pos - 1, -1, -1):
+        match = re.match(r"^(#{1,6})\s+(.+)$", lines[index].strip())
+        if match and not _matches_section_title(match.group(2), titles):
+            return len(match.group(1)) + 1
+    return 3
+
+
+def _relevel_sectioned_markdown(
+    markdown: str, kinds: list[str], base_level: int
+) -> list[str]:
+    """Rewrite the heading levels of a rendered sectioned table so all sibling
+    sub-categories share one depth: group (parent) headers at ``base_level``,
+    data sections one deeper when any group header exists."""
+    group_level = base_level
+    data_level = base_level + 1 if "group" in kinds else base_level
+    out: list[str] = []
+    kind_index = 0
+    for line in markdown.splitlines():
+        match = re.match(r"^#{1,6}\s+(.*)$", line)
+        if match and kind_index < len(kinds):
+            level = group_level if kinds[kind_index] == "group" else data_level
+            out.append("#" * max(1, min(level, 6)) + " " + match.group(1))
+            kind_index += 1
+        else:
+            out.append(line)
+    return out
+
+
+def _enforce_sectioned_candidate(
+    markdown: str, candidate: TableCandidate
+) -> str | None:
+    """Guarantee one sectioned candidate appears as its subtables; None = no change.
+
+    Finds the contiguous span of page content belonging to the candidate — its
+    subtable/twin pipe blocks plus any `### Section` headings, `- label:` list
+    remnants and qualifier lines the VLM emitted — and replaces the whole span
+    with the authoritative split, re-leveled so sibling section headings are
+    consistent. Falls back to surgical splicing when unrelated content is
+    interleaved, so nothing outside the table is disturbed.
+    """
+    candidate_rows = _sectioned_candidate_rows(candidate)
+    if not candidate_rows:
+        return None
+    stats = candidate.stats or {}
+    titles = {collapse_ws(title).lower() for title in stats.get("section_titles", [])}
+    quals = {collapse_ws(q).lower() for q in stats.get("section_qualifiers", [])}
+    kinds = list(stats.get("section_kinds", []))
+    label_cells = {row[0] for row in candidate_rows if row and row[0]}
+    lines = markdown.splitlines()
+
+    anchor_pipe: set[int] = set()
+    for start, end, rows in _pipe_table_spans(lines):
+        if rows and sum(1 for row in rows if row in candidate_rows) / len(rows) >= 0.5:
+            anchor_pipe.update(range(start, end))
+
+    def anchor_of(index: int) -> bool | None:
+        stripped = lines[index].strip()
+        if not stripped:
+            return None  # blank line: neutral, may sit inside the region
+        if index in anchor_pipe:
+            return True
+        heading = re.match(r"^#{1,6}\s+(.+)$", stripped)
+        if heading and _matches_section_title(heading.group(1), titles):
+            return True
+        listed = re.match(r"^[-*]\s+(.+)$", stripped)
+        if listed:
+            content = listed.group(1)
+            label = content.split(":", 1)[0] if ":" in content else content
+            if collapse_ws(label).lower() in label_cells:
+                return True
+        if collapse_ws(stripped).lower() in quals:
+            return True
+        return False
+
+    flags = [anchor_of(index) for index in range(len(lines))]
+    anchors = [index for index, flag in enumerate(flags) if flag is True]
+    if not anchors:
+        base = _sectioned_base_level(lines, len(lines), titles)
+        leveled = _relevel_sectioned_markdown(candidate.markdown, kinds, base)
+        return _apply_span_edits(lines, [(len(lines), len(lines), ["", *leveled])])
+
+    lo, hi = min(anchors), max(anchors)
+    base = _sectioned_base_level(lines, lo, titles)
+    leveled = _relevel_sectioned_markdown(candidate.markdown, kinds, base)
+    if all(flags[index] is not False for index in range(lo, hi + 1)):
+        # Clean region: nothing but the table's own headings/rows/remnants.
+        return _apply_span_edits(lines, [(lo, hi + 1, ["", *leveled, ""])])
+    # Unrelated content is interleaved: remove only the anchor lines and splice
+    # the authoritative split at the first of them, leaving everything else.
+    out: list[str] = []
+    inserted = False
+    for index, line in enumerate(lines):
+        if lo <= index <= hi and flags[index] is True:
+            if not inserted:
+                out.extend(["", *leveled, ""])
+                inserted = True
+            continue
+        out.append(line)
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(out)).strip() + "\n"
+
+
+def replace_sectioned_tables(
+    markdown: str, table_candidates: list[TableCandidate] | None
+) -> tuple[str, list[str]]:
+    """Ensure every verified sectioned-table candidate appears as its subtables.
+
+    Runs before ``drop_duplicate_subset_tables`` (so un-split twins are removed
+    before that pass could mistake a subtable for their prefix-subset) and
+    before the completeness guard (so the split table's header row never lands
+    in ``## Unplaced content``). Returns (markdown, enforced_candidate_ids).
+    """
+    enforced: list[str] = []
+    for candidate in table_candidates or []:
+        if not (candidate.verified and candidate.markdown):
+            continue
+        if (candidate.stats or {}).get("format") != "sectioned_table":
+            continue
+        updated = _enforce_sectioned_candidate(markdown, candidate)
+        if updated is not None and updated != markdown:
+            markdown = updated
+            enforced.append(candidate.candidate_id)
+    return markdown, enforced
+
+
 def drop_duplicate_subset_tables(
     markdown: str, table_candidates: list[TableCandidate] | None
 ) -> tuple[str, int]:
@@ -714,6 +868,6 @@ __all__ = [
     "standalone_value_line_count", "normalize_pipe_tables", "_pipe_table_spans",
     "drop_orphan_header_tables", "unwrap_layout_tables", "strip_br_lines",
     "drop_empty_header_row",
-    "_rows_prefix_subset", "drop_duplicate_subset_tables",
+    "_rows_prefix_subset", "drop_duplicate_subset_tables", "replace_sectioned_tables",
     "missing_verified_table_ids", "pipe_row_count",
 ]
