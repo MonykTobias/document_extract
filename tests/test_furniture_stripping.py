@@ -222,6 +222,30 @@ def check_strip_named_furniture() -> None:
     )
 
 
+def check_right_edge_dash() -> None:
+    # Real case: page 193 — bare ``-`` navigation marks sit in the right sidebar
+    # band. They are furniture only there; a ``-`` anywhere else is content.
+    check(is_chapter_tab("-", RIGHT_RECT), "right-band lone dash is navigation furniture")
+    check(is_chapter_tab("–", RIGHT_RECT), "right-band en-dash is navigation furniture")
+    check(not is_chapter_tab("-", BODY_RECT), "body lone dash is not furniture")
+
+    # A trailing run mixing dashes and tabs after the last image is stripped.
+    markdown = (
+        "Body paragraph.\n\n"
+        "![Picture p0193-i001](images/picture_p0193_i001.png)\n"
+        "-\n-\n-\n"
+    )
+    stripped = strip_furniture_lines(markdown, set())
+    check("\n-\n" not in stripped and not stripped.rstrip().endswith("-"), "trailing dash run removed")
+    check("Body paragraph." in stripped, "body kept alongside the dash run")
+
+    # A real list bullet and a lone dash in prose are never stripped.
+    kept = strip_furniture_lines("Intro.\n\n- a genuine bullet\n\nOutro.\n", set())
+    check("- a genuine bullet" in kept, "a real list bullet with content is preserved")
+    lone = strip_furniture_lines("Some text.\n\n-\n\nMore text.\n", set())
+    check("\n-\n" in lone, "a single lone dash in the body is kept (run < 2)")
+
+
 def main() -> int:
     check_signature_detection()
     check_section_start_protection()
@@ -230,6 +254,7 @@ def main() -> int:
     check_strip_tab_runs()
     check_strip_protections()
     check_strip_named_furniture()
+    check_right_edge_dash()
     print("test_furniture_stripping: all checks passed")
     return 0
 

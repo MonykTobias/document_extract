@@ -14,6 +14,9 @@ class PictureRecord:
     area_ratio: float
     classification: str
     caption: str
+    # Normalized [left, top, right, bottom] rect (top-left origin); lets later
+    # stages test band membership without the page size. None when unavailable.
+    norm_rect: list[float] | None = None
     summarize: bool = False
     skip_reason: str = ""
     triage_eligible: bool = False

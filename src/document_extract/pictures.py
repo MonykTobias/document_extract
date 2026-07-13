@@ -419,6 +419,7 @@ def save_picture_records(
             caption=caption_text(item),
         )
         picture_rect = bbox_to_normalized_rect(bbox, page_size)
+        record.norm_rect = list(picture_rect) if picture_rect else None
         table_overlaps = [
             rect_overlap_ratio(picture_rect, table_rect)
             for table_rect in table_rects

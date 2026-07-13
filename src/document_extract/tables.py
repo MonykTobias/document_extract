@@ -72,6 +72,15 @@ TABLE_REGIONS_MAX_PER_PAGE = 3
 TABLE_NUMERIC_COVERAGE_MIN = 0.9
 TABLE_WORD_COVERAGE_MIN = 0.8
 
+# Deterministic grid-shape normalization (title/detail + regular tables).
+GRID_MIN_RECORDS = 2
+GRID_MIN_CONTENT_COLUMNS = 2
+GRID_TITLE_DETAIL_MIN_PAIRS = 2
+GRID_HEADER_CELL_MAX_CHARS = 60
+GRID_SYMBOL_ROW_TOLERANCE = 0.006
+GRID_BULLET_CHARS = "•●▪◦‣·∙"
+_GRID_BULLET_SPLIT_RE = re.compile(rf"[{GRID_BULLET_CHARS}]")
+
 def segment_panels(cells: list[dict[str, Any]], depth: int = 0) -> list[list[dict[str, Any]]]:
     """Recursive XY-cut: split at vertical gutters first, then horizontal ones.
 
@@ -523,6 +532,257 @@ def evaluate_table_regions(
     return accepted, rejected
 
 
+def _grid_header_row_count(structured: dict[str, Any]) -> int:
+    """How many leading grid rows are the column header.
+
+    Trusts Docling's ``header_rows`` when it flagged one; otherwise accepts row 0
+    as a header when it reads like a column-label row (>= 2 short non-empty
+    cells), which covers tables Docling left unmarked.
+    """
+    rows = structured.get("rows") or []
+    header_rows = int(structured.get("header_rows") or 0)
+    if header_rows >= 1:
+        return min(header_rows, len(rows))
+    if rows:
+        first = [str(cell).strip() for cell in rows[0]]
+        non_empty = [cell for cell in first if cell]
+        if len(non_empty) >= 2 and all(
+            len(cell) <= GRID_HEADER_CELL_MAX_CHARS for cell in non_empty
+        ):
+            return 1
+    return 0
+
+
+def _grid_spanning_label(row: list[str]) -> str | None:
+    """A colspan super-header: a value repeated across >= 2 adjacent columns."""
+    values = [str(cell).strip() for cell in row]
+    for index in range(len(values) - 1):
+        if values[index] and values[index + 1] == values[index]:
+            return values[index]
+    return None
+
+
+def _merge_grid_header(
+    rows: list[list[str]], header_rows: int, num_cols: int
+) -> list[str]:
+    """Collapse multi-row headers into one flat header row.
+
+    Per column the deepest (last) non-empty header cell wins, so a stacked
+    header ("Location in the value chain" over "Upstream") keeps the specific
+    label. A spanning super-header left with an empty leading column is recovered
+    into column 0 (the impact/policy-name column), matching the visible table.
+    """
+    header = [""] * num_cols
+    header_block = rows[:header_rows]
+    for row in header_block:
+        for column in range(num_cols):
+            value = str(row[column]).strip() if column < len(row) else ""
+            if value:
+                header[column] = value
+    if header and not header[0]:
+        for row in header_block:
+            span = _grid_spanning_label(row)
+            if span:
+                header[0] = span
+                break
+    return header
+
+
+def _grid_is_title_only(cells: list[str]) -> bool:
+    return bool(cells) and bool(cells[0].strip()) and not any(c.strip() for c in cells[1:])
+
+
+def _grid_is_detail(cells: list[str]) -> bool:
+    return bool(cells) and bool(cells[0].strip()) and any(c.strip() for c in cells[1:])
+
+
+def _detail_with_bullets(detail: str) -> str:
+    """Preserve inline bullets in a detail cell as ``<br>- item`` fragments."""
+    detail = detail.strip()
+    if not any(ch in detail for ch in GRID_BULLET_CHARS):
+        return detail
+    parts = [part.strip() for part in _GRID_BULLET_SPLIT_RE.split(detail)]
+    leading_bullet = any(detail.lstrip().startswith(ch) for ch in GRID_BULLET_CHARS)
+    out: list[str] = []
+    for index, part in enumerate(parts):
+        if not part:
+            continue
+        if index == 0 and not leading_bullet:
+            out.append(part)
+        else:
+            out.append(f"- {part}")
+    return "<br>".join(out) if out else detail
+
+
+def _merge_title_detail_cell(title: str, detail: str) -> str:
+    """First cell of a merged title/detail record: ``title<br>detail``."""
+    title = title.strip()
+    detail_md = _detail_with_bullets(detail)
+    if not detail_md:
+        return title
+    if not title:
+        return detail_md
+    return f"{title}<br>{detail_md}"
+
+
+def _grid_content_column_count(records: list[dict[str, Any]], num_cols: int) -> int:
+    """Columns carrying data in >= 2 records (used for the real-table gate)."""
+    count = 0
+    for column in range(num_cols):
+        filled = sum(
+            1
+            for record in records
+            if column < len(record["cells"]) and record["cells"][column].strip()
+        )
+        if filled >= 2:
+            count += 1
+    return count
+
+
+def normalize_table_grid(structured: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Classify a Docling grid and produce normalized logical records.
+
+    Returns ``None`` for anything that is not a real ``regular_table`` or
+    ``title_detail_table`` (leave it to the existing flow). A
+    ``title_detail_table`` is a header plus repeated pairs where a
+    first-column-only title row is immediately followed by a populated detail
+    row; each pair merges into one record whose first cell is ``title<br>detail``
+    (bullets preserved). Every remaining row stays one record. A real table needs
+    a stable header, >= 2 logical records, and >= 2 content columns.
+    """
+    if not structured:
+        return None
+    rows = [[str(cell).strip() for cell in row] for row in (structured.get("rows") or [])]
+    if not rows:
+        return None
+    num_cols = int(structured.get("num_cols") or max((len(row) for row in rows), default=0))
+    if num_cols < GRID_MIN_CONTENT_COLUMNS + 1:
+        return None
+    header_rows = _grid_header_row_count(structured)
+    if header_rows < 1:
+        return None
+    header = _merge_grid_header(rows, header_rows, num_cols)
+    body = [row + [""] * (num_cols - len(row)) for row in rows[header_rows:]]
+    if not body:
+        return None
+
+    records: list[dict[str, Any]] = []
+    pair_merges = 0
+    index = 0
+    while index < len(body):
+        current = body[index]
+        following = body[index + 1] if index + 1 < len(body) else None
+        if _grid_is_title_only(current) and following is not None and _grid_is_detail(following):
+            merged = [_merge_title_detail_cell(current[0], following[0])] + list(following[1:])
+            records.append(
+                {"cells": merged, "source_rows": [header_rows + index, header_rows + index + 1]}
+            )
+            pair_merges += 1
+            index += 2
+        else:
+            records.append({"cells": list(current), "source_rows": [header_rows + index]})
+            index += 1
+
+    if len(records) < GRID_MIN_RECORDS:
+        return None
+    if _grid_content_column_count(records, num_cols) < GRID_MIN_CONTENT_COLUMNS:
+        return None
+    classification = (
+        "title_detail_table" if pair_merges >= GRID_TITLE_DETAIL_MIN_PAIRS else "regular_table"
+    )
+    return {
+        "classification": classification,
+        "header": header,
+        "records": records,
+        "num_cols": num_cols,
+        "header_rows": header_rows,
+    }
+
+
+def _grid_coverage_column(
+    header: list[str], records: list[dict[str, Any]], num_cols: int
+) -> int | None:
+    """The column table symbols belong in: a ``coverage`` header, else a trailing
+    column empty across every record."""
+    for column, label in enumerate(header):
+        if "coverage" in label.lower():
+            return column
+    last = num_cols - 1
+    if last >= 1 and all(
+        last >= len(record["cells"]) or not record["cells"][last].strip()
+        for record in records
+    ):
+        return last
+    return None
+
+
+def _record_y_band(
+    record: dict[str, Any], cell_rects_by_row: dict[int, list[list[float]]]
+) -> tuple[float, float] | None:
+    tops: list[float] = []
+    bottoms: list[float] = []
+    for row_index in record["source_rows"]:
+        for rect in cell_rects_by_row.get(row_index, []):
+            tops.append(rect[1])
+            bottoms.append(rect[3])
+    if not tops:
+        return None
+    return (min(tops), max(bottoms))
+
+
+def place_grid_symbols(
+    normalized: dict[str, Any],
+    symbols: list[dict[str, Any]],
+    cell_rects_by_row: dict[int, list[list[float]]],
+) -> list[int]:
+    """Inject each symbol's value into the coverage cell of the row that vertically
+    contains it. Returns the picture indices left unplaced.
+
+    A symbol is placed only when its vertical center falls inside exactly one
+    record's row band; ambiguous or geometry-less symbols are returned unplaced
+    (never assigned by sequence), per the escalation rule.
+    """
+    records = normalized["records"]
+    target = _grid_coverage_column(normalized["header"], records, normalized["num_cols"])
+    bands = [(_record_y_band(record, cell_rects_by_row), record) for record in records]
+    unplaced: list[int] = []
+    for symbol in symbols:
+        rect = symbol.get("rect")
+        value = str(symbol.get("value", "")).strip()
+        if target is None or not rect or not value:
+            unplaced.append(symbol["index"])
+            continue
+        center = (rect[1] + rect[3]) / 2
+        matches = [
+            record
+            for band, record in bands
+            if band
+            and band[0] - GRID_SYMBOL_ROW_TOLERANCE <= center <= band[1] + GRID_SYMBOL_ROW_TOLERANCE
+        ]
+        if len(matches) != 1:
+            unplaced.append(symbol["index"])
+            continue
+        cells = matches[0]["cells"]
+        while len(cells) <= target:
+            cells.append("")
+        existing = cells[target].strip()
+        cells[target] = f"{existing} {value}".strip() if existing else value
+    return unplaced
+
+
+def render_grid_markdown(normalized: dict[str, Any]) -> str:
+    """Render a normalized grid as one markdown pipe table (cells escaped)."""
+    num_cols = normalized["num_cols"]
+
+    def _row(cells: list[str]) -> str:
+        padded = [str(cell) for cell in cells] + [""] * (num_cols - len(cells))
+        return "| " + " | ".join(cell.replace("|", "\\|") for cell in padded[:num_cols]) + " |"
+
+    lines = [_row(normalized["header"]), "|" + "---|" * num_cols]
+    lines.extend(_row(record["cells"]) for record in normalized["records"])
+    return "\n".join(lines) + "\n"
+
+
 def build_table_candidates(
     *,
     cells: list[dict[str, Any]],
@@ -537,6 +797,12 @@ def build_table_candidates(
         if block.get("type") != "table":
             continue
         candidate_stats: dict[str, Any] = {}
+        # Retain the full structured Docling grid on every table candidate (not
+        # just KPI ones): deterministic rendering, source-complete verification,
+        # and symbol placement all read from it.
+        grid = block.get("_table_grid")
+        if grid:
+            candidate_stats["grid"] = grid
         if block.get("headerless") and block.get("first_row"):
             candidate_stats.update({
                 "headerless": True,
@@ -685,6 +951,60 @@ def build_table_candidates(
     return candidates
 
 
+def render_deterministic_docling_table(
+    candidate: TableCandidate,
+    records_by_index: dict[int, PictureRecord],
+    page_size: tuple[float, float],
+) -> bool:
+    """Render a structurally valid Docling table straight from its grid, injecting
+    in-cell symbols by row geometry. Returns True when the candidate was rendered.
+
+    Runs at transcription time (not detection) so the table's coverage symbols
+    are already summarized. Scoped to the title/detail signature and to regular
+    tables that carry in-cell symbols (the ESRS impact/policy tables), leaving
+    existing regular/headerless/KPI/sectioned handling untouched.
+    """
+    stats = candidate.stats or {}
+    if candidate.kind != "docling_table" or candidate.verified:
+        return False
+    if stats.get("headerless") or stats.get("kpi_panel") or stats.get("format"):
+        return False
+    normalized = normalize_table_grid(stats.get("grid"))
+    if normalized is None:
+        return False
+    symbols = [
+        {
+            "index": record.index,
+            "value": record.summary.strip(),
+            "rect": picture_record_rect(record, page_size),
+        }
+        for record in records_by_index.values()
+        if record.summary_type == "symbol"
+        and record.summary.strip()
+        and rect_overlap_ratio(
+            picture_record_rect(record, page_size), candidate.bbox
+        ) >= pictures.PICTURE_EMBED_OVERLAP_MIN
+    ]
+    if normalized["classification"] == "regular_table" and not symbols:
+        return False
+    cell_rects_by_row: dict[int, list[list[float]]] = {}
+    for cell in (stats.get("grid") or {}).get("cells", []):
+        normalized_rect = (
+            bbox_to_normalized_rect(cell.get("bbox"), page_size)
+            if cell.get("bbox")
+            else None
+        )
+        if normalized_rect:
+            cell_rects_by_row.setdefault(cell["r"], []).append(normalized_rect)
+    unplaced = place_grid_symbols(normalized, symbols, cell_rects_by_row)
+    candidate.markdown = render_grid_markdown(normalized)
+    candidate.verified = True
+    candidate.stats = {**stats, "format": normalized["classification"], "deterministic": True}
+    if unplaced:
+        candidate.stats["symbols_unplaced_geometry"] = unplaced
+    return True
+
+
 def verified_tables_prompt_block(candidates: list[TableCandidate]) -> str:
     """Only verified region tables reach a prompt; everything else is debug-only."""
     parts: list[str] = []
@@ -705,6 +1025,24 @@ def verified_tables_prompt_block(candidates: list[TableCandidate]) -> str:
                 "verbatim and in order, as markdown tables — do NOT merge them back into "
                 "one table, convert them to lists, drop the repeated header rows, or turn "
                 f"a section title into anything other than its `###` heading):\n{candidate.markdown.strip()}"
+            )
+        elif candidate_format == "title_detail_table":
+            parts.append(
+                f"Table at bbox {candidate.bbox} (authoritative; place this exact table "
+                "verbatim at its position). Each row's first cell already joins the bold "
+                "title and its detail text with `<br>`: keep that single cell as one cell — "
+                "do NOT split the title and detail into separate rows, do NOT turn a title "
+                "into a `### heading`, a section banner, a repeated header row, or a separate "
+                "field/list block. Keep the one header row exactly once and never repeat "
+                f"header labels in body rows:\n{candidate.markdown.strip()}"
+            )
+        elif candidate_format == "regular_table":
+            parts.append(
+                f"Table at bbox {candidate.bbox} (authoritative; place this exact table "
+                "verbatim at its position, as a single markdown table). Keep the one header "
+                "row exactly once, never repeat header labels in body rows, and do NOT "
+                "convert any row into a `### heading`, field block, or list:\n"
+                f"{candidate.markdown.strip()}"
             )
         else:
             parts.append(
@@ -921,12 +1259,19 @@ def transcribe_table_candidates(
     table_dir = page_dir / "table_candidates"
     if table_dir.exists():
         shutil.rmtree(table_dir)
+    DETERMINISTIC_FORMATS = {"sectioned_table", "regular_table", "title_detail_table"}
     for candidate in candidates:
-        # A sectioned docling table is already deterministically transcribed and
-        # verified at build time; never let a VLM pass overwrite it (a symbol
-        # picture overlapping it would otherwise reach the transcription below).
-        # In-cell symbols instead surface via the table_symbols_unplaced warning.
-        if candidate.verified and (candidate.stats or {}).get("format") == "sectioned_table":
+        # Render structurally valid title/detail and symbol-bearing regular Docling
+        # tables straight from the grid now that coverage symbols are summarized.
+        render_deterministic_docling_table(
+            candidate, records_by_index, page_size or (1.0, 1.0)
+        )
+        # A docling table already transcribed and verified deterministically at
+        # build time (sectioned split) or just now (grid render) is authoritative;
+        # never let a VLM pass overwrite it (a symbol picture overlapping it would
+        # otherwise reach the transcription below). Symbols the geometry pass could
+        # not place surface via the table_symbols_unplaced warning instead.
+        if candidate.verified and (candidate.stats or {}).get("format") in DETERMINISTIC_FORMATS:
             continue
         symbol_indices = (candidate.stats or {}).get("symbol_picture_indices", [])
         is_kpi = bool((candidate.stats or {}).get("kpi_panel"))
@@ -944,7 +1289,11 @@ def transcribe_table_candidates(
                 for cell in cells
                 if rect_overlap_ratio(cell.get("rect"), candidate.bbox) > 0.1
             ]
-        grid_rows = (candidate.stats or {}).get("grid_rows", [])
+        # Feed the verifier the COMPLETE Docling grid (full structured text, not
+        # the truncated grid_rows) so it cannot reject a valid table for numbers
+        # that live in cells the overlapping non-table cells omitted.
+        grid_stats = (candidate.stats or {}).get("grid") or {}
+        grid_rows = grid_stats.get("rows") or (candidate.stats or {}).get("grid_rows", [])
         if candidate.kind == "docling_table" and grid_rows:
             for row_index, row in enumerate(grid_rows):
                 for column_index, text in enumerate(row):
@@ -1056,6 +1405,8 @@ __all__ = [
     "nearby_table_signal_blocks", "picture_record_is_table_like",
     "regions_horizontally_adjacent", "merge_adjacent_regions",
     "evaluate_table_regions", "build_table_candidates",
+    "normalize_table_grid", "place_grid_symbols", "render_grid_markdown",
+    "render_deterministic_docling_table",
     "verified_tables_prompt_block", "numeric_tokens", "word_tokens",
     "verify_region_table", "verify_kpi_list", "table_candidate_rows", "render_layout_overlay",
     "render_table_candidates_overlay", "region_blocks_prompt_json",

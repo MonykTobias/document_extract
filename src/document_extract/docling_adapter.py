@@ -323,6 +323,51 @@ def table_header_profile(item: Any, document: Any = None) -> dict[str, Any]:
     }
 
 
+def table_grid_structured(
+    item: Any,
+    document: Any = None,
+    *,
+    max_rows: int = 200,
+    max_cols: int = 32,
+    max_cell_chars: int = 400,
+) -> dict[str, Any]:
+    """Full serializable view of a Docling table grid for deterministic rendering.
+
+    Returns ``{"rows", "num_cols", "header_rows", "cells"}`` where ``rows`` is
+    the dense text grid, ``header_rows`` is how many leading rows Docling marked
+    as column headers, and ``cells`` carries per-position ``{r, c, text, bbox,
+    column_header}`` records (``bbox`` is ``None`` when Docling exposes no cell
+    geometry). Unlike ``table_grid_rows`` this is uncapped enough to reconstruct
+    the whole table and is never sent to a prompt — it round-trips through
+    ``page_state.json`` and feeds transcription/verification/rendering.
+    """
+    data = getattr(item, "data", None)
+    grid = getattr(data, "grid", None) if data is not None else None
+    rows: list[list[str]] = []
+    cells: list[dict[str, Any]] = []
+    for r, row in enumerate(list(grid or [])[:max_rows]):
+        row_texts: list[str] = []
+        for c, cell in enumerate(list(row or [])[:max_cols]):
+            text = " ".join(table_cell_text(cell, document).split())[:max_cell_chars]
+            row_texts.append(text)
+            cells.append(
+                {
+                    "r": r,
+                    "c": c,
+                    "text": text,
+                    "bbox": bbox_to_values(getattr(cell, "bbox", None)),
+                    "column_header": bool(getattr(cell, "column_header", False)),
+                }
+            )
+        rows.append(row_texts)
+    return {
+        "rows": rows,
+        "num_cols": max((len(row) for row in rows), default=0),
+        "header_rows": table_header_profile(item, document)["header_rows"],
+        "cells": cells,
+    }
+
+
 def caption_text(item: Any) -> str:
     for attr in ("caption_text", "caption"):
         value = getattr(item, attr, None)
@@ -338,11 +383,12 @@ def caption_text(item: Any) -> str:
     return ""
 
 
-def bbox_dict(item: Any) -> dict[str, Any] | None:
-    prov = getattr(item, "prov", None) or []
-    if not prov:
-        return None
-    bbox = getattr(prov[0], "bbox", None)
+def bbox_to_values(bbox: Any) -> dict[str, Any] | None:
+    """Normalize a Docling bbox object (or ``[l, t, r, b]``) into a plain dict.
+
+    Shared by ``bbox_dict`` (item-provenance bbox) and the table-cell geometry
+    extraction, so table cells and items expose identical bbox dicts.
+    """
     if bbox is None:
         return None
     values: dict[str, Any] = {}
@@ -364,6 +410,13 @@ def bbox_dict(item: Any) -> dict[str, Any] | None:
     if origin is not None:
         values["origin"] = str(origin).split(".")[-1]
     return values
+
+
+def bbox_dict(item: Any) -> dict[str, Any] | None:
+    prov = getattr(item, "prov", None) or []
+    if not prov:
+        return None
+    return bbox_to_values(getattr(prov[0], "bbox", None))
 
 
 def export_item_markdown(item: Any, document: Any) -> str:
@@ -421,7 +474,7 @@ __all__ = [
     "item_content_layer", "is_furniture_item", "iter_furniture_items",
     "is_picture_item", "is_table_item", "is_heading_item", "item_text",
     "list_marker", "infer_list_levels", "table_cell_text", "table_grid_rows",
-    "table_header_profile",
-    "caption_text", "bbox_dict", "export_item_markdown",
+    "table_header_profile", "table_grid_structured",
+    "caption_text", "bbox_to_values", "bbox_dict", "export_item_markdown",
     "export_page_markdown_via_docling", "assert_docling_export_surface",
 ]

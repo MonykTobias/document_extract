@@ -27,6 +27,23 @@ IMAGE_PLACEHOLDER_RE = re.compile(
 SUMMARY_DUP_MIN_TOKENS = 12
 SUMMARY_DUP_COVERAGE = 0.9
 
+# A picture is right-edge navigation furniture when it sits in the right page
+# band, was skipped as decorative/too small, carries no summary, and is not
+# embedded in a table. These must not be force-appended as image references.
+NAVIGATION_SKIP_REASONS = {"too_small", "triage_decorative", "triage_photo"}
+RIGHT_EDGE_MIN_LEFT = 0.9
+
+
+def _is_right_edge_navigation_image(record: PictureRecord) -> bool:
+    rect = record.norm_rect
+    if not rect or len(rect) < 4 or record.embedded_in == "table":
+        return False
+    if rect[0] < RIGHT_EDGE_MIN_LEFT:
+        return False
+    if record.summary.strip():
+        return False
+    return record.skip_reason in NAVIGATION_SKIP_REASONS or not record.summarize
+
 def item_to_markdown(
     item: Any,
     document: Any,
@@ -206,10 +223,17 @@ def insert_image_references_and_summaries(
             represented.add(record.rel_path)
 
     replacements = [
-        "" if record.summary_type == "symbol" and symbol_in_table(record, markdown)
+        # A table symbol belongs in a table cell only: never emit its value as a
+        # standalone line. If placement succeeded it is already in a `|` row; if
+        # not, it surfaces via the table_symbols_unplaced warning + repair.
+        "" if record.summary_type == "symbol"
         else image_block(record)
         for record in records
         if record.rel_path not in represented
+        # Right-edge decorative/too-small navigation marks have no placeholder
+        # left in the refined body (the model drops them as furniture); never
+        # resurrect them as trailing image references.
+        and not _is_right_edge_navigation_image(record)
     ]
 
     def replace_match(match: re.Match[str]) -> str:
@@ -224,12 +248,9 @@ def insert_image_references_and_summaries(
     for record in records:
         reference = image_reference(record)
         if record.rel_path in represented and record.summary_type == "symbol":
-            replacement = (
-                ""
-                if not record.summary.strip() or symbol_in_table(record, out)
-                else record.summary.strip()
-            )
-            out = out.replace(reference, replacement, 1)
+            # Drop the image reference for a symbol: its value lives in a table
+            # cell when placed, otherwise it is left unplaced (never a loose line).
+            out = out.replace(reference, "", 1)
         elif record.rel_path in represented and record.summary:
             if record.summary.strip() not in out:
                 out = out.replace(reference, image_block(record), 1)

@@ -32,6 +32,10 @@ FURNITURE_SMALL_RUN_SHARE = 0.25
 # the right page edge ("1".."7", "A"). These are furniture even without
 # cross-page repetition.
 CHAPTER_TAB_RE = re.compile(r"^(?:\d{1,2}|[A-Z])$")
+# A bare dash (hyphen/en/em) is only ever furniture at the right page edge — a
+# navigation mark in the sidebar band. Everywhere else a lone "-" is content
+# (an empty list bullet, a value placeholder) and must be retained.
+RIGHT_EDGE_DASH_RE = re.compile(r"^[-–—]$")
 
 
 def furniture_band(rect: list[float] | None) -> str:
@@ -49,7 +53,10 @@ def furniture_band(rect: list[float] | None) -> str:
 
 
 def is_chapter_tab(text: str, rect: list[float] | None) -> bool:
-    return bool(CHAPTER_TAB_RE.fullmatch(text.strip())) and furniture_band(rect) == "right"
+    if furniture_band(rect) != "right":
+        return False
+    stripped = text.strip()
+    return bool(CHAPTER_TAB_RE.fullmatch(stripped) or RIGHT_EDGE_DASH_RE.fullmatch(stripped))
 
 
 def _signature(text: str, rect: list[float] | None) -> tuple[str, str] | None:
@@ -134,6 +141,7 @@ def page_strip_texts(
 
 __all__ = [
     "FURNITURE_BAND_FRACTION", "FURNITURE_MIN_PAGES", "CHAPTER_TAB_RE",
+    "RIGHT_EDGE_DASH_RE",
     "furniture_band", "is_chapter_tab", "repeated_furniture_signatures",
     "page_furniture_texts", "page_strip_texts",
 ]

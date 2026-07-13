@@ -684,6 +684,14 @@ def split_sectioned_grid(
     data_row_count = sum(len(s["rows"]) for s in sections)  # type: ignore[arg-type]
     if data_row_count < SECTIONED_MIN_DATA_ROWS:
         return None
+    # Reserve sectioning for a spanning title that governs two or more complete
+    # data rows. An alternating "title row -> single detail row" pattern (page
+    # 190's impact table, whose super-header sits outside the grid) is a
+    # title/detail table, handled deterministically by the table normalizer —
+    # never split it into one bare-heading subtable per record.
+    data_sections = [s for s in sections if s["title"] is not None and s["rows"]]
+    if data_sections and max(len(s["rows"]) for s in data_sections) < 2:  # type: ignore[arg-type]
+        return None
 
     return {
         "header": header,
@@ -1785,11 +1793,13 @@ def collapse_duplicate_paragraphs(markdown: str) -> tuple[str, list[str]]:
 # Page furniture (running headers/footers, sidebar chapter tabs)
 # --------------------------------------------------------------------------- #
 
-# A bare 1-2 digit number or single capital letter on its own line; a *run* of
-# these after the page's images (or at the very end) is a sidebar chapter-tab
-# column the VLM transcribed top-to-bottom. 3-digit numbers are deliberately
-# excluded: they are real content (TOC page numbers like ``159``).
-_TAB_LINE_RE = re.compile(r"^(?:\d{1,2}|[A-Z])$")
+# A bare 1-2 digit number, single capital letter, or lone dash on its own line;
+# a *run* of these after the page's images (or at the very end) is a sidebar
+# chapter-tab / navigation column the VLM transcribed top-to-bottom. 3-digit
+# numbers are deliberately excluded: they are real content (TOC page numbers
+# like ``159``). A lone dash only strips as part of such a trailing run — a
+# single ``-`` line, or a ``-`` in body prose, is never touched.
+_TAB_LINE_RE = re.compile(r"^(?:\d{1,2}|[A-Z]|[-–—])$")
 # A line that is exactly one image reference/placeholder (local copy: this
 # module must stay stdlib-only, so it cannot import formatting's constant).
 IMAGE_PLACEHOLDER_LINE_RE = re.compile(

@@ -460,7 +460,13 @@ def test_symbol_summary_shape_and_markdown_placement() -> None:
     fallback = insert_image_references_and_summaries(
         "Before\n\n{{DOC_IMAGE_p0026_i001}}", [symbol]
     )
-    check("S3" in fallback and "![" not in fallback, "unplaced symbol falls back to bare text")
+    # A table symbol belongs in a table cell only. When placement failed it must
+    # NOT leak as a standalone line (page 194-196 E5/S4/G1 artifact); it surfaces
+    # via the table_symbols_unplaced warning + repair instead.
+    check(
+        "S3" not in fallback and "![" not in fallback and "DOC_IMAGE" not in fallback,
+        "unplaced symbol is dropped from the body, never emitted as a bare line",
+    )
     _, warnings = postprocess_markdown(
         "{{DOC_IMAGE_p0026_i001}}", "{{DOC_IMAGE_p0026_i001}}", [symbol]
     )

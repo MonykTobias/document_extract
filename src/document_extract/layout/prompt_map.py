@@ -21,6 +21,7 @@ from ..docling_adapter import (
     item_text,
     list_marker,
     table_grid_rows,
+    table_grid_structured,
     table_header_profile,
 )
 from ..markdown.postprocess import render_sectioned_tables, split_sectioned_grid
@@ -199,6 +200,10 @@ def build_layout_prompt_map(
             {
                 "id": f"b{index:04d}",
                 "item": item,
+                # Each entry keeps its OWN picture record; a later loop must never
+                # reuse the module-level ``record`` variable (it would carry the
+                # last item's record onto every picture block).
+                "record": record,
                 "kind": kind,
                 "type": prompt_block_type(item),
                 "bbox": bbox,
@@ -226,13 +231,18 @@ def build_layout_prompt_map(
             "bbox": entry["rect"],
         }
         if entry["is_picture"]:
-            if record:
-                block["picture_index"] = record.index
+            picture_record = entry["record"]
+            if picture_record:
+                block["picture_index"] = picture_record.index
             if entry["caption"]:
                 block["caption"] = truncate_prompt_text(entry["caption"], 240)
-            if record and record.summary_type == "symbol" and record.summary.strip():
+            if (
+                picture_record
+                and picture_record.summary_type == "symbol"
+                and picture_record.summary.strip()
+            ):
                 block["role"] = "table_symbol"
-                block["value"] = record.summary.strip()
+                block["value"] = picture_record.summary.strip()
             blocks.append(block)
             continue
 
@@ -248,6 +258,12 @@ def build_layout_prompt_map(
             block["first_row"] = profile["first_row"]
         if entry["table_grid_rows"]:
             block["grid_rows"] = entry["table_grid_rows"]
+        if entry["is_table"]:
+            # Full structured grid (uncapped text + per-cell geometry) under a
+            # private key: it feeds deterministic table rendering, source-complete
+            # verification, and symbol placement, but ``layout_map_prompt_json``
+            # strips underscore keys so it never bloats a prompt.
+            block["_table_grid"] = table_grid_structured(entry["item"])
         if entry["is_table"] and not profile["headerless"]:
             # Detect spanning section-header rows on the FULL grid (grid_rows is
             # truncated) and, when found, attach the deterministic split under a
