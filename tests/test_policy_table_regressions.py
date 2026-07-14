@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.layout.prompt_map import build_layout_prompt_map
 from document_extract.markdown.formatting import (
+    _enforce_deterministic_candidate,
     insert_image_references_and_summaries,
     replace_deterministic_tables,
 )
@@ -925,6 +926,88 @@ def test_strong_list_preserves_midtext_weak() -> None:
     )
 
 
+# --------------------------------------------------------------------------- #
+# Tier-1 anchor distinctiveness: a small unrelated table whose only shared cells
+# are generic labels / coverage codes must not be spliced over by a large,
+# unrelated verified candidate; a genuine distinctive twin still splices.
+# --------------------------------------------------------------------------- #
+
+
+def test_generic_cell_overlap_does_not_splice_unrelated_table() -> None:
+    # The large candidate and the small page table share only generic strings
+    # (`Financial`, `E1, E3`, `Workers in the value chain`, `E1, E2, E3`,
+    # `ESRS coverage`) — ratio 5/6 clears the 0.6 gate, but only one shared cell
+    # carries unique content, so the splice must abstain (no takeover).
+    candidate = TableCandidate(
+        candidate_id="tcX",
+        kind="table",
+        bbox=[0.05, 0.05, 0.95, 0.5],
+        verified=True,
+        stats={"format": "regular_table"},
+        markdown=(
+            "| Metric | Value | ESRS coverage |\n"
+            "|---|---|---|\n"
+            "| Revenue growth in constant currency across all regions | 4.2% | E1, E3 |\n"
+            "| Financial | Shareholders and investors dialogue program | E1, E2, E3 |\n"
+            "| Workers in the value chain | Long-term contractual partnerships | E1 |\n"
+        ),
+    )
+    page = (
+        "## Some unrelated section\n\n"
+        "| Category | ESRS coverage |\n"
+        "|---|---|\n"
+        "| Financial | E1, E3 |\n"
+        "| Workers in the value chain | E1, E2, E3 |\n"
+    )
+    check(
+        _enforce_deterministic_candidate(page, candidate) is None,
+        "a generic-cell-only overlap does not anchor the candidate (returns None)",
+    )
+    out, enforced = replace_deterministic_tables(page, [candidate])
+    check(enforced == [], "the unrelated candidate is not enforced")
+    check(out == page, "the small foreign table is left untouched (not spliced over)")
+
+
+def test_distinctive_twin_still_splices() -> None:
+    # A genuine twin: the page carries the raw split title/detail rows and the
+    # candidate the authoritative merged form. Their shared cells are long/unique,
+    # so >= 2 are distinctive and the splice proceeds (currently-anchoring
+    # behavior preserved by the distinctiveness floor).
+    candidate = TableCandidate(
+        candidate_id="tcTwin",
+        kind="table",
+        bbox=[0.05, 0.2, 0.99, 0.66],
+        verified=True,
+        stats={"format": "title_detail_table"},
+        markdown=(
+            "| Topic | Type |\n"
+            "|---|---|\n"
+            "| Farmer support and regenerative agriculture<br>Long-term programs across the value chain | Positive impact |\n"
+            "| Community water stewardship initiatives<br>Protecting shared water resources locally | Positive impact |\n"
+        ),
+    )
+    page = (
+        "## Impacts\n\n"
+        "| Topic | Type |\n"
+        "|---|---|\n"
+        "| Farmer support and regenerative agriculture |  |\n"
+        "| Long-term programs across the value chain | Positive impact |\n"
+        "| Community water stewardship initiatives |  |\n"
+        "| Protecting shared water resources locally | Positive impact |\n"
+    )
+    out, enforced = replace_deterministic_tables(page, [candidate])
+    check(enforced == [candidate.candidate_id], "the distinctive twin is enforced")
+    check(
+        "Farmer support and regenerative agriculture<br>Long-term programs across the value chain" in out,
+        "the merged authoritative cell replaces the raw split title/detail rows",
+    )
+    check(
+        "| Farmer support and regenerative agriculture |  |" not in out,
+        "the standalone raw title row is gone",
+    )
+    check("## Impacts" in out, "the unrelated heading is preserved")
+
+
 def _run_all() -> None:
     test_picture_blocks_keep_their_own_index_and_value()
     test_full_grid_reaches_stats_and_verifier()
@@ -973,6 +1056,9 @@ def _run_all() -> None:
     test_leading_weak_glyph_is_a_bullet()
     test_multiple_midtext_middot_unchanged()
     test_strong_list_preserves_midtext_weak()
+    # Tier-1 anchor distinctiveness floor (generic-cell false-positive splice)
+    test_generic_cell_overlap_does_not_splice_unrelated_table()
+    test_distinctive_twin_still_splices()
     print("test_policy_table_regressions: all checks passed")
 
 

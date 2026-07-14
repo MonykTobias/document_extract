@@ -802,6 +802,26 @@ def _deterministic_anchor_texts(candidate: TableCandidate) -> set[str]:
     return texts
 
 
+# A run of >= 3 letters (Unicode-aware). Coverage codes (``E1``, ``S1``) are a
+# single letter + digit, so they never count as a distinctive "word".
+_DISTINCTIVE_WORD_RE = re.compile(r"[^\W\d_]{3,}", re.UNICODE)
+
+
+def _is_distinctive_cell(text: str) -> bool:
+    """True when a cell carries enough unique content to anchor a splice on its own.
+
+    Generic short labels and coverage codes (``E1``, ``Type``, ``ESRS coverage``,
+    even a ``E1, E2, E3`` code list) recur across unrelated tables, so counting
+    them lets a large candidate splice over a small foreign table that merely
+    reuses those strings. A cell is distinctive only when it is long (>= 16 chars)
+    or carries >= 3 real words (runs of >= 3 letters — codes never qualify).
+    """
+    collapsed = collapse_ws(text)
+    if len(collapsed) >= 16:
+        return True
+    return len(_DISTINCTIVE_WORD_RE.findall(collapsed)) >= 3
+
+
 def _enforce_deterministic_candidate(
     markdown: str, candidate: TableCandidate
 ) -> str | None:
@@ -824,8 +844,12 @@ def _enforce_deterministic_candidate(
         cells = [cell for row in rows for cell in row if cell]
         if not cells:
             continue
-        matched = sum(1 for cell in cells if cell in texts)
-        if matched >= 2 and matched >= 0.6 * len(cells):
+        matched = [cell for cell in cells if cell in texts]
+        distinctive = sum(1 for cell in matched if _is_distinctive_cell(cell))
+        # Require the overlap to be real: enough of the span (ratio) AND at least
+        # two cells carrying unique content, so a small unrelated table whose only
+        # shared cells are generic labels/coverage codes can't be spliced over.
+        if len(matched) >= 2 and len(matched) >= 0.6 * len(cells) and distinctive >= 2:
             anchor_pipe.update(range(start, end))
 
     def anchor_of(index: int) -> bool | None:
