@@ -12,9 +12,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.markdown.postprocess import (
+    extract_unplaced_sections,
     filter_unplaced_lines,
     normalize_furniture_text,
 )
+from document_extract.models import PictureRecord
 from document_extract.refinement import apply_completeness_guard, postprocess_markdown
 
 
@@ -41,6 +43,22 @@ RATING_BODY = (
     "| Agency | Short-term | Long-term |\n|---|---|---|\n"
     "| Moody's | P-2 | Baa1 |\n| S&P | | BBB+ |\n"
 )
+
+
+def _symbol_record(value: str = "S4") -> PictureRecord:
+    return PictureRecord(
+        page=1,
+        index=1,
+        placeholder="{{DOC_IMAGE_p0001_i001}}",
+        rel_path="images/picture_p0001_i001.png",
+        abs_path=None,
+        bbox=None,
+        area_ratio=0.001,
+        classification="",
+        caption="",
+        summary_type="symbol",
+        summary=value,
+    )
 
 
 def check_repeated_phrase() -> None:
@@ -120,6 +138,62 @@ def check_uncertain_block_routing() -> None:
     )
 
 
+def check_vlm_unplaced_sections_are_recycled_or_dropped() -> None:
+    untouched = "# Title\n\nBody remains.\n"
+    extracted, entries = extract_unplaced_sections(untouched)
+    check(extracted == untouched and entries == [], "pages without unplaced sections stay byte-identical")
+
+    record = _symbol_record()
+    working = (
+        "Body remains.\n\n"
+        "## Unplaced content\n\n"
+        "(none)\n"
+        "- ![S4](#)\n"
+        "- A genuinely missing prose detail with value 42%.\n"
+    )
+    final, warnings = postprocess_markdown("Body remains.\n", working, [record])
+    check("(none)" not in final, "literal empty unplaced filler is removed")
+    check("![S4](#)" not in final, "placed-symbol unplaced entry is removed")
+    check(final.count("## Unplaced content") == 1, "the guard is the sole final section author")
+    check(
+        "- A genuinely missing prose detail with value 42%." in final,
+        "genuine VLM unplaced prose is recycled through the guard",
+    )
+    check(
+        warnings.get("vlm_unplaced_sections") == {
+            "removed": 1,
+            "recycled": 1,
+            "dropped": 2,
+        },
+        "unplaced-section warning records removed, recycled, and dropped entries",
+    )
+
+    stripped, stripped_warnings = postprocess_markdown(
+        "Body remains.\n", "Body remains.\n\n![S4](#)\n", [record]
+    )
+    check("![S4](#)" not in stripped, "loose symbol link is stripped from body output")
+    check(
+        stripped_warnings.get("loose_symbol_lines_stripped") == 1,
+        "loose-symbol warning records the deterministic cleanup",
+    )
+
+    toc_final, toc_warnings = postprocess_markdown(
+        "Body remains.\n",
+        "Body remains.\n\n## Unplaced content\n\n- TOC-only missing detail.\n",
+        [],
+        page_role="toc",
+    )
+    check("TOC-only missing detail" not in toc_final, "TOC guard suppresses recycled unplaced prose")
+    check(
+        toc_warnings.get("vlm_unplaced_sections") == {
+            "removed": 1,
+            "recycled": 0,
+            "dropped": 1,
+        },
+        "TOC-suppressed survivor is counted as dropped",
+    )
+
+
 def main() -> int:
     check_repeated_phrase()
     check_fuzzy_present()
@@ -127,6 +201,7 @@ def main() -> int:
     check_furniture_rule()
     check_empty_section_not_emitted()
     check_uncertain_block_routing()
+    check_vlm_unplaced_sections_are_recycled_or_dropped()
     print("test_unplaced_filter: all checks passed")
     return 0
 

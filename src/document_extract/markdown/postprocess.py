@@ -29,6 +29,14 @@ from html.parser import HTMLParser
 # --------------------------------------------------------------------------- #
 
 BULLET_CHARS = "•●▪◦‣·∙"
+# Table cells need a slightly different bullet policy from prose. Strong glyphs
+# can form an inline list anywhere in a cell; weak middle dots only form a list
+# when they lead the cell, so values such as ``12·000`` stay literal.
+GRID_BULLET_CHARS_STRONG = "•●▪◦‣■"
+GRID_BULLET_CHARS_WEAK = "·∙"
+GRID_BULLET_CHARS = GRID_BULLET_CHARS_STRONG + GRID_BULLET_CHARS_WEAK
+_GRID_STRONG_SPLIT_RE = re.compile(rf"[{GRID_BULLET_CHARS_STRONG}]")
+_GRID_BULLET_SPLIT_RE = re.compile(rf"[{GRID_BULLET_CHARS}]")
 # Unicode bullet at line start, optionally after whitespace.
 _LEADING_BULLET_RE = re.compile(rf"^\s*[{BULLET_CHARS}]\s*")
 # Inline bullet used as an item separator (has content on both sides).
@@ -39,6 +47,9 @@ _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _TABLE_BLOCK_RE = re.compile(r"<table\b.*?</table>", re.IGNORECASE | re.DOTALL)
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 _UNCERTAINTY_TITLE_RE = re.compile(r"^\s*#{1,6}\s*uncertain", re.IGNORECASE)
+_REDUNDANT_LIST_GLYPH_RE = re.compile(
+    rf"^(\s*)-\s+([{GRID_BULLET_CHARS_STRONG}])\s+(\S.*)$"
+)
 
 # KPI panels: display values + all-caps captions are not data tables. Keep the
 # classifier here because postprocessing must stay stdlib-only.
@@ -653,8 +664,10 @@ def split_sectioned_grid(
     if not _sectioned_header_row_ok(header, header_rows):
         return None
 
-    sections: list[dict[str, object]] = [{"title": None, "qualifiers": [], "rows": []}]
-    for row in rows[1:]:
+    sections: list[dict[str, object]] = [
+        {"title": None, "qualifiers": [], "rows": [], "source_rows": []}
+    ]
+    for source_row, row in enumerate(rows[1:], start=1):
         padded = row + [""] * (n_cols - len(row))
         title = _sectioned_section_title(padded)
         if title is not None:
@@ -667,9 +680,17 @@ def split_sectioned_grid(
                 # "(in € millions)" directly under a just-opened section heading.
                 current["qualifiers"].append(title)  # type: ignore[union-attr]
             else:
-                sections.append({"title": title, "qualifiers": [], "rows": []})
+                sections.append(
+                    {
+                        "title": title,
+                        "qualifiers": [],
+                        "rows": [],
+                        "source_rows": [],
+                    }
+                )
         else:
             sections[-1]["rows"].append(padded)  # type: ignore[union-attr]
+            sections[-1]["source_rows"].append(source_row)  # type: ignore[union-attr]
 
     # Drop the empty untitled lead section and any dangling trailing banner(s)
     # that never received data rows.
@@ -744,7 +765,11 @@ def render_sectioned_tables(split: dict[str, object], base_level: int = 3) -> st
                 sectioned_heading_line(str(title), [str(q) for q in section["qualifiers"]], level)
             )
         if section["rows"]:
-            grid = [header, *section["rows"]]
+            body_rows = [
+                [cell_with_bullets(str(cell)) for cell in row]
+                for row in section["rows"]
+            ]
+            grid = [header, *body_rows]
             escaped = [
                 [cell.replace("|", "\\|") for cell in (row + [""] * (n_cols - len(row)))]
                 for row in grid
@@ -784,6 +809,62 @@ def flatten_html_tables(markdown: str) -> str:
 # --------------------------------------------------------------------------- #
 # Bullet / heading normalization (F9 hygiene)
 # --------------------------------------------------------------------------- #
+
+
+def cell_with_bullets(cell: str) -> str:
+    """Preserve inline table-cell lists as ``<br>- item`` fragments.
+
+    A cell is a list only when it starts with a bullet glyph or contains at
+    least two strong glyphs. This keeps a lone mid-text square and weak middle
+    dots in numeric or chemical values literal.
+    """
+    cell = cell.strip()
+    strong_count = sum(cell.count(ch) for ch in GRID_BULLET_CHARS_STRONG)
+    leading_bullet = bool(cell) and cell[0] in GRID_BULLET_CHARS
+    if strong_count < 2 and not leading_bullet:
+        return cell
+    leading_weak = bool(cell) and cell[0] in GRID_BULLET_CHARS_WEAK
+    split_re = _GRID_BULLET_SPLIT_RE if leading_weak else _GRID_STRONG_SPLIT_RE
+    parts = [part.strip() for part in split_re.split(cell)]
+    out: list[str] = []
+    for index, part in enumerate(parts):
+        if not part:
+            continue
+        if index == 0 and not leading_bullet:
+            out.append(part)
+        else:
+            out.append(f"- {part}")
+    return "<br>".join(out) if out else cell
+
+
+def became_bullet_list(before: str, after: str) -> bool:
+    """Whether :func:`cell_with_bullets` performed a genuine list conversion."""
+    return after != before.strip() and (after.startswith("- ") or "<br>- " in after)
+
+
+def strip_redundant_list_glyphs(markdown: str) -> str:
+    """Remove a duplicated strong bullet after an ordinary Markdown list marker.
+
+    This deliberately skips pipe rows and legend lines such as ``- ■ = fully
+    covered``. It must run before prose bullet normalization, where ``- • x``
+    would otherwise be split into malformed lines.
+    """
+    lines: list[str] = []
+    changed = False
+    for line in markdown.splitlines():
+        if line.lstrip().startswith("|"):
+            lines.append(line)
+            continue
+        match = _REDUNDANT_LIST_GLYPH_RE.match(line)
+        if match and not match.group(3).lstrip().startswith("="):
+            lines.append(f"{match.group(1)}- {match.group(3)}")
+            changed = True
+        else:
+            lines.append(line)
+    if not changed:
+        return markdown
+    suffix = "\n" if markdown.endswith("\n") else ""
+    return "\n".join(lines) + suffix
 
 
 def _split_inline_bullets(line: str) -> list[str]:
@@ -1162,11 +1243,43 @@ def completeness_diff(
 # --------------------------------------------------------------------------- #
 
 UNPLACED_TITLE = "## Unplaced content"
+_UNPLACED_SECTION_TITLE_RE = re.compile(r"^##\s+Unplaced content\s*$", re.IGNORECASE)
 
 # Coverage a part's alphabetic tokens need inside one body window to count as
 # already present (stricter than the 0.6 the completeness diff uses to call a
 # line missing, so the two tests cannot flap).
 UNPLACED_PRESENT_COVERAGE = 0.85
+
+
+def extract_unplaced_sections(markdown: str) -> tuple[str, list[str]]:
+    """Remove ``## Unplaced content`` sections and return their nonblank lines.
+
+    The deterministic completeness guard is the only final author of this
+    section. Model-authored copies are recycled through that guard, which keeps
+    genuine missing prose while dropping empty or already-placed entries.
+    """
+    lines = markdown.splitlines()
+    out: list[str] = []
+    captured: list[str] = []
+    in_section = False
+    found = False
+    for line in lines:
+        if _UNPLACED_SECTION_TITLE_RE.fullmatch(line.strip()):
+            in_section = True
+            found = True
+            continue
+        if in_section and re.match(r"^#{1,2}\s+\S", line):
+            in_section = False
+        if in_section:
+            stripped = line.strip()
+            if stripped:
+                captured.append(stripped)
+            continue
+        out.append(line)
+    if not found:
+        return markdown, []
+    suffix = "\n" if markdown.endswith("\n") and out else ""
+    return "\n".join(out) + suffix, captured
 
 
 def _part_present(
@@ -1952,6 +2065,8 @@ def strip_meta_commentary(markdown: str) -> str:
 # Decoding-loop / repetition detection (F6)
 # --------------------------------------------------------------------------- #
 
+_PIPE_SEPARATOR_ROW_RE = re.compile(r"^\|?[\s|:-]+\|?$")
+
 
 def detect_repeated_lines(text: str) -> tuple[float, bool]:
     """Return ``(repeated_ratio, is_anomalous)`` for a model output.
@@ -1959,7 +2074,18 @@ def detect_repeated_lines(text: str) -> tuple[float, bool]:
     ``repeated_ratio`` = 1 - unique/total over non-trivial lines. Anomalous when a
     single line repeats many times or the overall ratio is high on a long output.
     """
-    lines = [ln.strip() for ln in text.splitlines() if len(ln.strip()) > 20]
+    physical_lines = [line.strip() for line in text.splitlines()]
+    structural_rows: set[int] = set()
+    for index, line in enumerate(physical_lines):
+        if _PIPE_SEPARATOR_ROW_RE.fullmatch(line):
+            structural_rows.add(index)
+            if index and physical_lines[index - 1].startswith("|"):
+                structural_rows.add(index - 1)
+    lines = [
+        line
+        for index, line in enumerate(physical_lines)
+        if index not in structural_rows and len(line) > 20
+    ]
     total = len(lines)
     if total == 0:
         return 0.0, False

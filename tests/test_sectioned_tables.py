@@ -28,10 +28,11 @@ from document_extract.markdown.postprocess import (
     render_sectioned_tables,
     split_sectioned_grid,
 )
-from document_extract.models import TableCandidate
+from document_extract.models import PictureRecord, TableCandidate
 from document_extract.refinement import postprocess_markdown
 from document_extract.tables import (
     build_table_candidates,
+    render_sectioned_docling_table,
     transcribe_table_candidates,
     verified_tables_prompt_block,
 )
@@ -104,6 +105,8 @@ def _candidate_from_grid(grid, header_rows=0, candidate_id="tc001"):
         verified=True,
         stats={
             "format": "sectioned_table",
+            "grid": {"rows": grid},
+            "sectioned_split": split,
             "section_titles": split["section_titles"],
             "section_qualifiers": split["section_qualifiers"],
             "section_kinds": split["section_kinds"],
@@ -293,6 +296,123 @@ def check_render() -> None:
           "escaped cell keeps the row's column count aligned with the header")
 
 
+def check_sectioned_body_bullets_and_raw_twin_anchor() -> None:
+    grid = [
+        ["Topic", "Details", "ESRS coverage"],
+        ["SECTIONED BULLETS", "", ""],
+        ["Single", "■ one item", ""],
+        ["Multiple", "■ first ■ second", ""],
+        ["Lead", "lead ■ first ■ second", ""],
+        ["Literal", "literal ■ marker", ""],
+        ["Weak", "12·000", ""],
+    ]
+    split = split_sectioned_grid(grid, header_rows=1)
+    rendered = render_sectioned_tables(split)
+    check("| Topic | Details | ESRS coverage |" in rendered, "sectioned header remains unmodified")
+    check("### SECTIONED BULLETS" in rendered, "section title remains an unmodified heading")
+    check("| Single | - one item |" in rendered, "leading single bullet becomes one list item")
+    check("| Multiple | - first<br>- second |" in rendered, "multiple bullets become cell-local list items")
+    check("| Lead | lead<br>- first<br>- second |" in rendered, "leading prose survives before cell bullets")
+    check("literal ■ marker" in rendered, "lone mid-text black square remains literal")
+    check("12·000" in rendered, "mid-text weak middle dot remains literal")
+
+    candidate = _candidate_from_grid(grid, header_rows=1, candidate_id="tc-bullets")
+    raw_rows = "\n".join("| " + " | ".join(row) + " |" for row in grid)
+    raw_lines = raw_rows.splitlines()
+    raw_lines.insert(1, "|---|---|---|")
+    out, enforced = replace_sectioned_tables("\n".join(raw_lines) + "\n", [candidate])
+    check(enforced == ["tc-bullets"], "raw bullet-bearing sectioned twin still anchors and splices")
+    check("- first<br>- second" in out, "spliced sectioned twin uses normalized cell bullets")
+
+
+def _sectioned_structured_grid(rows: list[list[str]]) -> dict[str, object]:
+    cells: list[dict[str, object]] = []
+    row_height = 1.0 / len(rows)
+    num_cols = max(len(row) for row in rows)
+    for row_index, row in enumerate(rows):
+        for column_index, text in enumerate(row):
+            cells.append(
+                {
+                    "r": row_index,
+                    "c": column_index,
+                    "text": text,
+                    "bbox": {
+                        "l": column_index / num_cols,
+                        "t": row_index * row_height,
+                        "r": (column_index + 1) / num_cols,
+                        "b": (row_index + 1) * row_height,
+                        "origin": "TOPLEFT",
+                    },
+                    "column_header": row_index == 0,
+                }
+            )
+    return {"rows": rows, "num_cols": num_cols, "header_rows": 1, "cells": cells}
+
+
+def _sectioned_symbol(index: int, rect: list[float], value: str) -> PictureRecord:
+    return PictureRecord(
+        page=1,
+        index=index,
+        placeholder=f"{{{{DOC_IMAGE_p0001_i{index:03d}}}}}",
+        rel_path=f"images/picture_p0001_i{index:03d}.png",
+        abs_path=None,
+        bbox={"l": rect[0], "t": rect[1], "r": rect[2], "b": rect[3], "origin": "TOPLEFT"},
+        area_ratio=0.001,
+        classification="",
+        caption="",
+        summary_type="symbol",
+        summary=value,
+    )
+
+
+def check_sectioned_symbol_placement_by_source_row() -> None:
+    rows = [
+        ["Topic", "Description", "ESRS coverage"],
+        ["SECTION A", "", ""],
+        ["First A", "Description A", ""],
+        ["Second A", "Description B", ""],
+        ["SECTION B", "", ""],
+        ["First B", "Description C", ""],
+        ["Second B", "Description D", ""],
+    ]
+    structured = _sectioned_structured_grid(rows)
+    split = split_sectioned_grid(rows, header_rows=1)
+    candidate = TableCandidate(
+        candidate_id="tc-symbols",
+        kind="docling_table",
+        bbox=[0.0, 0.0, 1.0, 1.0],
+        markdown=render_sectioned_tables(split),
+        verified=True,
+        stats={
+            "format": "sectioned_table",
+            "grid": structured,
+            "sectioned_split": split,
+            "section_titles": split["section_titles"],
+            "section_qualifiers": split["section_qualifiers"],
+            "section_kinds": split["section_kinds"],
+        },
+    )
+    first = _sectioned_symbol(1, [0.82, 0.30, 0.90, 0.38], "E1")
+    third = _sectioned_symbol(2, [0.82, 0.73, 0.90, 0.81], "S2")
+    off_band = _sectioned_symbol(3, [0.82, 0.03, 0.90, 0.07], "G3")
+    rendered = render_sectioned_docling_table(
+        candidate, {1: first, 2: third, 3: off_band}, (1.0, 1.0)
+    )
+    check(rendered, "sectioned candidate rerenders after symbols are summarized")
+    check("| First A | Description A | E1 |" in candidate.markdown, "symbol lands in the first section row")
+    check("| First B | Description C | S2 |" in candidate.markdown, "symbol lands in the later section row")
+    check("G3" not in candidate.markdown, "off-band symbol is never sequenced into a section row")
+    check(
+        (candidate.stats or {}).get("symbols_unplaced_geometry") == [3],
+        "off-band symbol is retained as a geometry warning",
+    )
+    _, warnings = postprocess_markdown("", candidate.markdown, [first, third, off_band], [candidate])
+    check(
+        warnings.get("table_symbols_unplaced") == [off_band.placeholder],
+        "only the off-band sectioned symbol reaches the page warning",
+    )
+
+
 def _sectioned_table_item(grid, *, flag_header=False, bbox=(30, 30, 900, 760)):
     def cell(text, header):
         return SimpleNamespace(text=text, column_header=header)
@@ -318,6 +438,8 @@ def check_prompt_map_wiring() -> None:
     check(block["type"] == "table", "table block present")
     check("_sectioned_table" in block, "sectioned split attached to the table block")
     check(block["_sectioned_table"]["source_row_count"] == len(P154_GRID), "full grid used for detection")
+    source_rows = block["_sectioned_table"]["split"]["sections"][0]["source_rows"]
+    check(source_rows == [2, 3], "sectioned split retains source rows for later symbol placement")
     check(len(block.get("grid_rows", [])) == 12, "prompt-facing grid_rows stays truncated to 12 rows")
     prompt_json = layout_map_prompt_json(layout_map)
     check("_sectioned_table" not in prompt_json, "private key stripped from the prompt JSON")
@@ -333,6 +455,7 @@ def check_build_candidates() -> None:
         "grid_rows": P154_GRID[:12],
         "_sectioned_table": {
             "markdown": render_sectioned_tables(split),
+            "split": split,
             "section_titles": split["section_titles"],
             "section_qualifiers": split["section_qualifiers"],
             "data_row_count": split["data_row_count"],
@@ -348,6 +471,10 @@ def check_build_candidates() -> None:
     check(candidate.verified, "sectioned candidate is verified without a VLM call")
     check(candidate.usage is None, "no VLM usage recorded for a deterministic split")
     check((candidate.stats or {}).get("format") == "sectioned_table", "candidate marked sectioned_table")
+    check(
+        (candidate.stats or {}).get("sectioned_split", {}).get("sections"),
+        "candidate retains the sectioned source-row mapping",
+    )
     check("kpi_panel" not in (candidate.stats or {}), "KPI branch skipped for a sectioned table")
     check(candidate.markdown.count("### ") == 4, "candidate markdown holds the subtables")
 
@@ -542,6 +669,8 @@ def main() -> int:
     check_group_heading_levels_consistent()
     check_split_negatives()
     check_render()
+    check_sectioned_body_bullets_and_raw_twin_anchor()
+    check_sectioned_symbol_placement_by_source_row()
     check_prompt_map_wiring()
     check_build_candidates()
     check_prompt_block_wording()

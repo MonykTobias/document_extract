@@ -42,6 +42,7 @@ from document_extract.markdown.formatting import (
 )
 from document_extract.models import PictureRecord, TableCandidate
 from document_extract.pictures import (
+    normalize_symbol_summary,
     parse_picture_triage,
     parse_typed_summary,
     picture_specialist_prompt,
@@ -476,6 +477,21 @@ def test_symbol_summary_shape_and_markdown_placement() -> None:
             items=[], warnings=warnings, current_markdown="S3", records=[symbol]
         ),
         "unplaced table symbol triggers repair",
+    )
+
+
+def test_multi_code_symbol_summary_normalization() -> None:
+    check(
+        normalize_symbol_summary("S1 S2 S3") == "S1, S2, S3",
+        "space-separated symbol codes normalize to the comma cell convention",
+    )
+    check(
+        normalize_symbol_summary("S4") == "S4",
+        "a single symbol code is unchanged",
+    )
+    check(
+        normalize_symbol_summary("coverage applies broadly") == "coverage applies broadly",
+        "ordinary symbol text is unchanged",
     )
 
 

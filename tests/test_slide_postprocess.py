@@ -12,6 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from document_extract.markdown import postprocess as sp
+from document_extract.refinement import postprocess_markdown
 
 BASELINE = Path("outputs_paddleocr_vl_qwen/danoneiar2025v1")
 NEWRUN = Path("outputs_paddleocr_vl_qwen/danoneiar2025v2")
@@ -59,6 +60,33 @@ def test_inline_bullets():
     lines = [l for l in out.splitlines() if l.strip()]
     check(sum(l.startswith("- ") for l in lines) == 3, "inline bullets split into 3 list items")
     check(any("OUR TARGETS:" in l and not l.startswith("- ") for l in lines), "prefix kept as its own line")
+
+
+def test_redundant_list_glyphs():
+    markdown = (
+        "- ■ ongoing uncertainties are tracked.\n"
+        "  - • indented variant stays a list item.\n"
+        "- ■ = fully covered legend.\n"
+        "| Label | - ■ pipe-row value |\n"
+        "- plain list item.\n"
+    )
+    out = sp.strip_redundant_list_glyphs(markdown)
+    check("- ongoing uncertainties are tracked." in out, "black square after list marker is removed")
+    check("  - indented variant stays a list item." in out, "indented redundant bullet is removed")
+    check("- ■ = fully covered legend." in out, "legend glyph is preserved")
+    check("| Label | - ■ pipe-row value |" in out, "pipe-row glyph is preserved")
+    check("- plain list item." in out, "ordinary list item is unchanged")
+    check(sp.strip_redundant_list_glyphs(out) == out, "redundant-glyph strip is idempotent")
+
+    final, _ = postprocess_markdown(
+        "- • ongoing uncertainties are tracked.\n",
+        "- • ongoing uncertainties are tracked.\n",
+        [],
+    )
+    check(
+        final.strip() == "- ongoing uncertainties are tracked.",
+        "postprocess strips before prose bullet normalization can split the list",
+    )
 
 
 def test_extract_uncertainty():
@@ -183,6 +211,33 @@ def test_repeated_lines():
     normal = "# Title\n\nA sentence here.\n\nAnother distinct sentence there.\n"
     _, anom2 = sp.detect_repeated_lines(normal)
     check(not anom2, "normal text not flagged as loop")
+
+
+def test_repeated_lines_ignores_structural_table_rows():
+    header = "| This long repeated section header must not count as a decoding loop | Value |"
+    separator = "|---|---|"
+    distinct_bodies = [
+        f"| Distinct body row {index} contains enough descriptive content to remain unique | {index} |"
+        for index in range(8)
+    ]
+    sectioned = "\n".join(
+        line
+        for index, body in enumerate(distinct_bodies)
+        for line in (header, separator, body)
+    )
+    ratio, anomalous = sp.detect_repeated_lines(sectioned)
+    check(not anomalous and ratio == 0.0, "repeated section headers and separators are structural")
+
+    repeated_body = "| Repeated body row with enough content to indicate a real decoding loop | x |"
+    _, body_anomalous = sp.detect_repeated_lines("\n".join([header, separator] + [repeated_body] * 6))
+    check(body_anomalous, "repeated table body rows still trigger the decoder-loop guard")
+    prose = "The same long prose sentence repeats and should remain a decoder-loop signal."
+    _, prose_anomalous = sp.detect_repeated_lines("\n".join([prose] * 5))
+    check(prose_anomalous, "repeated prose still triggers the decoder-loop guard")
+    first = "First long prose line repeated below to exercise the ratio-only branch."
+    second = "Second long prose line repeated below to exercise the ratio-only branch."
+    ratio, ratio_anomalous = sp.detect_repeated_lines("\n".join([first] * 4 + [second] * 4))
+    check(ratio_anomalous and ratio > 0.5, "the repeated-ratio branch remains active")
 
 
 def test_meta_commentary():

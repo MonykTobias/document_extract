@@ -279,6 +279,10 @@ def build_layout_prompt_map(
             if split:
                 block["_sectioned_table"] = {
                     "markdown": render_sectioned_tables(split),
+                    # Keep the source-row mapping private but checkpointed so
+                    # summarized table symbols can be placed deterministically
+                    # after picture extraction.
+                    "split": split,
                     "section_titles": split["section_titles"],
                     "section_qualifiers": split["section_qualifiers"],
                     "section_kinds": split["section_kinds"],

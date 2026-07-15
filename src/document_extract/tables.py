@@ -80,16 +80,14 @@ GRID_HEADER_CELL_MAX_CHARS = 60
 GRID_SYMBOL_ROW_TOLERANCE = 0.006
 # Delimiter for several symbol values sharing one coverage cell (``E1, E2, S3``).
 GRID_SYMBOL_JOIN = ", "
-# Strong glyphs are unambiguous bullets. Weak glyphs (middle dots) are bullets
-# only in leading position; mid-text they stay literal so ``12·000`` and
-# ``CuSO4·5H2O`` are never shredded into a list.
-# GRID_BULLET_CHARS_STRONG includes U+25A0 BLACK SQUARE (■), the glyph the Danone
-# document actually uses.
-GRID_BULLET_CHARS_STRONG = "•●▪◦‣■"
-GRID_BULLET_CHARS_WEAK = "·∙"
-GRID_BULLET_CHARS = GRID_BULLET_CHARS_STRONG + GRID_BULLET_CHARS_WEAK
-_GRID_STRONG_SPLIT_RE = re.compile(rf"[{GRID_BULLET_CHARS_STRONG}]")
-_GRID_BULLET_SPLIT_RE = re.compile(rf"[{GRID_BULLET_CHARS}]")
+# Re-export the pure table-bullet primitives for existing callers. Their home
+# is ``markdown.postprocess`` so sectioned-table rendering can use the exact
+# same semantics without importing this heavier module.
+GRID_BULLET_CHARS_STRONG = sp.GRID_BULLET_CHARS_STRONG
+GRID_BULLET_CHARS_WEAK = sp.GRID_BULLET_CHARS_WEAK
+GRID_BULLET_CHARS = sp.GRID_BULLET_CHARS
+_cell_with_bullets = sp.cell_with_bullets
+_became_bullet_list = sp.became_bullet_list
 
 def segment_panels(cells: list[dict[str, Any]], depth: int = 0) -> list[list[dict[str, Any]]]:
     """Recursive XY-cut: split at vertical gutters first, then horizontal ones.
@@ -606,47 +604,6 @@ def _grid_is_detail(cells: list[str]) -> bool:
     return bool(cells) and bool(cells[0].strip()) and any(c.strip() for c in cells[1:])
 
 
-def _cell_with_bullets(cell: str) -> str:
-    """Preserve inline bullets in any table cell as ``<br>- item`` fragments.
-
-    Only fires on a genuine list: a cell that starts with a bullet glyph (strong
-    or weak), or one carrying two or more *strong* glyphs. Weak glyphs (``·``/``∙``
-    middle dots) never contribute to that count, and mid-text weak glyphs stay
-    literal — a strong-triggered item keeps ``CuSO4·5H2O`` intact, and a cell such
-    as ``12·000 · EUR net`` is returned verbatim. Empty fragments — e.g. a ``■ ■``
-    double glyph — collapse to a single item.
-    """
-    cell = cell.strip()
-    strong_count = sum(cell.count(ch) for ch in GRID_BULLET_CHARS_STRONG)
-    leading_bullet = bool(cell) and cell[0] in GRID_BULLET_CHARS
-    if strong_count < 2 and not leading_bullet:
-        return cell
-    # A weak-led cell (``· a · b``) is a weak-bulleted list, so split on weak too;
-    # otherwise split on strong only, leaving mid-text weak glyphs literal.
-    leading_weak = bool(cell) and cell[0] in GRID_BULLET_CHARS_WEAK
-    split_re = _GRID_BULLET_SPLIT_RE if leading_weak else _GRID_STRONG_SPLIT_RE
-    parts = [part.strip() for part in split_re.split(cell)]
-    out: list[str] = []
-    for index, part in enumerate(parts):
-        if not part:
-            continue
-        if index == 0 and not leading_bullet:
-            out.append(part)
-        else:
-            out.append(f"- {part}")
-    return "<br>".join(out) if out else cell
-
-
-def _became_bullet_list(before: str, after: str) -> bool:
-    """True when ``_cell_with_bullets`` turned a cell into a genuine bullet list.
-
-    Distinguishes a real takeover (a bullet-glyph cell rewritten as
-    ``- item<br>- item``) from a cell that already began with a source ``- `` dash
-    and was returned unchanged — the latter must not trigger deterministic render.
-    """
-    return after != before.strip() and (after.startswith("- ") or "<br>- " in after)
-
-
 def _merge_title_detail_cell(title: str, detail_md: str) -> str:
     """First cell of a merged title/detail record: ``title<br>detail``."""
     title = title.strip()
@@ -915,6 +872,7 @@ def build_table_candidates(
                     "section_qualifiers": list(sectioned.get("section_qualifiers", [])),
                     "section_kinds": list(sectioned.get("section_kinds", [])),
                     "sectioned_source_rows": sectioned.get("source_row_count"),
+                    "sectioned_split": sectioned.get("split"),
                 }
             )
         else:
@@ -1100,6 +1058,96 @@ def render_deterministic_docling_table(
     candidate.markdown = render_grid_markdown(normalized)
     candidate.verified = True
     candidate.stats = {**stats, "format": normalized["classification"], "deterministic": True}
+    if unplaced:
+        candidate.stats["symbols_unplaced_geometry"] = unplaced
+    return True
+
+
+def render_sectioned_docling_table(
+    candidate: TableCandidate,
+    records_by_index: dict[int, PictureRecord],
+    page_size: tuple[float, float],
+) -> bool:
+    """Place summarized symbols into a verified sectioned Docling table.
+
+    Sectioned candidates are already rendered at layout-map time. Their stored
+    split keeps each body row's source-grid index, allowing the existing geometry
+    placement routine to fill coverage cells after picture summaries arrive.
+    Older checkpoints without that additive mapping remain untouched.
+    """
+    stats = candidate.stats or {}
+    if (
+        candidate.kind != "docling_table"
+        or not candidate.verified
+        or stats.get("format") != "sectioned_table"
+    ):
+        return False
+    split = stats.get("sectioned_split")
+    grid = stats.get("grid")
+    if not isinstance(split, dict) or not isinstance(grid, dict):
+        return False
+    header = split.get("header")
+    sections = split.get("sections")
+    if not isinstance(header, list) or not isinstance(sections, list):
+        return False
+    try:
+        num_cols = int(split.get("n_cols"))
+    except (TypeError, ValueError):
+        return False
+    symbols = [
+        {
+            "index": record.index,
+            "value": record.summary.strip(),
+            "rect": picture_record_rect(record, page_size),
+        }
+        for record in records_by_index.values()
+        if record.summary_type == "symbol"
+        and record.summary.strip()
+        and rect_overlap_ratio(
+            picture_record_rect(record, page_size), candidate.bbox
+        ) >= pictures.PICTURE_EMBED_OVERLAP_MIN
+    ]
+    if not symbols:
+        return False
+    section_records: list[dict[str, Any]] = []
+    for section in sections:
+        if not isinstance(section, dict):
+            return False
+        rows = section.get("rows")
+        source_rows = section.get("source_rows")
+        if not isinstance(rows, list) or not isinstance(source_rows, list):
+            return False
+        if len(rows) != len(source_rows):
+            return False
+        for row, source_row in zip(rows, source_rows):
+            if not isinstance(row, list):
+                return False
+            try:
+                row_index = int(source_row)
+            except (TypeError, ValueError):
+                return False
+            section_records.append({"cells": row, "source_rows": [row_index]})
+    if not section_records:
+        return False
+    cell_rects_by_row: dict[int, list[list[float]]] = {}
+    for cell in grid.get("cells", []):
+        if not isinstance(cell, dict) or not cell.get("bbox"):
+            continue
+        try:
+            row_index = int(cell["r"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        normalized_rect = bbox_to_normalized_rect(cell["bbox"], page_size)
+        if normalized_rect:
+            cell_rects_by_row.setdefault(row_index, []).append(normalized_rect)
+    normalized = {
+        "header": [str(cell) for cell in header],
+        "records": section_records,
+        "num_cols": num_cols,
+    }
+    unplaced = place_grid_symbols(normalized, symbols, cell_rects_by_row)
+    candidate.markdown = sp.render_sectioned_tables(split)
+    candidate.stats = {**stats, "deterministic": True}
     if unplaced:
         candidate.stats["symbols_unplaced_geometry"] = unplaced
     return True
@@ -1418,6 +1466,12 @@ def transcribe_table_candidates(
         shutil.rmtree(table_dir)
     DETERMINISTIC_FORMATS = {"sectioned_table", "regular_table", "title_detail_table"}
     for candidate in candidates:
+        # Sectioned candidates are verified at layout-map time. Once picture
+        # summaries are available, inject their geometry-matched values before
+        # the verified-candidate fast path skips further transcription.
+        render_sectioned_docling_table(
+            candidate, records_by_index, page_size or (1.0, 1.0)
+        )
         # Render structurally valid title/detail and symbol-bearing regular Docling
         # tables straight from the grid now that coverage symbols are summarized.
         render_deterministic_docling_table(
@@ -1585,7 +1639,7 @@ __all__ = [
     "regions_horizontally_adjacent", "merge_adjacent_regions",
     "evaluate_table_regions", "build_table_candidates",
     "normalize_table_grid", "place_grid_symbols", "render_grid_markdown",
-    "render_deterministic_docling_table",
+    "render_deterministic_docling_table", "render_sectioned_docling_table",
     "verified_tables_prompt_block", "numeric_tokens", "word_tokens",
     "verify_region_table", "verify_kpi_list", "table_candidate_rows", "render_layout_overlay",
     "render_table_candidates_overlay", "region_blocks_prompt_json",

@@ -18,6 +18,7 @@ from .markdown.formatting import (
     drop_empty_header_row,
     drop_orphan_header_tables,
     insert_image_references_and_summaries,
+    is_loose_symbol_line,
     mark_redundant_summaries,
     missing_verified_table_ids,
     normalize_headerless_pipe_tables,
@@ -26,6 +27,7 @@ from .markdown.formatting import (
     replace_deterministic_tables,
     replace_sectioned_tables,
     standalone_value_line_count,
+    strip_loose_symbol_lines,
     strip_br_lines,
     unwrap_layout_tables,
 )
@@ -54,7 +56,11 @@ def format_page_repair_prompt(
     table_candidates: list[TableCandidate],
     unplaced_lines: list[str],
 ) -> str:
-    unplaced_block = "\n".join(f"- {line}" for line in unplaced_lines) if unplaced_lines else "(none)"
+    unplaced_block = (
+        "\n".join(f"- {line}" for line in unplaced_lines)
+        if unplaced_lines
+        else "(none — every line is already placed; do not output an '## Unplaced content' section)"
+    )
     return prompt_template.format(
         current_markdown=current_markdown,
         layout_blocks=layout_map_prompt_json(layout_blocks),
@@ -105,10 +111,28 @@ def postprocess_markdown(
 ) -> tuple[str, dict[str, Any]]:
     is_toc = page_role == "toc"
     final = sp.flatten_html_tables(working_markdown)
+    final = sp.strip_redundant_list_glyphs(final)
     final = sp.normalize_bullets_and_headings(final)
     final = sp.demote_datapoint_headings(final)
     flagged_summaries = mark_redundant_summaries(source_markdown, records)
     final = insert_image_references_and_summaries(final, records)
+    final, loose_symbol_lines_stripped = strip_loose_symbol_lines(final, records)
+    vlm_unplaced_removed = sum(
+        1
+        for line in final.splitlines()
+        if re.fullmatch(r"##\s+Unplaced content\s*", line.strip(), re.IGNORECASE)
+    )
+    final, vlm_unplaced_entries = sp.extract_unplaced_sections(final)
+    vlm_unplaced_survivors: list[str] = []
+    vlm_unplaced_dropped = 0
+    for entry in vlm_unplaced_entries:
+        content = re.sub(r"^[-*]\s+", "", entry.strip())
+        if not content:
+            continue
+        if content.lower() == "(none)" or is_loose_symbol_line(content, records):
+            vlm_unplaced_dropped += 1
+            continue
+        vlm_unplaced_survivors.append(content)
     final = sp.strip_meta_commentary(final)
     final = sp.normalize_footnotes(final)
     # After flatten_html_tables (escaped entities must not turn into real
@@ -166,6 +190,17 @@ def postprocess_markdown(
 
     warnings: dict[str, Any] = {}
     warnings.update(table_warnings)
+    if loose_symbol_lines_stripped:
+        warnings["loose_symbol_lines_stripped"] = loose_symbol_lines_stripped
+    if vlm_unplaced_removed:
+        recycled = 0 if is_toc else len(vlm_unplaced_survivors)
+        if is_toc:
+            vlm_unplaced_dropped += len(vlm_unplaced_survivors)
+        warnings["vlm_unplaced_sections"] = {
+            "removed": vlm_unplaced_removed,
+            "recycled": recycled,
+            "dropped": vlm_unplaced_dropped,
+        }
     # Route the model's `## Uncertain mappings` block to a sidecar warning
     # instead of the final markdown. Image references inside it return to the
     # body (images are never sidecar content); its text lines re-enter the
@@ -189,6 +224,8 @@ def postprocess_markdown(
             uncertain_lines.append(content)
         if uncertain_images:
             final = final.rstrip() + "\n\n" + "\n\n".join(uncertain_images) + "\n"
+    if not is_toc:
+        uncertain_lines.extend(vlm_unplaced_survivors)
     if flagged_summaries:
         warnings["redundant_image_summaries"] = flagged_summaries
     unplaced_symbols = [

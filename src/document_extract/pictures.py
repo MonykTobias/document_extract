@@ -60,6 +60,7 @@ SUMMARY_TYPES = {"photo", "table", "chart", "kpi", "infographic", "map", "diagra
 # label/value list rather than a pipe table.
 SUMMARY_TABLE_TYPES = {"table"}
 SUMMARY_TYPE_RE = re.compile(r"^\s*TYPE:\s*([a-z]+)\s*$", re.IGNORECASE)
+_SYMBOL_CODE_SEQUENCE_RE = re.compile(r"^([EGS]\d{1,2})(\s+[EGS]\d{1,2})+$")
 PICTURE_CROP_NEIGHBOR_GAP = 0.03
 PICTURE_CROP_MARGIN = 0.02
 PICTURE_SYMBOL_CROP_MARGIN = 0.005
@@ -475,6 +476,14 @@ def parse_typed_summary(answer: str) -> tuple[str, str]:
     return "", answer.strip()
 
 
+def normalize_symbol_summary(summary: str) -> str:
+    """Use the table-cell comma convention for multi-code symbol values."""
+    value = summary.strip()
+    if _SYMBOL_CODE_SEQUENCE_RE.fullmatch(value):
+        return ", ".join(value.split())
+    return value
+
+
 def summary_shape_ok(summary_type: str, body: str) -> bool:
     """Deterministic per-type shape check for an image transcription."""
     if not body:
@@ -637,7 +646,11 @@ def summarize_pictures(
                 record.summary_warnings.append("summary_shape_failed")
         if summary_type in SUMMARY_TABLE_TYPES:
             body = normalize_pipe_tables(body)
-        record.summary = body.strip()
+        record.summary = (
+            normalize_symbol_summary(body)
+            if summary_type == "symbol"
+            else body.strip()
+        )
 
 
 def save_region_crop(
@@ -673,6 +686,7 @@ __all__ = [
     "should_visual_triage_picture", "parse_picture_triage",
     "picture_vlm_image_path", "picture_specialist_prompt", "triage_pictures",
     "save_picture_records", "get_picture_image", "parse_typed_summary",
+    "normalize_symbol_summary",
     "summary_shape_ok", "picture_summary_rect", "summarize_pictures",
     "save_region_crop",
 ]

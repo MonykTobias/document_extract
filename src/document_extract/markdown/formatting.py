@@ -32,6 +32,9 @@ SUMMARY_DUP_COVERAGE = 0.9
 # embedded in a table. These must not be force-appended as image references.
 NAVIGATION_SKIP_REASONS = {"too_small", "triage_decorative", "triage_photo"}
 RIGHT_EDGE_MIN_LEFT = 0.9
+_SYMBOL_CODE_RE = re.compile(r"^[A-Z]{1,3}\d{0,2}$")
+_LOOSE_IMAGE_REF_RE = re.compile(r"!\[(?P<alt>[^\]]*)\]\((?P<href>[^)]*)\)")
+_LOOSE_IMAGE_TRAILER_RE = re.compile(r"\s*(?:\(from\s+block\b[^)]*\))?\s*$", re.IGNORECASE)
 
 
 def _is_right_edge_navigation_image(record: PictureRecord) -> bool:
@@ -257,6 +260,74 @@ def insert_image_references_and_summaries(
     if replacements:
         out = out.rstrip() + "\n\n" + "\n\n".join(replacements) + "\n"
     return re.sub(r"\n{3,}", "\n\n", out).strip() + "\n"
+
+
+def _symbol_record_codes(records: list[PictureRecord]) -> set[str]:
+    """Coverage-code values emitted by this page's real symbol records."""
+    codes: set[str] = set()
+    for record in records:
+        if record.summary_type != "symbol":
+            continue
+        summary = record.summary.strip()
+        if not summary:
+            continue
+        for part in re.split(r"[\s,]+", summary):
+            code = part.strip()
+            if _SYMBOL_CODE_RE.fullmatch(code):
+                codes.add(code)
+    return codes
+
+
+def is_loose_symbol_line(line: str, records: list[PictureRecord]) -> bool:
+    """Whether a standalone image-reference line is a dumped table symbol.
+
+    The strict grammar avoids touching ordinary picture references. At least
+    one code must be anchored to a real page symbol, while every code-shaped alt
+    on the line must still be valid so a hallucinated companion is removed with
+    the genuine dumped symbol.
+    """
+    stripped = line.strip()
+    if not stripped or stripped.startswith("|"):
+        return False
+    matches = list(_LOOSE_IMAGE_REF_RE.finditer(stripped))
+    if not matches:
+        return False
+    cursor = 0
+    alts: list[str] = []
+    for match in matches:
+        if stripped[cursor:match.start()].strip():
+            return False
+        alts.append(match.group("alt"))
+        cursor = match.end()
+    if not _LOOSE_IMAGE_TRAILER_RE.fullmatch(stripped[cursor:]):
+        return False
+    codes = _symbol_record_codes(records)
+    if not codes:
+        return False
+    parts: list[str] = []
+    for alt in alts:
+        value = re.sub(r"^\s*Image summary:\s*", "", alt, flags=re.IGNORECASE)
+        parts.extend(part for part in re.split(r"[\s,]+", value.strip()) if part)
+    return bool(parts) and all(_SYMBOL_CODE_RE.fullmatch(part) for part in parts) and any(
+        part in codes for part in parts
+    )
+
+
+def strip_loose_symbol_lines(
+    markdown: str, records: list[PictureRecord]
+) -> tuple[str, int]:
+    """Drop VLM-emitted standalone table-symbol image links from markdown."""
+    kept: list[str] = []
+    removed = 0
+    for line in markdown.splitlines():
+        if is_loose_symbol_line(line, records):
+            removed += 1
+        else:
+            kept.append(line)
+    if not removed:
+        return markdown, 0
+    suffix = "\n" if markdown.endswith("\n") and kept else ""
+    return "\n".join(kept) + suffix, removed
 
 
 def _overlap_tokens(text: str) -> list[str]:
@@ -624,11 +695,23 @@ def _apply_span_edits(
 
 
 def _sectioned_candidate_rows(candidate: TableCandidate) -> set[tuple[str, ...]]:
-    return {
+    rows = {
         row
         for _, _, rows in _pipe_table_spans(candidate.markdown.splitlines())
         for row in rows
     }
+    # The rendered sectioned table normalizes inline bullet glyphs into
+    # ``<br>- item`` fragments. A raw Docling twin still carries its original
+    # glyph-bearing cells, so retain the structured grid rows as a second,
+    # normalized anchor source.
+    grid = (candidate.stats or {}).get("grid") or {}
+    for raw_row in grid.get("rows", []) if isinstance(grid, dict) else []:
+        if not isinstance(raw_row, list):
+            continue
+        row = tuple(collapse_ws(str(cell)).lower() for cell in raw_row)
+        if any(row):
+            rows.add(row)
+    return rows
 
 
 def _matches_section_title(text: str, titles: set[str]) -> bool:
@@ -1113,6 +1196,7 @@ __all__ = [
     "apply_list_levels_from_layout", "normalize_headerless_pipe_tables",
     "image_reference",
     "insert_image_references_and_summaries", "image_block",
+    "is_loose_symbol_line", "strip_loose_symbol_lines",
     "mark_redundant_summaries",
     "standalone_value_line_count", "normalize_pipe_tables", "_pipe_table_spans",
     "drop_orphan_header_tables", "unwrap_layout_tables", "strip_br_lines",

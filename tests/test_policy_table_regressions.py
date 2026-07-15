@@ -25,6 +25,7 @@ from document_extract.markdown.formatting import (
     insert_image_references_and_summaries,
     missing_verified_table_ids,
     replace_deterministic_tables,
+    strip_loose_symbol_lines,
 )
 from document_extract.markdown.postprocess import (
     filter_unplaced_lines,
@@ -366,6 +367,33 @@ def test_symbol_value_never_becomes_a_standalone_line() -> None:
     check("picture_p0001_i001" not in out, "the symbol's image reference is dropped from the body")
 
 
+def test_loose_symbol_lines_are_stripped_without_touching_real_images() -> None:
+    _, s4 = _picture(1, [0.90, 0.20, 0.96, 0.24], "S4")
+    _, g1 = _picture(2, [0.90, 0.30, 0.96, 0.34], "G1")
+    _, multi = _picture(3, [0.90, 0.40, 0.96, 0.44], "S1, S2, S3")
+    markdown = (
+        "![S4](#)\n"
+        "![G1](#) ![G1](#) ![G1](#)\n"
+        "![S1 S2 S3](#)\n"
+        "![S1, S2, S3](#)\n"
+        "![S4](#) ![Z9](#)\n"
+        "![Image summary: S4](#) (from block b0011, position [0.1, 0.2])\n"
+        "![Picture p0001-i099](images/picture_p0001_i099.png)\n"
+        "**Image summary:** a genuine content image.\n"
+        "Prose mentioning S4 must stay.\n"
+        "| Coverage | ![S4](#) |\n"
+        "![Z9](#)\n"
+    )
+    out, count = strip_loose_symbol_lines(markdown, [s4, g1, multi])
+    check(count == 6, "all standalone real-symbol dump shapes are stripped")
+    check("![Picture p0001-i099]" in out, "genuine picture reference is retained")
+    check("Prose mentioning S4 must stay." in out, "ordinary prose is retained")
+    check("| Coverage | ![S4](#) |" in out, "pipe-row image token is retained")
+    check("![Z9](#)" in out, "unanchored code-shaped image token is retained")
+    second, second_count = strip_loose_symbol_lines(out, [s4, g1, multi])
+    check(second == out and second_count == 0, "loose-symbol stripping is idempotent")
+
+
 def test_right_edge_navigation_image_is_omitted_content_image_kept() -> None:
     nav = PictureRecord(
         page=1, index=1, placeholder="{{DOC_IMAGE_p0001_i001}}",
@@ -458,6 +486,17 @@ def test_single_symbol_gains_no_delimiter() -> None:
     row = [ln for ln in candidate.markdown.splitlines() if ln.startswith("| FOOD WASTE")]
     coverage = row[0].split("|")[-2] if row else ""
     check(coverage.strip() == "E5", "a lone symbol value carries no comma delimiter")
+
+
+def test_multi_code_symbol_value_stays_comma_joined_in_a_coverage_cell() -> None:
+    grid = _policy_grid_with_coverage()
+    _, symbol = _picture(1, [0.90, 0.34, 0.96, 0.37], "S1, S2, S3")
+    candidate = _detect_and_render(grid, [0.05, 0.08, 0.99, 0.58], {1: symbol})
+    row = [line for line in candidate.markdown.splitlines() if line.startswith("| FOOD WASTE")]
+    check(
+        bool(row) and row[0].rstrip().endswith("S1, S2, S3 |"),
+        "a multi-code symbol remains comma-joined when placed in a cell",
+    )
 
 
 def test_comma_joined_coverage_symbols_count_as_placed() -> None:
@@ -1254,6 +1293,7 @@ def _run_all() -> None:
     test_end_to_end_candidate_places_symbols_in_coverage_cell()
     test_ambiguous_symbol_is_left_unplaced_not_sequenced()
     test_symbol_value_never_becomes_a_standalone_line()
+    test_loose_symbol_lines_are_stripped_without_touching_real_images()
     test_right_edge_navigation_image_is_omitted_content_image_kept()
     test_placed_coverage_value_is_not_reported_unplaced()
     test_right_edge_dash_run_but_lone_dash_kept()
@@ -1261,6 +1301,7 @@ def _run_all() -> None:
     test_multiple_symbols_join_in_visual_reading_order()
     test_repeated_symbol_value_is_de_duplicated()
     test_single_symbol_gains_no_delimiter()
+    test_multi_code_symbol_value_stays_comma_joined_in_a_coverage_cell()
     test_comma_joined_coverage_symbols_count_as_placed()
     # Phase 2: bullet lists inside body cells + lifted 400-char truncation
     test_black_square_bullets_are_preserved()
