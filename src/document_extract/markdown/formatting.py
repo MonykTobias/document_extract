@@ -822,6 +822,76 @@ def _is_distinctive_cell(text: str) -> bool:
     return len(_DISTINCTIVE_WORD_RE.findall(collapsed)) >= 3
 
 
+# Fragment-level matching for the list-aware fallback. Strong glyphs only:
+# weak middle dots remain part of their value (for example, ``12·000`` and
+# ``CuSO4·5H2O``) rather than acting as list separators.
+_STRONG_FRAGMENT_CHARS = "\u2022\u25cf\u25aa\u25e6\u2023\u25a0"
+_FRAGMENT_SPLIT_RE = re.compile(
+    rf"(?:<br\s*/?>)|[{_STRONG_FRAGMENT_CHARS}]", re.IGNORECASE
+)
+_LEADING_MARKER_RE = re.compile(rf"^[-*{_STRONG_FRAGMENT_CHARS}]\s*")
+_FUZZY_MIN_MATCHES = 4
+_FUZZY_MIN_PRECISION = 0.5
+
+
+def _list_fragments(cell: str) -> list[str]:
+    """Normalize list items from one table cell for fallback matching."""
+    fragments: list[str] = []
+    for part in _FRAGMENT_SPLIT_RE.split(cell):
+        normalized = collapse_ws(part)
+        fragment = collapse_ws(_LEADING_MARKER_RE.sub("", normalized)).lower()
+        if fragment:
+            fragments.append(fragment)
+    return fragments
+
+
+def _distinctive_fragments(cells: list[str]) -> set[str]:
+    """Return long or multi-word list fragments suitable for a safe match."""
+    fragments: set[str] = set()
+    for cell in cells:
+        for fragment in _list_fragments(cell):
+            if _is_distinctive_cell(fragment):
+                fragments.add(fragment)
+    return fragments
+
+
+def _candidate_fragment_cells(candidate: TableCandidate) -> list[str]:
+    """Cells from both candidate render and source grid for fallback matching."""
+    cells: list[str] = []
+    for _, _, rows in _pipe_table_spans(candidate.markdown.splitlines()):
+        cells.extend(cell for row in rows for cell in row if cell)
+    grid = (candidate.stats or {}).get("grid") or {}
+    for row in grid.get("rows") or []:
+        cells.extend(str(cell) for cell in row if str(cell).strip())
+    return cells
+
+
+def _fuzzy_anchor_spans(lines: list[str], candidate: TableCandidate) -> set[int]:
+    """Find every confident list-fragment match for a restructured VLM table.
+
+    This is a fallback for a verified candidate after the exact anchors abstain.
+    Anchoring every qualifying span intentionally collapses duplicate degraded
+    copies into the one authoritative deterministic table.
+    """
+    candidate_fragments = _distinctive_fragments(_candidate_fragment_cells(candidate))
+    if len(candidate_fragments) < _FUZZY_MIN_MATCHES:
+        return set()
+
+    anchors: set[int] = set()
+    for start, end, rows in _pipe_table_spans(lines):
+        cells = [cell for row in rows for cell in row if cell]
+        span_fragments = _distinctive_fragments(cells)
+        if not span_fragments:
+            continue
+        intersection = len(candidate_fragments & span_fragments)
+        if (
+            intersection >= _FUZZY_MIN_MATCHES
+            and intersection >= _FUZZY_MIN_PRECISION * len(span_fragments)
+        ):
+            anchors.update(range(start, end))
+    return anchors
+
+
 def _enforce_deterministic_candidate(
     markdown: str, candidate: TableCandidate
 ) -> str | None:
@@ -871,6 +941,15 @@ def _enforce_deterministic_candidate(
 
     flags = [anchor_of(index) for index in range(len(lines))]
     anchors = [index for index, flag in enumerate(flags) if flag is True]
+    if not anchors:
+        # A VLM can merge/drop columns and re-join list cells, leaving no whole
+        # cell equal to the raw grid or deterministic render. Fall back only in
+        # that case, then reuse the normal splice logic unchanged.
+        fuzzy_pipe = _fuzzy_anchor_spans(lines, candidate)
+        if fuzzy_pipe:
+            anchor_pipe.update(fuzzy_pipe)
+            flags = [anchor_of(index) for index in range(len(lines))]
+            anchors = [index for index, flag in enumerate(flags) if flag is True]
     if not anchors:
         return None
     lo, hi = min(anchors), max(anchors)

@@ -19,8 +19,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.layout.prompt_map import build_layout_prompt_map
 from document_extract.markdown.formatting import (
+    _distinctive_fragments,
     _enforce_deterministic_candidate,
+    _list_fragments,
     insert_image_references_and_summaries,
+    missing_verified_table_ids,
     replace_deterministic_tables,
 )
 from document_extract.markdown.postprocess import (
@@ -1008,6 +1011,237 @@ def test_distinctive_twin_still_splices() -> None:
     check("## Impacts" in out, "the unrelated heading is preserved")
 
 
+# --------------------------------------------------------------------------- #
+# Follow-up v3: list-fragment fallback for VLM-restructured deterministic grids
+# --------------------------------------------------------------------------- #
+
+
+_FUZZY_ITEMS = (
+    "Build long-term regenerative partnerships",
+    "Expand farmer training support",
+    "Facilitate quarterly advisory meetings",
+    "Co-design local water projects",
+    "Improve collective bargaining frameworks",
+    "Strengthen workplace wellbeing services",
+    "Run annual listening surveys",
+    "Establish employee feedback councils",
+)
+
+
+def _fuzzy_candidate() -> TableCandidate:
+    square = "\u25a0"
+    rows = [
+        ["Owner", "Actions", "Contact", "Scope", "Codes"],
+        [
+            "Farmers",
+            f"{square} {_FUZZY_ITEMS[0]} {square} {_FUZZY_ITEMS[1]}",
+            f"{square} {_FUZZY_ITEMS[2]} {square} {_FUZZY_ITEMS[3]}",
+            "Value chain",
+            "",
+        ],
+        [
+            "Employees",
+            f"{square} {_FUZZY_ITEMS[4]} {square} {_FUZZY_ITEMS[5]}",
+            f"{square} {_FUZZY_ITEMS[6]} {square} {_FUZZY_ITEMS[7]}",
+            "Own operations",
+            "",
+        ],
+    ]
+    grid = _structured_grid(
+        rows,
+        header_rows=1,
+        row_bands=[(0.10, 0.13), (0.20, 0.32), (0.34, 0.46)],
+    )
+    candidate = _detect_and_render(grid, [0.05, 0.05, 0.95, 0.50], {})
+    check(candidate.verified, "fuzzy fixture produces a verified candidate")
+    return candidate
+
+
+def _restructured_vlm_table(reverse_rows: bool = False) -> str:
+    square = "\u25a0"
+    rows = [
+        (
+            "Farmers",
+            f"{square} {_FUZZY_ITEMS[0]}<br>{square} {_FUZZY_ITEMS[1]}",
+            f"{square} {_FUZZY_ITEMS[2]}<br>{square} {_FUZZY_ITEMS[3]}",
+            "Value chain",
+        ),
+        (
+            "Employees",
+            f"{square} {_FUZZY_ITEMS[4]}<br>{square} {_FUZZY_ITEMS[5]}",
+            f"{square} {_FUZZY_ITEMS[6]}<br>{square} {_FUZZY_ITEMS[7]}",
+            "Own operations",
+        ),
+    ]
+    if reverse_rows:
+        rows.reverse()
+    body = "\n".join("| " + " | ".join(row) + " |" for row in rows)
+    return (
+        "| Owner | Actions | Contact | Scope |\n"
+        "|---|---|---|---|\n"
+        f"{body}\n"
+    )
+
+
+def test_restructured_vlm_table_fuzzy_anchored() -> None:
+    candidate = _fuzzy_candidate()
+    vlm = "Introductory prose.\n\n" + _restructured_vlm_table() + "\nClosing prose.\n"
+
+    out, enforced = replace_deterministic_tables(vlm, [candidate])
+    check(enforced == [candidate.candidate_id], "a restructured VLM table is fuzzy-anchored and enforced")
+    check(
+        out.count("| Owner | Actions | Contact | Scope | Codes |") == 1,
+        "the authoritative five-column header appears exactly once",
+    )
+    check("\u25a0" not in out, "no raw black-square list marker survives the replacement")
+    check(missing_verified_table_ids(out, [candidate]) == [], "the fuzzy-enforced table is not reported missing")
+    check("Introductory prose." in out and "Closing prose." in out, "surrounding prose is preserved")
+
+
+def test_fuzzy_anchors_all_duplicate_copies() -> None:
+    candidate = _fuzzy_candidate()
+    table = _restructured_vlm_table()
+    page = f"Before table.\n\n{table}\nBetween tables.\n\n{table}\nAfter table.\n"
+
+    out, enforced = replace_deterministic_tables(page, [candidate])
+    check(enforced == [candidate.candidate_id], "duplicate degraded copies are enforced once")
+    check(
+        out.count("| Owner | Actions | Contact | Scope | Codes |") == 1,
+        "all matching copies collapse to one authoritative table",
+    )
+    check("\u25a0" not in out, "duplicate degraded list markers are removed")
+    check(
+        all(text in out for text in ("Before table.", "Between tables.", "After table.")),
+        "prose around duplicate tables is retained",
+    )
+
+
+def test_list_fragment_forms_are_equivalent() -> None:
+    first = "Build sufficiently detailed partner programs"
+    second = "Expand sufficiently detailed training support"
+    forms = [
+        f"\u25a0 {first} \u25a0 {second}",
+        f"- {first}<br>- {second}",
+        f"  - {first}  <br>  - {second}  ",
+    ]
+    expected = _distinctive_fragments([forms[0]])
+    check(
+        all(_distinctive_fragments([form]) == expected for form in forms[1:]),
+        "strong-glyph, markdown-list, and whitespace variants share fragments",
+    )
+
+
+def test_weak_middot_fragments_not_split() -> None:
+    check(
+        _list_fragments("12\u00b7000 units delivered") == ["12\u00b7000 units delivered"],
+        "a numeric middle dot remains inside one fragment",
+    )
+    check(
+        _list_fragments("CuSO4\u00b75H2O reagent grade") == ["cuso4\u00b75h2o reagent grade"],
+        "a chemical middle dot remains inside one fragment",
+    )
+
+
+def test_fuzzy_matches_reordered_rows() -> None:
+    candidate = _fuzzy_candidate()
+    out, enforced = replace_deterministic_tables(_restructured_vlm_table(reverse_rows=True), [candidate])
+    check(enforced == [candidate.candidate_id], "row order does not prevent a fragment fallback match")
+    check(
+        out.index("| Farmers |") < out.index("| Employees |"),
+        "the replacement restores the deterministic candidate row order",
+    )
+
+
+def test_fuzzy_ignores_generic_headers() -> None:
+    candidate = _fuzzy_candidate()
+    page = (
+        "| Owner | Actions | Contact | Scope |\n|---|---|---|---|\n"
+        "| Alpha | Routine status update | Daily note | Global |\n"
+        "| Beta | Standard review process | Weekly note | Regional |\n"
+    )
+    out, enforced = replace_deterministic_tables(page, [candidate])
+    check(enforced == [], "generic matching headers do not trigger the fragment fallback")
+    check(out == page, "a generic foreign table remains byte-identical")
+
+
+def test_fuzzy_rejects_unrelated_table() -> None:
+    candidate = _fuzzy_candidate()
+    page = (
+        "| Owner | Actions | Contact | Scope |\n|---|---|---|---|\n"
+        "| Gamma | \u25a0 Develop unrelated market planning narrative | "
+        "\u25a0 Coordinate unrelated supplier engagement | Global |\n"
+        "| Delta | \u25a0 Maintain unrelated governance reporting | "
+        "\u25a0 Review unrelated compliance documentation | Regional |\n"
+    )
+    out, enforced = replace_deterministic_tables(page, [candidate])
+    check(enforced == [], "a table with unrelated distinctive fragments is not enforced")
+    check(out == page, "an unrelated table remains untouched")
+
+
+def test_fuzzy_rejects_below_min_matches() -> None:
+    candidate = _fuzzy_candidate()
+    page = (
+        "| Owner | Actions | Contact | Scope |\n|---|---|---|---|\n"
+        f"| Gamma | \u25a0 {_FUZZY_ITEMS[0]}<br>\u25a0 {_FUZZY_ITEMS[1]} | "
+        f"\u25a0 {_FUZZY_ITEMS[2]} | Global |\n"
+    )
+    out, enforced = replace_deterministic_tables(page, [candidate])
+    check(enforced == [], "three distinctive fragments stay below the fuzzy match floor")
+    check(out == page, "a below-floor partial match is not replaced")
+
+
+def test_fuzzy_rejects_low_precision_span() -> None:
+    candidate = _fuzzy_candidate()
+    foreign = [
+        "Document a separate procurement improvement initiative",
+        "Publish a separate community engagement roadmap",
+        "Measure a separate supplier resilience program",
+        "Coordinate a separate climate adaptation workshop",
+        "Review a separate regional governance strategy",
+    ]
+    page = (
+        "| Owner | Actions | Contact | Scope |\n|---|---|---|---|\n"
+        f"| Gamma | \u25a0 {_FUZZY_ITEMS[0]}<br>\u25a0 {_FUZZY_ITEMS[1]} | "
+        f"\u25a0 {_FUZZY_ITEMS[2]}<br>\u25a0 {_FUZZY_ITEMS[3]} | "
+        f"\u25a0 {foreign[0]}<br>\u25a0 {foreign[1]}<br>\u25a0 {foreign[2]}<br>"
+        f"\u25a0 {foreign[3]}<br>\u25a0 {foreign[4]} |\n"
+    )
+    out, enforced = replace_deterministic_tables(page, [candidate])
+    check(enforced == [], "a mostly foreign span fails the fuzzy precision gate")
+    check(out == page, "a low-precision span is not replaced")
+
+
+def test_exact_match_still_wins() -> None:
+    candidate = _fuzzy_candidate()
+    source_rows = (candidate.stats or {})["grid"]["rows"]
+    source = _raw_twin_markdown(source_rows, header_rows=1)
+    out, enforced = replace_deterministic_tables(source, [candidate])
+    check(enforced == [candidate.candidate_id], "an exact raw-grid twin remains enforceable")
+    check("\u25a0" not in out, "the exact path still replaces raw list glyphs")
+
+
+def test_title_detail_detail_normalized_once() -> None:
+    rows = [
+        ["", "Type", "Coverage"],
+        ["Animal welfare", "", ""],
+        ["\u25a0 Improve shelter design \u25a0 Improve welfare monitoring", "Negative impact", ""],
+        ["Water stewardship", "", ""],
+        ["Protect shared water resources", "Positive impact", ""],
+    ]
+    grid = _structured_grid(
+        rows,
+        header_rows=1,
+        row_bands=[(0.10, 0.13), (0.20, 0.23), (0.24, 0.30), (0.32, 0.35), (0.36, 0.42)],
+    )
+    normalized = normalize_table_grid(grid)
+    first = normalized["records"][0]["cells"][0]
+    check(normalized["bulleted"] is True, "title-detail bullet normalization records one bullet takeover")
+    check(
+        first == "Animal welfare<br>- Improve shelter design<br>- Improve welfare monitoring",
+        "the pre-normalized detail is merged without a second bullet transformation",
+    )
+
+
 def _run_all() -> None:
     test_picture_blocks_keep_their_own_index_and_value()
     test_full_grid_reaches_stats_and_verifier()
@@ -1059,6 +1293,18 @@ def _run_all() -> None:
     # Tier-1 anchor distinctiveness floor (generic-cell false-positive splice)
     test_generic_cell_overlap_does_not_splice_unrelated_table()
     test_distinctive_twin_still_splices()
+    # Follow-up v3: list-aware fallback when a VLM restructures a grid table
+    test_restructured_vlm_table_fuzzy_anchored()
+    test_fuzzy_anchors_all_duplicate_copies()
+    test_list_fragment_forms_are_equivalent()
+    test_weak_middot_fragments_not_split()
+    test_fuzzy_matches_reordered_rows()
+    test_fuzzy_ignores_generic_headers()
+    test_fuzzy_rejects_unrelated_table()
+    test_fuzzy_rejects_below_min_matches()
+    test_fuzzy_rejects_low_precision_span()
+    test_exact_match_still_wins()
+    test_title_detail_detail_normalized_once()
     print("test_policy_table_regressions: all checks passed")
 
 

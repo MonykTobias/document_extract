@@ -647,10 +647,9 @@ def _became_bullet_list(before: str, after: str) -> bool:
     return after != before.strip() and (after.startswith("- ") or "<br>- " in after)
 
 
-def _merge_title_detail_cell(title: str, detail: str) -> str:
+def _merge_title_detail_cell(title: str, detail_md: str) -> str:
     """First cell of a merged title/detail record: ``title<br>detail``."""
     title = title.strip()
-    detail_md = _cell_with_bullets(detail)
     if not detail_md:
         return title
     if not title:
@@ -708,13 +707,14 @@ def normalize_table_grid(structured: dict[str, Any] | None) -> dict[str, Any] | 
         following = body[index + 1] if index + 1 < len(body) else None
         if _grid_is_title_only(current) and following is not None and _grid_is_detail(following):
             detail = following[0]
-            bulleted |= _became_bullet_list(detail, _cell_with_bullets(detail))
+            detail_md = _cell_with_bullets(detail)
+            bulleted |= _became_bullet_list(detail, detail_md)
             rest: list[str] = []
             for cell in following[1:]:
                 transformed = _cell_with_bullets(cell)
                 bulleted |= _became_bullet_list(cell, transformed)
                 rest.append(transformed)
-            merged = [_merge_title_detail_cell(current[0], detail)] + rest
+            merged = [_merge_title_detail_cell(current[0], detail_md)] + rest
             records.append(
                 {"cells": merged, "source_rows": [header_rows + index, header_rows + index + 1]}
             )
