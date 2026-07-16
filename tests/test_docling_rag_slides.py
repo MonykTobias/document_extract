@@ -60,7 +60,12 @@ from document_extract.prompts import (
     DEFAULT_PAGE_REFINEMENT_PROMPT,
     DEFAULT_PAGE_REPAIR_PROMPT,
 )
-from document_extract.pipeline.state import _picture_state_rows, _records_from_state
+from document_extract.pipeline.state import (
+    _candidate_state_rows,
+    _candidates_from_state,
+    _picture_state_rows,
+    _records_from_state,
+)
 from document_extract.refinement import (
     apply_completeness_guard,
     format_page_refinement_prompt,
@@ -686,11 +691,29 @@ def test_page_state_checkpoint_round_trip_and_paths() -> None:
         state.pdf_size = 0
         state.artifact_paths["page_image"] = "page.png"
         state.picture_records = [{"index": 1, "rel_path": "images/picture.png"}]
+        candidate = TableCandidate(
+            candidate_id="tc-symbols",
+            kind="docling_table",
+            bbox=[0.0, 0.0, 1.0, 1.0],
+            verified=True,
+            stats={
+                "symbol_picture_indices": [1, 2],
+                "symbols_placed_geometry": [1, 2],
+                "symbol_row_assignments": {1: 0, 2: 1},
+            },
+        )
+        state.table_candidates = _candidate_state_rows([candidate], page_dir)
         state.stage_history.append(runtime.StageRecord(stage="prepare", status="ok"))
         path = state.save()
         loaded = runtime.PageState.load(path)
         check(loaded.page == 1 and loaded.page_size == [100.0, 200.0], "page state round-trips")
         check(loaded.stage_history[0].stage == "prepare", "stage history round-trips")
+        restored_candidate = _candidates_from_state(loaded)[0]
+        check(
+            restored_candidate.has_complete_symbol_geometry()
+            and restored_candidate.stats["symbol_row_assignments"] == {"1": 0, "2": 1},
+            "symbol geometry audit stats survive checkpoint round-trip",
+        )
         check(runtime.resolve_page_path("images/picture.png", page_dir).endswith("picture.png"), "relative image paths resolve")
 
 
@@ -1441,6 +1464,45 @@ def test_repair_regression_reasons() -> None:
     padded = truncated + "\n## Unplaced content\n\n- 61%\n- Goal two\n- A closing paragraph with details.\n"
     reasons = repair_regression_reasons(pre, padded, None)
     check("fewer_table_rows" in reasons, "unplaced-content padding does not hide lost rows")
+
+    first_symbol = make_record(1, summary="S1")
+    second_symbol = make_record(2, summary="S1")
+    first_symbol.summary_type = second_symbol.summary_type = "symbol"
+    symbol_candidate = TableCandidate(
+        candidate_id="tc-symbols",
+        kind="docling_table",
+        bbox=[0.0, 0.0, 1.0, 1.0],
+        markdown=(
+            "| Goal | ESRS coverage |\n|---|---|\n"
+            "| Goal one | S1 |\n| Goal two | S1 |\n"
+        ),
+        verified=True,
+        stats={
+            "format": "regular_table",
+            "symbol_picture_indices": [1, 2],
+            "symbols_placed_geometry": [1, 2],
+            "symbol_row_assignments": {1: 0, 2: 1},
+        },
+    )
+    symbol_pre = (
+        "| Goal | ESRS coverage |\n|---|---|\n"
+        "| Goal one | S1 |\n| Goal two | S1 |\n"
+    )
+    symbol_repaired = (
+        "| Goal | ESRS coverage |\n|---|---|\n"
+        "| Goal one | S1 |\n| Goal two |  |\n"
+    )
+    reasons = repair_regression_reasons(
+        symbol_pre,
+        symbol_repaired,
+        None,
+        records=[first_symbol, second_symbol],
+        table_candidates=[symbol_candidate],
+    )
+    check(
+        "fewer_table_symbol_instances" in reasons,
+        "repair cannot remove one of two same-value table-symbol instances",
+    )
 
 
 def test_token_usage_includes_table_extraction() -> None:

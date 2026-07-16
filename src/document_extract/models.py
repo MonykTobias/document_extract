@@ -50,4 +50,20 @@ class TableCandidate:
     usage: dict[str, Any] | None = None
     crop_path: str | None = None
 
+    def has_complete_symbol_geometry(self) -> bool:
+        """Whether geometry has accounted for every expected table-symbol picture.
+
+        Older checkpoints predate the placed-index audit.  They retain the
+        historical authority behaviour unless they already carry an explicit
+        geometry deficit; newly rendered candidates always carry both lists.
+        """
+        stats = self.stats or {}
+        if stats.get("symbols_unplaced_geometry"):
+            return False
+        expected = stats.get("symbol_picture_indices")
+        placed = stats.get("symbols_placed_geometry")
+        if not expected or placed is None:
+            return True
+        return set(expected).issubset(set(placed))
+
 __all__ = ["PictureRecord", "TableCandidate"]

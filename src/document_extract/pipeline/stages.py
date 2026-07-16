@@ -59,6 +59,24 @@ from .state import (
     _sync_page_state,
 )
 
+
+def _repair_unplaced_lines(
+    warnings: dict[str, Any], records: list[PictureRecord]
+) -> list[str]:
+    """Combine ordinary and instance-aware table-symbol repair instructions."""
+    lines = list(warnings.get("unplaced_content_lines", []))
+    records_by_placeholder = {record.placeholder: record for record in records}
+    for placeholder in warnings.get("table_symbols_unplaced", []):
+        record = records_by_placeholder.get(placeholder)
+        if record is None:
+            continue
+        lines.append(
+            "table symbol "
+            f"picture_index={record.index} value={record.summary.strip()} is not placed; "
+            "use the matching layout block bbox"
+        )
+    return list(dict.fromkeys(line for line in lines if line))
+
 def _execute_stage(
     state: PageState,
     reporter: StatusReporter,
@@ -494,12 +512,13 @@ def _run_page_repair(
         return
 
     def action() -> dict[str, Any]:
+        repair_unplaced_lines = _repair_unplaced_lines(state.warnings, records)
         if has_runtime_items:
             repair_layout_map = build_layout_prompt_map(
                 items=items,
                 page_size=tuple(state.page_size),
                 picture_records=runtime.get("picture_map") or {},
-                unplaced_lines=state.warnings.get("unplaced_content_lines", []),
+                unplaced_lines=repair_unplaced_lines,
             )
         else:
             repair_layout_map = state.layout_map
@@ -512,7 +531,7 @@ def _run_page_repair(
             layout_blocks=repair_layout_map,
             table_candidates=candidates,
             page_image_path=page_dir / "page.png",
-            unplaced_lines=state.warnings.get("unplaced_content_lines", []),
+            unplaced_lines=repair_unplaced_lines,
             prompt_template=prompt,
             args=args,
         )
@@ -530,7 +549,11 @@ def _run_page_repair(
             page_role=state.page_role or None,
         )
         reject_reasons = repair_regression_reasons(
-            state.final_markdown, repaired_final, usage
+            state.final_markdown,
+            repaired_final,
+            usage,
+            records=records,
+            table_candidates=candidates,
         )
         if reject_reasons:
             state.warnings["repair_rejected"] = reject_reasons

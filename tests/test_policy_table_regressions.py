@@ -22,6 +22,7 @@ from document_extract.markdown.formatting import (
     _distinctive_fragments,
     _enforce_deterministic_candidate,
     _list_fragments,
+    drop_duplicate_subset_tables,
     insert_image_references_and_summaries,
     missing_verified_table_ids,
     replace_deterministic_tables,
@@ -40,6 +41,7 @@ from document_extract.tables import (
     render_deterministic_docling_table,
     render_grid_markdown,
     verify_region_table,
+    verified_tables_prompt_block,
 )
 
 
@@ -336,6 +338,84 @@ def test_ambiguous_symbol_is_left_unplaced_not_sequenced() -> None:
     candidate = _detect_and_render(grid, table_bbox, {1: rec})
     check("S9" not in candidate.markdown, "an unmatched symbol is never written into a cell by sequence")
     check((candidate.stats or {}).get("symbols_unplaced_geometry") == [1], "the unplaced symbol is recorded for repair")
+
+
+def test_cross_record_rowspan_bbox_does_not_expand_record_bands() -> None:
+    """A Docling merged-cell bbox repeated across records must be ignored."""
+    rows = [
+        ["Policy", "Details", "ESRS coverage"],
+        ["Policy one", "Detail one", ""],
+        ["Policy two", "Detail two", ""],
+        ["Policy three", "Detail three", ""],
+        ["Policy four", "Detail four", ""],
+        ["Policy five", "Detail five", ""],
+    ]
+    bands = [(0.10, 0.14), (0.20, 0.25), (0.28, 0.33), (0.36, 0.41), (0.44, 0.49), (0.52, 0.57)]
+    grid = _structured_grid(rows, header_rows=1, row_bands=bands)
+    # Mirrors p200: one first-column cell bbox is repeated on five different
+    # source rows even though every row is its own normalized logical record.
+    merged_bbox = {"l": 0.0, "t": 0.20, "r": 1 / 3, "b": 0.57, "origin": "TOPLEFT"}
+    for cell in grid["cells"]:
+        if cell["c"] == 0 and 1 <= cell["r"] <= 5:
+            cell["bbox"] = dict(merged_bbox)
+    records = {
+        index: _picture(index, [0.88, bands[index][0] + 0.01, 0.96, bands[index][0] + 0.04], "S1")[1]
+        for index in range(1, 6)
+    }
+    candidate = _detect_and_render(grid, [0.0, 0.1, 1.0, 0.6], records)
+    coverage_rows = [line for line in candidate.markdown.splitlines() if line.startswith("| Policy ") and "Details" not in line]
+    check(len(coverage_rows) == 5 and all(line.rstrip().endswith("S1 |") for line in coverage_rows),
+          "each repeated S1 lands in its own logical coverage row")
+    stats = candidate.stats or {}
+    check(stats.get("symbols_placed_geometry") == [1, 2, 3, 4, 5], "all row-local placements are audited")
+    check("symbols_unplaced_geometry" not in stats, "cross-record bbox reuse creates no ambiguity")
+    candidate.verified = False
+    candidate.markdown = ""
+    candidate.stats["symbols_unplaced_geometry"] = [999]
+    candidate.stats.pop("symbols_placed_geometry", None)
+    check(
+        render_deterministic_docling_table(candidate, records, (1.0, 1.0)),
+        "an incomplete deterministic checkpoint candidate is rerendered",
+    )
+    check(
+        "symbols_unplaced_geometry" not in (candidate.stats or {}),
+        "checkpoint rerender clears its stale geometry deficit",
+    )
+
+
+def test_bbox_reused_inside_one_title_detail_record_is_kept() -> None:
+    """A repeated bbox remains valid when both rows normalize into one record."""
+    grid = _structured_grid(IMPACT_ROWS, header_rows=2, row_bands=IMPACT_BANDS)
+    shared_bbox = {"l": 0.0, "t": 0.30, "r": 1.0, "b": 0.40, "origin": "TOPLEFT"}
+    for cell in grid["cells"]:
+        if cell["r"] in {2, 3}:
+            cell["bbox"] = dict(shared_bbox)
+    _, symbol = _picture(1, [0.90, 0.34, 0.98, 0.38], "S1")
+    candidate = _detect_and_render(grid, [0.05, 0.20, 0.99, 0.66], {1: symbol})
+    check("S1" in candidate.markdown, "same-record repeated bbox still supplies a usable band")
+    check((candidate.stats or {}).get("symbol_row_assignments") == {1: 0}, "placement retains its logical-record audit")
+
+
+def test_incomplete_deterministic_candidate_is_not_authoritative() -> None:
+    rows = [
+        ["Danone's Policies", "Key contents", "Scope", "ESRS coverage"],
+        ["FOOD WASTE REPORTING GUIDELINES", "version 1.0", "Own operations", ""],
+        ["HUMAN RIGHTS POLICY", "10 Principles", "Own operations", ""],
+    ]
+    candidate = _detect_and_render(
+        _structured_grid(rows, header_rows=1, row_bands=[(0.10, 0.13), (0.20, 0.30), (0.32, 0.42)]),
+        [0.05, 0.05, 0.99, 0.5],
+        {1: _picture(1, [0.90, 0.23, 0.98, 0.27], "E5")[1]},
+    )
+    candidate.stats["symbols_placed_geometry"] = []
+    candidate.stats["symbols_unplaced_geometry"] = [1]
+    source = _raw_twin_markdown(rows, header_rows=1)
+    out, enforced = replace_deterministic_tables(source, [candidate])
+    check(enforced == [] and out == source, "incomplete regular candidate cannot overwrite a VLM/raw table")
+    check(verified_tables_prompt_block([candidate]) == "(none)", "incomplete candidate is omitted from the authoritative prompt block")
+    check(missing_verified_table_ids("# Page\n", [candidate]) == [], "incomplete candidate is not reported as a required verified table")
+    _, dropped = drop_duplicate_subset_tables(source + "\n" + source, [candidate])
+    check(dropped == 0, "incomplete candidate cannot back duplicate-table deletion")
 
 
 # --------------------------------------------------------------------------- #
@@ -1292,6 +1372,9 @@ def _run_all() -> None:
     test_regular_grid_without_symbols_is_left_alone()
     test_end_to_end_candidate_places_symbols_in_coverage_cell()
     test_ambiguous_symbol_is_left_unplaced_not_sequenced()
+    test_cross_record_rowspan_bbox_does_not_expand_record_bands()
+    test_bbox_reused_inside_one_title_detail_record_is_kept()
+    test_incomplete_deterministic_candidate_is_not_authoritative()
     test_symbol_value_never_becomes_a_standalone_line()
     test_loose_symbol_lines_are_stripped_without_touching_real_images()
     test_right_edge_navigation_image_is_omitted_content_image_kept()

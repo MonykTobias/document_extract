@@ -413,6 +413,56 @@ def check_sectioned_symbol_placement_by_source_row() -> None:
     )
 
 
+def check_sectioned_cross_record_rowspan_bbox_is_ignored() -> None:
+    """The local-rectangle rule must cover sectioned-table placement too."""
+    rows = [
+        ["Topic", "Description", "ESRS coverage"],
+        ["SECTION A", "", ""],
+        ["First A", "Description A", ""],
+        ["Second A", "Description B", ""],
+        ["SECTION B", "", ""],
+        ["First B", "Description C", ""],
+        ["Second B", "Description D", ""],
+    ]
+    split = split_sectioned_grid(rows, header_rows=1)
+    structured = _sectioned_structured_grid(rows)
+    shared_bbox = {"l": 0.0, "t": 2 / 7, "r": 1 / 3, "b": 6 / 7, "origin": "TOPLEFT"}
+    for cell in structured["cells"]:
+        if cell["c"] == 0 and cell["r"] in {2, 5}:
+            cell["bbox"] = dict(shared_bbox)
+    candidate = TableCandidate(
+        candidate_id="tc-cross-section",
+        kind="docling_table",
+        bbox=[0.0, 0.0, 1.0, 1.0],
+        markdown=render_sectioned_tables(split),
+        verified=True,
+        stats={"format": "sectioned_table", "grid": structured, "sectioned_split": split},
+    )
+    first = _sectioned_symbol(1, [0.82, 0.31, 0.90, 0.35], "E1")
+    second = _sectioned_symbol(2, [0.82, 0.74, 0.90, 0.78], "S2")
+    off_band = _sectioned_symbol(3, [0.82, 0.03, 0.90, 0.07], "G3")
+    check(
+        render_sectioned_docling_table(candidate, {1: first, 2: second, 3: off_band}, (1.0, 1.0)),
+        "sectioned cross-record fixture rerenders",
+    )
+    check("| First A | Description A | E1 |" in candidate.markdown, "first cross-section row receives E1")
+    check("| First B | Description C | S2 |" in candidate.markdown, "second cross-section row receives S2")
+    check((candidate.stats or {}).get("symbols_unplaced_geometry") == [3], "only the real off-band symbol remains unplaced")
+    render_sectioned_docling_table(candidate, {1: first, 2: second}, (1.0, 1.0))
+    check(
+        "symbols_unplaced_geometry" not in (candidate.stats or {}),
+        "a successful rerender clears stale geometry-deficit stats",
+    )
+
+    candidate.stats["symbols_placed_geometry"] = []
+    candidate.stats["symbols_unplaced_geometry"] = [1]
+    degraded = candidate.markdown.replace("E1", "")
+    out, enforced = replace_sectioned_tables(degraded, [candidate])
+    check(enforced == [] and out == degraded, "incomplete sectioned candidate cannot overwrite a VLM/raw table")
+    check(verified_tables_prompt_block([candidate]) == "(none)", "incomplete sectioned candidate stays out of the prompt block")
+    check(missing_verified_table_ids("# Page\n", [candidate]) == [], "incomplete sectioned candidate is not required as verified")
+
+
 def _sectioned_table_item(grid, *, flag_header=False, bbox=(30, 30, 900, 760)):
     def cell(text, header):
         return SimpleNamespace(text=text, column_header=header)
@@ -671,6 +721,7 @@ def main() -> int:
     check_render()
     check_sectioned_body_bullets_and_raw_twin_anchor()
     check_sectioned_symbol_placement_by_source_row()
+    check_sectioned_cross_record_rowspan_bbox_is_ignored()
     check_prompt_map_wiring()
     check_build_candidates()
     check_prompt_block_wording()

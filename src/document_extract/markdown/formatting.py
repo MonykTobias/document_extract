@@ -278,8 +278,8 @@ def _symbol_record_codes(records: list[PictureRecord]) -> set[str]:
     return codes
 
 
-def is_loose_symbol_line(line: str, records: list[PictureRecord]) -> bool:
-    """Whether a standalone image-reference line is a dumped table symbol.
+def _loose_symbol_values(line: str, records: list[PictureRecord]) -> list[str]:
+    """Code values from one standalone VLM-emitted table-symbol image dump.
 
     The strict grammar avoids touching ordinary picture references. At least
     one code must be anchored to a real page symbol, while every code-shaped alt
@@ -288,39 +288,62 @@ def is_loose_symbol_line(line: str, records: list[PictureRecord]) -> bool:
     """
     stripped = line.strip()
     if not stripped or stripped.startswith("|"):
-        return False
+        return []
     matches = list(_LOOSE_IMAGE_REF_RE.finditer(stripped))
     if not matches:
-        return False
+        return []
     cursor = 0
     alts: list[str] = []
     for match in matches:
         if stripped[cursor:match.start()].strip():
-            return False
+            return []
         alts.append(match.group("alt"))
         cursor = match.end()
     if not _LOOSE_IMAGE_TRAILER_RE.fullmatch(stripped[cursor:]):
-        return False
+        return []
     codes = _symbol_record_codes(records)
     if not codes:
-        return False
+        return []
     parts: list[str] = []
     for alt in alts:
         value = re.sub(r"^\s*Image summary:\s*", "", alt, flags=re.IGNORECASE)
         parts.extend(part for part in re.split(r"[\s,]+", value.strip()) if part)
-    return bool(parts) and all(_SYMBOL_CODE_RE.fullmatch(part) for part in parts) and any(
-        part in codes for part in parts
-    )
+    if not (
+        parts
+        and all(_SYMBOL_CODE_RE.fullmatch(part) for part in parts)
+        and any(part in codes for part in parts)
+    ):
+        return []
+    return parts
+
+
+def is_loose_symbol_line(line: str, records: list[PictureRecord]) -> bool:
+    """Whether a standalone image-reference line is a dumped table symbol."""
+    return bool(_loose_symbol_values(line, records))
 
 
 def strip_loose_symbol_lines(
-    markdown: str, records: list[PictureRecord]
+    markdown: str,
+    records: list[PictureRecord],
+    protected_symbol_values: dict[str, int] | None = None,
 ) -> tuple[str, int]:
-    """Drop VLM-emitted standalone table-symbol image links from markdown."""
+    """Drop redundant standalone table-symbol image links from markdown.
+
+    A known geometry deficit can have one loose VLM copy. Keep that copy until
+    the instance audit decides whether a real table cell accounts for it, so
+    cleanup cannot silently delete the last evidence.
+    """
     kept: list[str] = []
     removed = 0
     for line in markdown.splitlines():
-        if is_loose_symbol_line(line, records):
+        values = _loose_symbol_values(line, records)
+        protected = protected_symbol_values or {}
+        if values and any(protected.get(value, 0) > 0 for value in values):
+            for value in set(values):
+                if protected.get(value, 0) > 0:
+                    protected[value] -= 1
+            kept.append(line)
+        elif values:
             removed += 1
         else:
             kept.append(line)
@@ -840,7 +863,11 @@ def replace_sectioned_tables(
     """
     enforced: list[str] = []
     for candidate in table_candidates or []:
-        if not (candidate.verified and candidate.markdown):
+        if not (
+            candidate.verified
+            and candidate.markdown
+            and candidate.has_complete_symbol_geometry()
+        ):
             continue
         if (candidate.stats or {}).get("format") != "sectioned_table":
             continue
@@ -1068,7 +1095,11 @@ def replace_deterministic_tables(
     """
     enforced: list[str] = []
     for candidate in table_candidates or []:
-        if not (candidate.verified and candidate.markdown):
+        if not (
+            candidate.verified
+            and candidate.markdown
+            and candidate.has_complete_symbol_geometry()
+        ):
             continue
         if (candidate.stats or {}).get("format") not in _DETERMINISTIC_FORMATS:
             continue
@@ -1094,6 +1125,7 @@ def drop_duplicate_subset_tables(
         for candidate in table_candidates or []
         if candidate.verified
         and candidate.markdown
+        and candidate.has_complete_symbol_geometry()
         and (candidate.stats or {}).get("format") != "kpi_list"
         for rows in [
             [
@@ -1158,7 +1190,11 @@ def missing_verified_table_ids(
     }
     out: list[str] = []
     for candidate in table_candidates:
-        if not (candidate.verified and candidate.markdown):
+        if not (
+            candidate.verified
+            and candidate.markdown
+            and candidate.has_complete_symbol_geometry()
+        ):
             continue
         if (candidate.stats or {}).get("format") == "kpi_list":
             kpi_lines = [

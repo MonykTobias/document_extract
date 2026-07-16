@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import argparse
 import re
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
 from .docling_adapter import is_table_item
-from .layout.prompt_map import layout_map_prompt_json
+from .layout.prompt_map import collapse_ws, layout_map_prompt_json
 from .llm import ollama as ollama_client
 from .markdown import postprocess as sp
 from .markdown.formatting import (
@@ -33,6 +34,181 @@ from .markdown.formatting import (
 )
 from .models import PictureRecord, TableCandidate
 from .tables import verified_tables_prompt_block
+
+
+_SYMBOL_CODE_RE = re.compile(r"^[A-Z]{1,3}\d{0,2}$")
+_SYMBOL_CODE_TOKEN_RE = re.compile(r"\b[A-Z]{1,3}\d{0,2}\b")
+_MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+
+
+def _symbol_value_tokens(value: str) -> list[str]:
+    """Normalized symbol tokens, keeping non-code summaries as one exact value."""
+    normalized = collapse_ws(value).upper()
+    parts = [part for part in re.split(r"[\s,]+", normalized) if part]
+    if parts and all(_SYMBOL_CODE_RE.fullmatch(part) for part in parts):
+        return parts
+    return [normalized] if normalized else []
+
+
+def _geometry_unplaced_symbol_records(
+    records: list[PictureRecord], table_candidates: list[TableCandidate] | None
+) -> list[PictureRecord]:
+    """Symbol records explicitly left without a geometry-backed logical row."""
+    unplaced_indices: set[int] = set()
+    for candidate in table_candidates or []:
+        unplaced_indices.update(
+            int(index)
+            for index in (candidate.stats or {}).get("symbols_unplaced_geometry", [])
+        )
+    return sorted(
+        [
+            record
+            for record in records
+            if record.index in unplaced_indices
+            and record.summary_type == "symbol"
+            and record.summary.strip()
+        ],
+        key=lambda record: record.index,
+    )
+
+
+def _protected_symbol_value_budget(records: list[PictureRecord]) -> dict[str, int]:
+    """How many loose code links may be deferred for known geometry deficits."""
+    budget: Counter[str] = Counter()
+    for record in records:
+        for value in _symbol_value_tokens(record.summary):
+            if _SYMBOL_CODE_RE.fullmatch(value):
+                budget[value] += 1
+    return dict(budget)
+
+
+def _protected_loose_symbol_line(
+    line: str, records: list[PictureRecord], protected_records: list[PictureRecord]
+) -> bool:
+    """Whether a deferred loose link carries a code from a known deficit."""
+    if not is_loose_symbol_line(line, records):
+        return False
+    values = {
+        value
+        for record in protected_records
+        for value in _symbol_value_tokens(record.summary)
+        if _SYMBOL_CODE_RE.fullmatch(value)
+    }
+    upper = line.upper()
+    return any(re.search(rf"\b{re.escape(value)}\b", upper) for value in values)
+
+
+def _pipe_table_symbol_counts(markdown: str, expected_values: set[str]) -> Counter[str]:
+    """Count symbol values in actual pipe-table cells, never image-link dumps."""
+    counts: Counter[str] = Counter()
+    non_codes = {value for value in expected_values if not _SYMBOL_CODE_RE.fullmatch(value)}
+    for line in markdown.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|") or set(stripped) <= set("|-: "):
+            continue
+        for cell in stripped.strip("|").split("|"):
+            clean = _MARKDOWN_IMAGE_RE.sub("", cell)
+            normalized = collapse_ws(clean).upper()
+            for code in _SYMBOL_CODE_TOKEN_RE.findall(normalized):
+                if code in expected_values:
+                    counts[code] += 1
+            if normalized in non_codes:
+                counts[normalized] += 1
+    return counts
+
+
+def audit_table_symbol_instances(
+    markdown: str,
+    records: list[PictureRecord],
+    table_candidates: list[TableCandidate] | None,
+) -> list[PictureRecord]:
+    """Return symbol records whose individual table occurrence is still absent.
+
+    Candidate placement metadata identifies the logical row of each placed
+    picture. Identical values in one logical cell collapse to one expected
+    occurrence; equal values in different rows remain separate.  Legacy or
+    non-deterministic records use the same multiset accounting without row
+    metadata, so one surviving ``S1`` cannot satisfy every ``S1`` picture.
+    """
+    records_by_index = {
+        record.index: record
+        for record in records
+        if record.summary_type == "symbol" and record.summary.strip()
+    }
+    # (value, priority, candidate order, logical row, picture index, record)
+    occurrences: list[tuple[str, int, int, int, int, PictureRecord]] = []
+    claimed_indices: set[int] = set()
+    placed_groups: dict[tuple[str, int, str], tuple[int, int, int, PictureRecord]] = {}
+    for candidate_order, candidate in enumerate(table_candidates or []):
+        stats = candidate.stats or {}
+        raw_indices = set(stats.get("symbol_picture_indices", []))
+        raw_indices.update(stats.get("symbols_placed_geometry", []))
+        raw_indices.update(stats.get("symbols_unplaced_geometry", []))
+        if not raw_indices:
+            continue
+        assignments = {
+            int(index): int(row)
+            for index, row in (stats.get("symbol_row_assignments") or {}).items()
+        }
+        unplaced = {int(index) for index in stats.get("symbols_unplaced_geometry", [])}
+        for raw_index in sorted(raw_indices, key=int):
+            index = int(raw_index)
+            if index in claimed_indices or index not in records_by_index:
+                continue
+            claimed_indices.add(index)
+            record = records_by_index[index]
+            for value in _symbol_value_tokens(record.summary):
+                if index in unplaced:
+                    occurrences.append((value, 1, candidate_order, -1, index, record))
+                elif index in assignments:
+                    key = (candidate.candidate_id, assignments[index], value)
+                    current = placed_groups.get(key)
+                    if current is None or index < current[2]:
+                        placed_groups[key] = (
+                            candidate_order,
+                            assignments[index],
+                            index,
+                            record,
+                        )
+                else:
+                    # Older/interrupted metadata names an expected picture but
+                    # not its row. Keep conservative multiset accounting.
+                    occurrences.append((value, 2, candidate_order, -1, index, record))
+    for (_candidate_id, row, value), (order, _, index, record) in placed_groups.items():
+        occurrences.append((value, 0, order, row, index, record))
+    for index, record in records_by_index.items():
+        if index not in claimed_indices:
+            for value in _symbol_value_tokens(record.summary):
+                occurrences.append((value, 2, len(table_candidates or []), -1, index, record))
+
+    expected_values = {value for value, *_ in occurrences}
+    observed = _pipe_table_symbol_counts(markdown, expected_values)
+    unresolved_indices: set[int] = set()
+    for value in expected_values:
+        available = observed[value]
+        for _, _, _, _, index, record in sorted(
+            (occurrence for occurrence in occurrences if occurrence[0] == value),
+            key=lambda occurrence: (
+                occurrence[1], occurrence[2], occurrence[3], occurrence[4]
+            ),
+        ):
+            if available:
+                available -= 1
+            else:
+                unresolved_indices.add(index)
+    return [
+        record
+        for record in sorted(records_by_index.values(), key=lambda record: record.index)
+        if record.index in unresolved_indices
+    ]
+
+
+def _symbol_deficit_lines(records: list[PictureRecord]) -> list[str]:
+    return [
+        "table symbol "
+        f"picture_index={record.index} value={record.summary.strip()} is not placed"
+        for record in records
+    ]
 
 def format_page_refinement_prompt(
     *,
@@ -116,7 +292,12 @@ def postprocess_markdown(
     final = sp.demote_datapoint_headings(final)
     flagged_summaries = mark_redundant_summaries(source_markdown, records)
     final = insert_image_references_and_summaries(final, records)
-    final, loose_symbol_lines_stripped = strip_loose_symbol_lines(final, records)
+    protected_symbol_records = _geometry_unplaced_symbol_records(records, table_candidates)
+    final, loose_symbol_lines_stripped = strip_loose_symbol_lines(
+        final,
+        records,
+        protected_symbol_values=_protected_symbol_value_budget(protected_symbol_records),
+    )
     vlm_unplaced_removed = sum(
         1
         for line in final.splitlines()
@@ -124,13 +305,20 @@ def postprocess_markdown(
     )
     final, vlm_unplaced_entries = sp.extract_unplaced_sections(final)
     vlm_unplaced_survivors: list[str] = []
+    protected_loose_survivors: list[str] = []
     vlm_unplaced_dropped = 0
     for entry in vlm_unplaced_entries:
         content = re.sub(r"^[-*]\s+", "", entry.strip())
         if not content:
             continue
-        if content.lower() == "(none)" or is_loose_symbol_line(content, records):
+        if content.lower() == "(none)":
             vlm_unplaced_dropped += 1
+            continue
+        if is_loose_symbol_line(content, records):
+            if _protected_loose_symbol_line(content, records, protected_symbol_records):
+                protected_loose_survivors.append(content)
+            else:
+                vlm_unplaced_dropped += 1
             continue
         vlm_unplaced_survivors.append(content)
     final = sp.strip_meta_commentary(final)
@@ -190,8 +378,6 @@ def postprocess_markdown(
 
     warnings: dict[str, Any] = {}
     warnings.update(table_warnings)
-    if loose_symbol_lines_stripped:
-        warnings["loose_symbol_lines_stripped"] = loose_symbol_lines_stripped
     if vlm_unplaced_removed:
         recycled = 0 if is_toc else len(vlm_unplaced_survivors)
         if is_toc:
@@ -228,21 +414,24 @@ def postprocess_markdown(
         uncertain_lines.extend(vlm_unplaced_survivors)
     if flagged_summaries:
         warnings["redundant_image_summaries"] = flagged_summaries
-    unplaced_symbols = [
-        record.placeholder
-        for record in records
-        if record.summary_type == "symbol"
-        and record.summary.strip()
-        and not any(
-            line.strip().startswith("|") and record.summary.strip() in line
-            for line in final.splitlines()
-        )
-    ]
-    if unplaced_symbols:
-        warnings["table_symbols_unplaced"] = unplaced_symbols
     final, dropped_tables = drop_duplicate_subset_tables(final, table_candidates)
     if dropped_tables:
         warnings["duplicate_tables_dropped"] = dropped_tables
+    unplaced_symbol_records = audit_table_symbol_instances(
+        final, records, table_candidates
+    )
+    # Deferred loose links are never valid table cells. Once their fate is
+    # audited, remove the image syntax; a remaining deficit becomes explicit
+    # text below instead of a silently dropped image reference.
+    final, deferred_loose_lines_stripped = strip_loose_symbol_lines(final, records)
+    loose_symbol_lines_stripped += deferred_loose_lines_stripped
+    if unplaced_symbol_records:
+        warnings["table_symbols_unplaced"] = [
+            record.placeholder for record in unplaced_symbol_records
+        ]
+    elif protected_loose_survivors:
+        # A complete VLM/raw table made the deferred links redundant after all.
+        loose_symbol_lines_stripped += len(protected_loose_survivors)
     # Dedupe before the completeness guard: the guard diffs against the raw
     # markdown, which contains each paragraph once, so dropped copies are not
     # re-appended as missing content.
@@ -275,6 +464,15 @@ def postprocess_markdown(
             extra_lines=uncertain_lines,
         )
     warnings.update(guard_warnings)
+    if unplaced_symbol_records:
+        final = sp.merge_unplaced_content(
+            final, _symbol_deficit_lines(unplaced_symbol_records)
+        )
+        warnings["loose_symbol_lines_preserved_as_unplaced"] = len(
+            unplaced_symbol_records
+        )
+    if loose_symbol_lines_stripped:
+        warnings["loose_symbol_lines_stripped"] = loose_symbol_lines_stripped
     footnote_warnings = sp.footnote_consistency(final)
     if footnote_warnings:
         warnings["footnotes"] = footnote_warnings
@@ -363,6 +561,8 @@ def repair_regression_reasons(
     pre_markdown: str,
     repaired_markdown: str,
     usage: dict[str, Any] | None,
+    records: list[PictureRecord] | None = None,
+    table_candidates: list[TableCandidate] | None = None,
 ) -> list[str]:
     """Why a repair result must be rejected in favor of the pre-repair markdown.
 
@@ -387,6 +587,15 @@ def repair_regression_reasons(
         pre_body
     ):
         reasons.append("duplicate_content_added")
+    if records is not None:
+        pre_missing = audit_table_symbol_instances(
+            pre_markdown, records, table_candidates
+        )
+        repaired_missing = audit_table_symbol_instances(
+            repaired_markdown, records, table_candidates
+        )
+        if len(repaired_missing) > len(pre_missing):
+            reasons.append("fewer_table_symbol_instances")
     return reasons
 
 
@@ -421,6 +630,6 @@ def apply_completeness_guard(
 __all__ = [
     "format_page_refinement_prompt", "format_page_repair_prompt",
     "refine_page_markdown", "postprocess_markdown",
-    "should_run_repair_pass", "repair_page_markdown",
+    "should_run_repair_pass", "repair_page_markdown", "audit_table_symbol_instances",
     "strip_unplaced_section", "repair_regression_reasons", "apply_completeness_guard",
 ]

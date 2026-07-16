@@ -16,7 +16,7 @@ from document_extract.markdown.postprocess import (
     filter_unplaced_lines,
     normalize_furniture_text,
 )
-from document_extract.models import PictureRecord
+from document_extract.models import PictureRecord, TableCandidate
 from document_extract.refinement import apply_completeness_guard, postprocess_markdown
 
 
@@ -45,12 +45,12 @@ RATING_BODY = (
 )
 
 
-def _symbol_record(value: str = "S4") -> PictureRecord:
+def _symbol_record(value: str = "S4", index: int = 1) -> PictureRecord:
     return PictureRecord(
         page=1,
-        index=1,
-        placeholder="{{DOC_IMAGE_p0001_i001}}",
-        rel_path="images/picture_p0001_i001.png",
+        index=index,
+        placeholder=f"{{{{DOC_IMAGE_p0001_i{index:03d}}}}}",
+        rel_path=f"images/picture_p0001_i{index:03d}.png",
         abs_path=None,
         bbox=None,
         area_ratio=0.001,
@@ -58,6 +58,26 @@ def _symbol_record(value: str = "S4") -> PictureRecord:
         caption="",
         summary_type="symbol",
         summary=value,
+    )
+
+
+def _symbol_candidate(*, placed: list[int], unplaced: list[int]) -> TableCandidate:
+    return TableCandidate(
+        candidate_id="tc-symbols",
+        kind="docling_table",
+        bbox=[0.0, 0.0, 1.0, 1.0],
+        markdown=(
+            "| Policy | ESRS coverage |\n|---|---|\n"
+            "| First policy | S1 |\n| Second policy | S1 |\n"
+        ),
+        verified=True,
+        stats={
+            "format": "regular_table",
+            "symbol_picture_indices": [1, 2],
+            "symbols_placed_geometry": placed,
+            "symbol_row_assignments": {index: position for position, index in enumerate(placed)},
+            **({"symbols_unplaced_geometry": unplaced} if unplaced else {}),
+        },
     )
 
 
@@ -194,6 +214,60 @@ def check_vlm_unplaced_sections_are_recycled_or_dropped() -> None:
     )
 
 
+def check_instance_aware_symbol_audit_and_loose_cleanup() -> None:
+    first = _symbol_record("S1", 1)
+    second = _symbol_record("S1", 2)
+    complete = _symbol_candidate(placed=[1, 2], unplaced=[])
+    complete_working = (
+        "| Policy | ESRS coverage |\n|---|---|\n"
+        "| First policy | S1 |\n| Second policy | S1 |\n\n![S1](#)\n"
+    )
+    complete_final, complete_warnings = postprocess_markdown(
+        "", complete_working, [first, second], [complete]
+    )
+    check("![S1](#)" not in complete_final, "redundant loose link is removed when both table instances exist")
+    check(
+        complete_warnings.get("table_symbols_unplaced") is None,
+        "complete same-value instances produce no symbol deficit",
+    )
+
+    incomplete = _symbol_candidate(placed=[1], unplaced=[2])
+    missing_working = (
+        "| Policy | ESRS coverage |\n|---|---|\n"
+        "| First policy | S1 |\n\n![S1](#)\n"
+    )
+    missing_final, missing_warnings = postprocess_markdown(
+        "", missing_working, [first, second], [incomplete]
+    )
+    check(
+        missing_warnings.get("table_symbols_unplaced") == [second.placeholder],
+        "one surviving S1 cannot satisfy the missing second-row S1 instance",
+    )
+    check("![S1](#)" not in missing_final, "deferred loose link is removed from final markdown")
+    check(
+        "picture_index=2 value=S1 is not placed" in missing_final,
+        "unresolved last copy becomes an auditable unplaced entry",
+    )
+    check(
+        missing_warnings.get("loose_symbol_lines_preserved_as_unplaced") == 1,
+        "the preserved-symbol warning records the unresolved instance",
+    )
+
+    section_working = (
+        "| Policy | ESRS coverage |\n|---|---|\n"
+        "| First policy | S1 |\n\n## Unplaced content\n\n- ![S1](#)\n"
+    )
+    section_final, section_warnings = postprocess_markdown(
+        "", section_working, [first, second], [incomplete]
+    )
+    check("![S1](#)" not in section_final, "unplaced-section loose link is converted instead of retained")
+    check(
+        section_warnings.get("table_symbols_unplaced") == [second.placeholder]
+        and "picture_index=2 value=S1 is not placed" in section_final,
+        "unplaced-section last copy follows the same auditable fallback",
+    )
+
+
 def main() -> int:
     check_repeated_phrase()
     check_fuzzy_present()
@@ -202,6 +276,7 @@ def main() -> int:
     check_empty_section_not_emitted()
     check_uncertain_block_routing()
     check_vlm_unplaced_sections_are_recycled_or_dropped()
+    check_instance_aware_symbol_audit_and_loose_cleanup()
     print("test_unplaced_filter: all checks passed")
     return 0
 

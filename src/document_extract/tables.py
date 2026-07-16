@@ -722,13 +722,35 @@ def _grid_coverage_column(
     return None
 
 
+def _rect_key(rect: list[float]) -> tuple[float, float, float, float]:
+    """A stable full-rectangle key for Docling grid cells.
+
+    Matching only vertical bounds would incorrectly merge ordinary cells that
+    happen to share one visual row.  Rounded normalized coordinates are already
+    the stable representation written to checkpoints.
+    """
+    return tuple(round(float(value), 6) for value in rect)  # type: ignore[return-value]
+
+
 def _record_y_band(
-    record: dict[str, Any], cell_rects_by_row: dict[int, list[list[float]]]
+    record_index: int,
+    record: dict[str, Any],
+    cell_rects_by_row: dict[int, list[list[float]]],
+    rect_owner_records: dict[tuple[float, float, float, float], set[int]],
 ) -> tuple[float, float] | None:
+    """Build a row band only from rectangles local to one logical record.
+
+    Docling can repeat a merged cell's full bbox on every source row it spans.
+    Such a rectangle belongs to several normalized records and must not expand
+    any of their bands; a repeated title/detail bbox remains valid because both
+    source rows normalize into the same record.
+    """
     tops: list[float] = []
     bottoms: list[float] = []
     for row_index in record["source_rows"]:
         for rect in cell_rects_by_row.get(row_index, []):
+            if rect_owner_records.get(_rect_key(rect)) != {record_index}:
+                continue
             tops.append(rect[1])
             bottoms.append(rect[3])
     if not tops:
@@ -766,9 +788,10 @@ def place_grid_symbols(
     normalized: dict[str, Any],
     symbols: list[dict[str, Any]],
     cell_rects_by_row: dict[int, list[list[float]]],
-) -> list[int]:
+) -> tuple[list[int], dict[int, int]]:
     """Inject each symbol's value into the coverage cell of the row that vertically
-    contains it. Returns the picture indices left unplaced.
+    contains it. Returns the picture indices left unplaced and each successful
+    ``picture_index -> logical_record_index`` assignment.
 
     A symbol is placed only when its vertical center falls inside exactly one
     record's row band; ambiguous or geometry-less symbols are returned unplaced
@@ -778,11 +801,27 @@ def place_grid_symbols(
     """
     records = normalized["records"]
     target = _grid_coverage_column(normalized["header"], records, normalized["num_cols"])
+    source_row_records: dict[int, set[int]] = {}
+    for record_index, record in enumerate(records):
+        for row_index in record["source_rows"]:
+            source_row_records.setdefault(row_index, set()).add(record_index)
+    rect_owner_records: dict[tuple[float, float, float, float], set[int]] = {}
+    for row_index, rects in cell_rects_by_row.items():
+        for rect in rects:
+            rect_owner_records.setdefault(_rect_key(rect), set()).update(
+                source_row_records.get(row_index, set())
+            )
     bands = [
-        (_record_y_band(record, cell_rects_by_row), record_index)
+        (
+            _record_y_band(
+                record_index, record, cell_rects_by_row, rect_owner_records
+            ),
+            record_index,
+        )
         for record_index, record in enumerate(records)
     ]
     unplaced: list[int] = []
+    assignments: dict[int, int] = {}
     # Collect matched symbols per record first, so several symbols sharing one
     # cell can be visually ordered and comma-joined rather than appended in
     # arrival order with a single space.
@@ -803,6 +842,7 @@ def place_grid_symbols(
         if len(matches) != 1:
             unplaced.append(symbol["index"])
             continue
+        assignments[symbol["index"]] = matches[0]
         matched_by_record.setdefault(matches[0], []).append(symbol)
     for record_index, matched in matched_by_record.items():
         cells = records[record_index]["cells"]
@@ -818,7 +858,7 @@ def place_grid_symbols(
                 seen.add(value)
                 values.append(value)
         cells[target] = GRID_SYMBOL_JOIN.join(values)
-    return unplaced
+    return sorted(unplaced), dict(sorted(assignments.items()))
 
 
 def render_grid_markdown(normalized: dict[str, Any]) -> str:
@@ -1021,7 +1061,16 @@ def render_deterministic_docling_table(
     stats = candidate.stats or {}
     if candidate.kind != "docling_table" or candidate.verified:
         return False
-    if stats.get("headerless") or stats.get("kpi_panel") or stats.get("format"):
+    existing_format = stats.get("format")
+    resumable_deterministic = (
+        existing_format in {"regular_table", "title_detail_table"}
+        and stats.get("deterministic")
+    )
+    if (
+        stats.get("headerless")
+        or stats.get("kpi_panel")
+        or (existing_format and not resumable_deterministic)
+    ):
         return False
     normalized = normalize_table_grid(stats.get("grid"))
     if normalized is None:
@@ -1054,10 +1103,21 @@ def render_deterministic_docling_table(
         )
         if normalized_rect:
             cell_rects_by_row.setdefault(cell["r"], []).append(normalized_rect)
-    unplaced = place_grid_symbols(normalized, symbols, cell_rects_by_row)
+    unplaced, assignments = place_grid_symbols(normalized, symbols, cell_rects_by_row)
     candidate.markdown = render_grid_markdown(normalized)
     candidate.verified = True
-    candidate.stats = {**stats, "format": normalized["classification"], "deterministic": True}
+    candidate.stats = {
+        **stats,
+        "format": normalized["classification"],
+        "deterministic": True,
+        "symbol_picture_indices": sorted(
+            set(stats.get("symbol_picture_indices", []))
+            | {symbol["index"] for symbol in symbols}
+        ),
+        "symbols_placed_geometry": sorted(assignments),
+        "symbol_row_assignments": assignments,
+    }
+    candidate.stats.pop("symbols_unplaced_geometry", None)
     if unplaced:
         candidate.stats["symbols_unplaced_geometry"] = unplaced
     return True
@@ -1145,9 +1205,19 @@ def render_sectioned_docling_table(
         "records": section_records,
         "num_cols": num_cols,
     }
-    unplaced = place_grid_symbols(normalized, symbols, cell_rects_by_row)
+    unplaced, assignments = place_grid_symbols(normalized, symbols, cell_rects_by_row)
     candidate.markdown = sp.render_sectioned_tables(split)
-    candidate.stats = {**stats, "deterministic": True}
+    candidate.stats = {
+        **stats,
+        "deterministic": True,
+        "symbol_picture_indices": sorted(
+            set(stats.get("symbol_picture_indices", []))
+            | {symbol["index"] for symbol in symbols}
+        ),
+        "symbols_placed_geometry": sorted(assignments),
+        "symbol_row_assignments": assignments,
+    }
+    candidate.stats.pop("symbols_unplaced_geometry", None)
     if unplaced:
         candidate.stats["symbols_unplaced_geometry"] = unplaced
     return True
@@ -1157,7 +1227,11 @@ def verified_tables_prompt_block(candidates: list[TableCandidate]) -> str:
     """Only verified region tables reach a prompt; everything else is debug-only."""
     parts: list[str] = []
     for candidate in candidates:
-        if not (candidate.verified and candidate.markdown.strip()):
+        if not (
+            candidate.verified
+            and candidate.markdown.strip()
+            and candidate.has_complete_symbol_geometry()
+        ):
             continue
         candidate_format = (candidate.stats or {}).get("format")
         if candidate_format == "kpi_list":
@@ -1482,7 +1556,11 @@ def transcribe_table_candidates(
         # never let a VLM pass overwrite it (a symbol picture overlapping it would
         # otherwise reach the transcription below). Symbols the geometry pass could
         # not place surface via the table_symbols_unplaced warning instead.
-        if candidate.verified and (candidate.stats or {}).get("format") in DETERMINISTIC_FORMATS:
+        if (
+            candidate.verified
+            and candidate.has_complete_symbol_geometry()
+            and (candidate.stats or {}).get("format") in DETERMINISTIC_FORMATS
+        ):
             continue
         symbol_indices = (candidate.stats or {}).get("symbol_picture_indices", [])
         is_kpi = bool((candidate.stats or {}).get("kpi_panel"))
