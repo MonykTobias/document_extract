@@ -7,7 +7,7 @@ name = "document_extract"
 version = "0.1.0"
 description = "Page-oriented Docling and multimodal RAG extraction pipeline"
 requires-python = ">=3.12"
-dependencies = ["PyYAML>=6,<7"]
+dependencies = ["PyYAML>=6,<7", "pypdf>=6.10,<7"]
 
 [project.scripts]
 document_extract = "document_extract.main:cli"
@@ -17,4 +17,3 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 document_extract = ["resources/config/*.yaml", "resources/prompts/*.md"]
-

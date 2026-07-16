@@ -394,6 +394,10 @@ def test_bbox_reused_inside_one_title_detail_record_is_kept() -> None:
     candidate = _detect_and_render(grid, [0.05, 0.20, 0.99, 0.66], {1: symbol})
     check("S1" in candidate.markdown, "same-record repeated bbox still supplies a usable band")
     check((candidate.stats or {}).get("symbol_row_assignments") == {1: 0}, "placement retains its logical-record audit")
+    check(
+        (candidate.stats or {}).get("symbol_cell_assignments") == {1: {"record_index": 0, "column_index": 5}},
+        "placement retains its exact output-cell audit",
+    )
 
 
 def test_incomplete_deterministic_candidate_is_not_authoritative() -> None:
@@ -416,6 +420,46 @@ def test_incomplete_deterministic_candidate_is_not_authoritative() -> None:
     check(missing_verified_table_ids("# Page\n", [candidate]) == [], "incomplete candidate is not reported as a required verified table")
     _, dropped = drop_duplicate_subset_tables(source + "\n" + source, [candidate])
     check(dropped == 0, "incomplete candidate cannot back duplicate-table deletion")
+
+
+def test_visual_enforce_gate_uses_shared_authority_callers() -> None:
+    rows = [
+        ["Policy", "Detail", "Signal"],
+        ["Alpha", "First", ""],
+        ["Beta", "Second", ""],
+    ]
+    candidate = _detect_and_render(
+        _structured_grid(rows, header_rows=1, row_bands=[(0.10, 0.13), (0.20, 0.30), (0.32, 0.42)]),
+        [0.05, 0.05, 0.99, 0.5],
+        {1: _picture(1, [0.90, 0.23, 0.98, 0.27], "X1")[1]},
+    )
+    source = _raw_twin_markdown(rows, header_rows=1)
+    candidate.stats["visual_values"] = {
+        "status": "incomplete",
+        "mode": "enforce",
+        "collector_version": 1,
+    }
+    out, enforced = replace_deterministic_tables(source, [candidate])
+    check(
+        enforced == [] and out == source,
+        "enforce visual incompleteness preserves the existing page table",
+    )
+    check(
+        verified_tables_prompt_block([candidate]) == "(none)",
+        "visual incompleteness is withheld from the shared authoritative prompt",
+    )
+    _, dropped = drop_duplicate_subset_tables(source + "\n" + source, [candidate])
+    check(dropped == 0, "visual incompleteness cannot back duplicate-table deletion")
+
+    candidate.stats["visual_values"]["mode"] = "audit"
+    out, enforced = replace_deterministic_tables(source, [candidate])
+    check(
+        candidate.has_complete_symbol_geometry()
+        and verified_tables_prompt_block([candidate]) != "(none)"
+        and enforced == []
+        and out == source,
+        "audit records incompleteness without changing legacy table authority",
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -942,8 +986,9 @@ def test_grid_verifier_untouched_without_grid() -> None:
 
 def test_symbol_free_regular_table_renders_bullets_end_to_end() -> None:
     # Pages 183-185: a regular table whose body cells carry ■-lists but that has
-    # NO coverage badge. Bullet normalization must now drive a deterministic
-    # render; previously this table was dropped (verified=False, markdown="").
+    # no legacy/PictureRecord coverage badge. Bullet normalization must now
+    # drive a deterministic render; previously this table was dropped
+    # (verified=False, markdown="").
     rows = [
         ["Stakeholder", "Engagement channels", "Example initiatives"],
         ["Farmers", "■ Strategic partnerships ■ Co-design", "Regenerative agriculture"],
@@ -1375,6 +1420,7 @@ def _run_all() -> None:
     test_cross_record_rowspan_bbox_does_not_expand_record_bands()
     test_bbox_reused_inside_one_title_detail_record_is_kept()
     test_incomplete_deterministic_candidate_is_not_authoritative()
+    test_visual_enforce_gate_uses_shared_authority_callers()
     test_symbol_value_never_becomes_a_standalone_line()
     test_loose_symbol_lines_are_stripped_without_touching_real_images()
     test_right_edge_navigation_image_is_omitted_content_image_kept()

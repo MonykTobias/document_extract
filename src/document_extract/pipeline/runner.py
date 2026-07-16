@@ -45,8 +45,9 @@ from .stages import (
     _run_table_detect,
     _run_table_extract,
 )
-from .state import _candidates_from_state, _records_from_state
+from .state import _candidates_from_state, _records_from_state, _visual_candidates_from_state
 from ..tables import table_candidate_rows
+from ..visual_values import COLLECTOR_VERSION
 
 # Pages per Docling convert() call, which is also the prefetch unit: the next
 # chunk is converted in a persistent worker process while the current chunk's
@@ -158,6 +159,8 @@ def _manifest_row(state: PageState) -> dict[str, Any]:
         "table_candidate_count": len(candidates),
         "table_candidate_kinds": sorted({candidate.kind for candidate in candidates}),
         "table_candidates": table_candidate_rows(candidates),
+        "visual_audit": state.visual_audit,
+        "visual_candidate_count": len(state.visual_candidates),
         "table_extraction_usage": [
             {
                 "candidate_id": candidate.candidate_id,
@@ -254,14 +257,44 @@ def _write_run_outputs(output_root: Path, states: list[PageState]) -> None:
     _warn_stale_page_dirs(output_root, ordered)
 
 
+def _has_current_visual_audit(
+    state: PageState, page_dir: Path, visual_values_mode: str
+) -> bool:
+    """Return whether a resumed non-off run has complete collector state."""
+    audit = state.visual_audit or {}
+    if (
+        not audit.get("completed")
+        or audit.get("collector_version") != COLLECTOR_VERSION
+        or audit.get("mode") != visual_values_mode
+        or audit.get("candidate_count") != len(state.visual_candidates)
+        or not (page_dir / "visual_candidates.json").exists()
+    ):
+        return False
+    return all(
+        (candidate.get("stats") or {}).get("visual_values", {}).get("mode")
+        == visual_values_mode
+        and (candidate.get("stats") or {}).get("visual_values", {}).get("collector_version")
+        == COLLECTOR_VERSION
+        for candidate in state.table_candidates
+    )
+
+
 def run_pipeline(args: argparse.Namespace) -> int:
     import fitz  # noqa: PLC0415
 
+    visual_values_mode = getattr(args, "visual_values_mode", "off")
+    if visual_values_mode not in {"off", "audit", "enforce"}:
+        raise ValueError("--visual-values-mode must be off, audit, or enforce")
     if not args.triage_model:
         args.triage_model = args.ollama_model
     if not 0.0 <= args.triage_confidence <= 1.0:
         raise ValueError("--triage-confidence must be between 0 and 1")
     pdf_path = ensure_pdf(args.pdf)
+    visual_reader = None
+    if visual_values_mode != "off":
+        from pypdf import PdfReader  # noqa: PLC0415
+
+        visual_reader = PdfReader(str(pdf_path))
     output_root = args.output_dir.expanduser().resolve() / pdf_path.stem
     output_root.mkdir(parents=True, exist_ok=True)
     page_refinement_prompt = load_page_refinement_prompt(args.prompt_file)
@@ -356,16 +389,39 @@ def run_pipeline(args: argparse.Namespace) -> int:
                             page_dir=page_dir,
                         )
                         state.page_dir = str(page_dir)
-                        clear_downstream_artifacts(page_dir, args.resume_from)
-                        invalidate_from(state, args.resume_from)
+                        effective_resume_from = args.resume_from
+                        if stage_index(effective_resume_from) > stage_index("table_detect"):
+                            audit = state.visual_audit or {}
+                            stale_visual_state = (
+                                visual_values_mode == "off"
+                                and (
+                                    state.visual_values_mode != "off"
+                                    or bool(audit)
+                                    or any(
+                                        (candidate.get("stats") or {}).get("visual_values")
+                                        for candidate in state.table_candidates
+                                    )
+                                )
+                            ) or (
+                                visual_values_mode != "off"
+                                and not _has_current_visual_audit(
+                                    state, page_dir, visual_values_mode
+                                )
+                            )
+                            if stale_visual_state:
+                                effective_resume_from = "table_detect"
+                        clear_downstream_artifacts(page_dir, effective_resume_from)
+                        invalidate_from(state, effective_resume_from)
+                        state.visual_values_mode = visual_values_mode
                         state.save()
                         runtime: dict[str, Any] = {
                             "items": None,
                             "records": _records_from_state(state),
                             "candidates": _candidates_from_state(state),
+                            "visual_candidates": _visual_candidates_from_state(state),
                         }
-                        start_index = stage_index(args.resume_from)
-                        reporter.emit("page", "resume", from_stage=args.resume_from)
+                        start_index = stage_index(effective_resume_from)
+                        reporter.emit("page", "resume", from_stage=effective_resume_from)
                     else:
                         state = new_page_state(
                             pdf_path=pdf_path,
@@ -375,6 +431,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                             dpi=args.dpi,
                             page_dir=page_dir,
                             page_size=page_sizes[page_number],
+                            visual_values_mode=visual_values_mode,
                         )
                         runtime = _prepare_page(
                             state=state,
@@ -399,7 +456,11 @@ def run_pipeline(args: argparse.Namespace) -> int:
                             prompt=image_summary_prompt,
                         ),
                         "table_detect": lambda: _run_table_detect(
-                            state=state, reporter=reporter, runtime=runtime
+                            state=state,
+                            reporter=reporter,
+                            runtime=runtime,
+                            reader=visual_reader,
+                            mode=visual_values_mode,
                         ),
                         "table_extract": lambda: _run_table_extract(
                             state=state, reporter=reporter, args=args, runtime=runtime
@@ -442,6 +503,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                             dpi=args.dpi,
                             page_dir=page_dir,
                             page_size=page_sizes[page_number],
+                            visual_values_mode=visual_values_mode,
                         )
                     if state.status != "failed":
                         state.status = "failed"

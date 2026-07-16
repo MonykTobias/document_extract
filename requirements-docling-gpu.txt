@@ -9,3 +9,4 @@ pymupdf==1.27.2.2
 Pillow==11.3.0
 requests==2.34.2
 PyYAML==6.0.2
+pypdf==6.10.0

@@ -78,6 +78,9 @@ class PageState:
     layout_map: dict[str, Any] = field(default_factory=dict)
     repair_layout_map: dict[str, Any] = field(default_factory=dict)
     table_candidates: list[dict[str, Any]] = field(default_factory=list)
+    visual_values_mode: str = "off"
+    visual_candidates: list[dict[str, Any]] = field(default_factory=list)
+    visual_audit: dict[str, Any] = field(default_factory=dict)
     block_rows: list[dict[str, Any]] = field(default_factory=list)
     page_vlm_usage: dict[str, Any] | None = None
     page_repair_usage: dict[str, Any] | None = None
@@ -123,6 +126,7 @@ def new_page_state(
     dpi: int,
     page_dir: Path,
     page_size: tuple[float, float],
+    visual_values_mode: str = "off",
 ) -> PageState:
     return PageState(
         schema_version=CHECKPOINT_SCHEMA_VERSION,
@@ -134,6 +138,7 @@ def new_page_state(
         dpi=dpi,
         page_dir=str(page_dir),
         page_size=page_size,
+        visual_values_mode=visual_values_mode,
     )
 
 
@@ -275,6 +280,9 @@ def invalidate_from(state: PageState, stage: str) -> None:
             )
     if start <= stage_index("table_detect"):
         state.table_candidates = []
+        state.visual_values_mode = "off"
+        state.visual_candidates = []
+        state.visual_audit = {}
     if start <= stage_index("table_extract"):
         for candidate in state.table_candidates:
             candidate.update(
@@ -313,8 +321,8 @@ def clear_downstream_artifacts(page_dir: Path, stage: str) -> None:
     groups: dict[str, tuple[str, ...]] = {
         "picture_triage": ("image_summaries.jsonl",),
         "picture_extract": ("image_summaries.jsonl",),
-        "table_detect": ("table_candidates.json", "table_candidates_overlay.png"),
-        "table_extract": ("table_candidates.json", "table_candidates_overlay.png", "table_candidates"),
+        "table_detect": ("table_candidates.json", "table_candidates_overlay.png", "visual_candidates.json"),
+        "table_extract": ("table_candidates.json", "table_candidates_overlay.png", "table_candidates", "visual_candidates.json"),
         "page_refine": ("page_vlm.md", "page_repair.md", "docling_final.md"),
         "page_repair": ("page_repair.md", "docling_final.md"),
         "finalize": ("docling_final.md", "image_summaries.jsonl"),

@@ -53,10 +53,21 @@ from ..tables import (
     table_candidate_rows,
     transcribe_table_candidates,
 )
+from ..visual_values import (
+    apply_trusted_visual_values,
+    associate_table_cells,
+    collect_tagged_candidates,
+    merge_picture_evidence,
+    reconcile_picture_evidence,
+    update_visual_completeness,
+    visual_audit_summary,
+    visual_candidate_rows,
+)
 from .state import (
     _candidates_from_state,
     _records_from_state,
     _sync_page_state,
+    _visual_candidates_from_state,
 )
 
 
@@ -334,12 +345,19 @@ def _run_picture_extract(
 
 
 def _run_table_detect(
-    *, state: PageState, reporter: StatusReporter, runtime: dict[str, Any]
+    *,
+    state: PageState,
+    reporter: StatusReporter,
+    runtime: dict[str, Any],
+    reader: Any | None = None,
+    mode: str = "off",
 ) -> list[TableCandidate]:
     records = runtime.get("records") or _records_from_state(state)
     page_dir = Path(state.page_dir)
 
     def action() -> dict[str, Any]:
+        if mode != "off" and reader is None:
+            raise RuntimeError("visual-value audit requires a tagged-PDF reader")
         picture_map = {record.index: record for record in records}
         candidates = build_table_candidates(
             cells=state.detection_cells,
@@ -347,8 +365,36 @@ def _run_table_detect(
             picture_records=picture_map,
             layout_map=state.layout_map,
         )
+        visual_candidates = []
+        if mode != "off":
+            visual_candidates = collect_tagged_candidates(
+                reader, state.page, tuple(state.page_size)
+            )
+            visual_candidates = merge_picture_evidence(visual_candidates, records)
+            associate_table_cells(visual_candidates, candidates, tuple(state.page_size))
+            update_visual_completeness(candidates, visual_candidates, mode=mode)
+            state.visual_audit = visual_audit_summary(
+                candidates, visual_candidates, mode=mode
+            )
+            (page_dir / "visual_candidates.json").write_text(
+                json.dumps(
+                    visual_candidate_rows(visual_candidates),
+                    indent=2,
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+        else:
+            state.visual_audit = {}
+            visual_path = page_dir / "visual_candidates.json"
+            if visual_path.exists():
+                visual_path.unlink()
+        state.visual_values_mode = mode
         runtime["candidates"] = candidates
-        _sync_page_state(state, candidates=candidates)
+        runtime["visual_candidates"] = visual_candidates
+        _sync_page_state(
+            state, candidates=candidates, visual_candidates=visual_candidates
+        )
         (page_dir / "table_candidates.json").write_text(
             json.dumps(table_candidate_rows(candidates), indent=2, ensure_ascii=False),
             encoding="utf-8",
@@ -361,6 +407,8 @@ def _run_table_detect(
         return {
             "candidates": len(candidates),
             "kinds": sorted({candidate.kind for candidate in candidates}),
+            "visual_candidates": len(visual_candidates),
+            "visual": (state.visual_audit or {}).get("table_status_counts"),
         }
 
     _execute_stage(state, reporter, "table_detect", action)
@@ -372,8 +420,11 @@ def _run_table_extract(
 ) -> list[TableCandidate]:
     candidates = runtime.get("candidates") or _candidates_from_state(state)
     records = runtime.get("records") or _records_from_state(state)
+    visual_candidates = runtime.get("visual_candidates") or _visual_candidates_from_state(state)
+    mode = state.visual_values_mode or "off"
 
     def action() -> dict[str, Any]:
+        inserted = apply_trusted_visual_values(candidates, visual_candidates, mode=mode)
         symbol_records = [
             record
             for record in records
@@ -401,7 +452,27 @@ def _run_table_extract(
         )
         runtime["candidates"] = candidates
         runtime["records"] = records
-        _sync_page_state(state, records=records, candidates=candidates)
+        runtime["visual_candidates"] = visual_candidates
+        if mode != "off":
+            reconcile_picture_evidence(candidates, visual_candidates)
+            update_visual_completeness(candidates, visual_candidates, mode=mode)
+            state.visual_audit = visual_audit_summary(
+                candidates, visual_candidates, mode=mode
+            )
+            Path(state.page_dir, "visual_candidates.json").write_text(
+                json.dumps(
+                    visual_candidate_rows(visual_candidates),
+                    indent=2,
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+        _sync_page_state(
+            state,
+            records=records,
+            candidates=candidates,
+            visual_candidates=visual_candidates,
+        )
         Path(state.page_dir, "table_candidates.json").write_text(
             json.dumps(table_candidate_rows(candidates), indent=2, ensure_ascii=False),
             encoding="utf-8",
@@ -410,6 +481,8 @@ def _run_table_extract(
             "candidates": len(candidates),
             "verified": sum(candidate.verified for candidate in candidates),
             "calls": sum(candidate.usage is not None for candidate in candidates),
+            "visual_inserted": inserted,
+            "visual": (state.visual_audit or {}).get("table_status_counts"),
         }
 
     _execute_stage(state, reporter, "table_extract", action)

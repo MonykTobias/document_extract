@@ -6,7 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from ..models import PictureRecord, TableCandidate
+from ..models import PictureRecord, TableCandidate, VisualCandidate
 from ..runtime import PageState, relative_page_path, resolve_page_path
 
 def _picture_state_rows(records: list[PictureRecord], page_dir: Path) -> list[dict[str, Any]]:
@@ -60,6 +60,19 @@ def _candidates_from_state(state: PageState) -> list[TableCandidate]:
     return candidates
 
 
+def _visual_candidate_state_rows(candidates: list[VisualCandidate]) -> list[dict[str, Any]]:
+    return [asdict(candidate) for candidate in candidates]
+
+
+def _visual_candidates_from_state(state: PageState) -> list[VisualCandidate]:
+    fields = set(VisualCandidate.__dataclass_fields__)
+    candidates: list[VisualCandidate] = []
+    for row in state.visual_candidates:
+        payload = {key: value for key, value in row.items() if key in fields}
+        candidates.append(VisualCandidate(**payload))
+    return candidates
+
+
 def _sync_page_state(
     state: PageState,
     *,
@@ -68,6 +81,7 @@ def _sync_page_state(
     layout_map: dict[str, Any] | None = None,
     repair_layout_map: dict[str, Any] | None = None,
     candidates: list[TableCandidate] | None = None,
+    visual_candidates: list[VisualCandidate] | None = None,
 ) -> None:
     page_dir = Path(state.page_dir)
     if records is not None:
@@ -80,6 +94,8 @@ def _sync_page_state(
         state.repair_layout_map = repair_layout_map
     if candidates is not None:
         state.table_candidates = _candidate_state_rows(candidates, page_dir)
+    if visual_candidates is not None:
+        state.visual_candidates = _visual_candidate_state_rows(visual_candidates)
     state.artifact_paths.update(
         {
             "page_image": "page.png",
@@ -89,6 +105,7 @@ def _sync_page_state(
             "repair_layout_map": "layout_prompt_map_repair.json",
             "table_candidates": "table_candidates.json",
             "table_overlay": "table_candidates_overlay.png",
+            "visual_candidates": "visual_candidates.json",
             "final_markdown": "docling_final.md",
             "image_summaries": "image_summaries.jsonl",
             "checkpoint": "page_state.json",
@@ -97,5 +114,6 @@ def _sync_page_state(
 
 __all__ = [
     "_picture_state_rows", "_records_from_state", "_candidate_state_rows",
-    "_candidates_from_state", "_sync_page_state",
+    "_candidates_from_state", "_visual_candidate_state_rows",
+    "_visual_candidates_from_state", "_sync_page_state",
 ]

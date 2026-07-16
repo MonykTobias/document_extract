@@ -35,6 +35,24 @@ class PictureRecord:
 
 
 @dataclass
+class VisualCandidate:
+    candidate_id: str
+    page: int
+    norm_rect: list[float] | None
+    evidence: list[dict[str, Any]] = field(default_factory=list)
+    proposals: list[dict[str, Any]] = field(default_factory=list)
+    target: dict[str, Any] = field(default_factory=dict)
+    semantic: str = "uncertain"
+    resolution: str = "unresolved"
+    resolved_value: str = ""
+    detection_confidence: float | None = None
+    semantic_confidence: float | None = None
+    value_confidence: float | None = None
+    placement_confidence: float | None = None
+    reasons: list[str] = field(default_factory=list)
+
+
+@dataclass
 class TableCandidate:
     candidate_id: str
     kind: str
@@ -58,6 +76,12 @@ class TableCandidate:
         geometry deficit; newly rendered candidates always carry both lists.
         """
         stats = self.stats or {}
+        visual = stats.get("visual_values") or {}
+        if (
+            visual.get("mode") == "enforce"
+            and visual.get("status") in {"incomplete", "uncertain"}
+        ):
+            return False
         if stats.get("symbols_unplaced_geometry"):
             return False
         expected = stats.get("symbol_picture_indices")
@@ -66,4 +90,4 @@ class TableCandidate:
             return True
         return set(expected).issubset(set(placed))
 
-__all__ = ["PictureRecord", "TableCandidate"]
+__all__ = ["PictureRecord", "TableCandidate", "VisualCandidate"]

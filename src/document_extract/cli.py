@@ -41,6 +41,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Do not call Ollama; keep image references without summaries.",
     )
     parser.add_argument(
+        "--visual-values-mode",
+        choices=("off", "audit", "enforce"),
+        default="off",
+        help="Tagged-PDF visual-value handling mode.",
+    )
+    parser.add_argument(
         "--ollama-base-url",
         default=os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434"),
         help="Base URL for Ollama.",

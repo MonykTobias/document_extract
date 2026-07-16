@@ -335,11 +335,11 @@ def table_grid_structured(
 
     Returns ``{"rows", "num_cols", "header_rows", "cells"}`` where ``rows`` is
     the dense text grid, ``header_rows`` is how many leading rows Docling marked
-    as column headers, and ``cells`` carries per-position ``{r, c, text, bbox,
-    column_header}`` records (``bbox`` is ``None`` when Docling exposes no cell
-    geometry). Unlike ``table_grid_rows`` this is uncapped enough to reconstruct
-    the whole table and is never sent to a prompt — it round-trips through
-    ``page_state.json`` and feeds transcription/verification/rendering.
+    as column headers, and ``cells`` carries per-position text, geometry, and
+    Docling offset/span metadata (``bbox`` is ``None`` when Docling exposes no
+    cell geometry). Unlike ``table_grid_rows`` this is uncapped enough to
+    reconstruct the whole table and is never sent to a prompt — it round-trips
+    through ``page_state.json`` and feeds transcription/verification/rendering.
     """
     data = getattr(item, "data", None)
     grid = getattr(data, "grid", None) if data is not None else None
@@ -357,6 +357,12 @@ def table_grid_structured(
                     "text": text,
                     "bbox": bbox_to_values(getattr(cell, "bbox", None)),
                     "column_header": bool(getattr(cell, "column_header", False)),
+                    "start_row_offset_idx": getattr(cell, "start_row_offset_idx", None),
+                    "end_row_offset_idx": getattr(cell, "end_row_offset_idx", None),
+                    "start_col_offset_idx": getattr(cell, "start_col_offset_idx", None),
+                    "end_col_offset_idx": getattr(cell, "end_col_offset_idx", None),
+                    "row_span": getattr(cell, "row_span", None),
+                    "col_span": getattr(cell, "col_span", None),
                 }
             )
         rows.append(row_texts)

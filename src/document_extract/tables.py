@@ -861,6 +861,57 @@ def place_grid_symbols(
     return sorted(unplaced), dict(sorted(assignments.items()))
 
 
+def _symbol_cell_assignments(
+    assignments: dict[int, int], column_index: int | None
+) -> dict[int, dict[str, int]]:
+    """Persist the exact legacy output cell for each geometry placement."""
+    if column_index is None:
+        return {}
+    return {
+        picture_index: {"record_index": record_index, "column_index": column_index}
+        for picture_index, record_index in assignments.items()
+    }
+
+
+def place_visual_value(
+    normalized: dict[str, Any], record_index: int, column_index: int, value: str
+) -> bool:
+    """Place one opaque scalar in an explicitly targeted normalized-grid cell.
+
+    A matching value is already complete and succeeds without changing the
+    grid. A different nonempty value is left untouched: generic code must not
+    invent a delimiter or overwrite native text.
+    """
+    records = normalized.get("records")
+    try:
+        num_cols = int(normalized.get("num_cols", 0))
+    except (TypeError, ValueError):
+        return False
+    if (
+        not isinstance(records, list)
+        or not isinstance(value, str)
+        or not value
+        or record_index < 0
+        or record_index >= len(records)
+        or column_index < 0
+        or column_index >= num_cols
+    ):
+        return False
+    record = records[record_index]
+    if not isinstance(record, dict) or not isinstance(record.get("cells"), list):
+        return False
+    cells = record["cells"]
+    if len(cells) <= column_index:
+        cells.extend([""] * (column_index + 1 - len(cells)))
+    existing = cells[column_index]
+    if existing == value:
+        return True
+    if existing != "":
+        return False
+    cells[column_index] = value
+    return True
+
+
 def render_grid_markdown(normalized: dict[str, Any]) -> str:
     """Render a normalized grid as one markdown pipe table (cells escaped)."""
     num_cols = normalized["num_cols"]
@@ -1092,6 +1143,7 @@ def render_deterministic_docling_table(
         normalized["classification"] == "regular_table"
         and not symbols
         and not normalized.get("bulleted")
+        and not stats.get("visual_values_inserted")
     ):
         return False
     cell_rects_by_row: dict[int, list[list[float]]] = {}
@@ -1103,7 +1155,11 @@ def render_deterministic_docling_table(
         )
         if normalized_rect:
             cell_rects_by_row.setdefault(cell["r"], []).append(normalized_rect)
+    symbol_column = _grid_coverage_column(
+        normalized["header"], normalized["records"], normalized["num_cols"]
+    )
     unplaced, assignments = place_grid_symbols(normalized, symbols, cell_rects_by_row)
+    cell_assignments = _symbol_cell_assignments(assignments, symbol_column)
     candidate.markdown = render_grid_markdown(normalized)
     candidate.verified = True
     candidate.stats = {
@@ -1116,6 +1172,7 @@ def render_deterministic_docling_table(
         ),
         "symbols_placed_geometry": sorted(assignments),
         "symbol_row_assignments": assignments,
+        "symbol_cell_assignments": cell_assignments,
     }
     candidate.stats.pop("symbols_unplaced_geometry", None)
     if unplaced:
@@ -1205,7 +1262,11 @@ def render_sectioned_docling_table(
         "records": section_records,
         "num_cols": num_cols,
     }
+    symbol_column = _grid_coverage_column(
+        normalized["header"], normalized["records"], normalized["num_cols"]
+    )
     unplaced, assignments = place_grid_symbols(normalized, symbols, cell_rects_by_row)
+    cell_assignments = _symbol_cell_assignments(assignments, symbol_column)
     candidate.markdown = sp.render_sectioned_tables(split)
     candidate.stats = {
         **stats,
@@ -1216,6 +1277,7 @@ def render_sectioned_docling_table(
         ),
         "symbols_placed_geometry": sorted(assignments),
         "symbol_row_assignments": assignments,
+        "symbol_cell_assignments": cell_assignments,
     }
     candidate.stats.pop("symbols_unplaced_geometry", None)
     if unplaced:
@@ -1716,7 +1778,7 @@ __all__ = [
     "nearby_table_signal_blocks", "picture_record_is_table_like",
     "regions_horizontally_adjacent", "merge_adjacent_regions",
     "evaluate_table_regions", "build_table_candidates",
-    "normalize_table_grid", "place_grid_symbols", "render_grid_markdown",
+    "normalize_table_grid", "place_grid_symbols", "place_visual_value", "render_grid_markdown",
     "render_deterministic_docling_table", "render_sectioned_docling_table",
     "verified_tables_prompt_block", "numeric_tokens", "word_tokens",
     "verify_region_table", "verify_kpi_list", "table_candidate_rows", "render_layout_overlay",

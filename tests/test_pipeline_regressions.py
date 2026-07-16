@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -16,7 +17,8 @@ from document_extract import pictures, tables
 from document_extract.config import apply_detection_config, config_from_mapping
 from document_extract.layout.prompt_map import build_layout_prompt_map
 from document_extract.models import PictureRecord
-from document_extract.pipeline.runner import selected_page_numbers
+from document_extract.pipeline.runner import _has_current_visual_audit, selected_page_numbers
+from document_extract.visual_values import COLLECTOR_VERSION
 from document_extract.runtime import CHECKPOINT_SCHEMA_VERSION, PageState, invalidate_from
 
 
@@ -126,6 +128,63 @@ def check_page_repair_replay_state() -> None:
     )
 
 
+def check_visual_value_invalidation() -> None:
+    state = make_page_state()
+    state.completed_stage = "finalize"
+    state.visual_values_mode = "enforce"
+    state.visual_candidates = [{"candidate_id": "vv001"}]
+    state.visual_audit = {"completed": True}
+    state.table_candidates = [{"candidate_id": "tc001"}]
+    invalidate_from(state, "table_detect")
+    check(
+        state.visual_values_mode == "off"
+        and state.visual_candidates == []
+        and state.visual_audit == {},
+        "replaying table detection clears visual-value checkpoint state",
+    )
+
+
+def check_visual_resume_audit_freshness() -> None:
+    state = make_page_state()
+    state.visual_values_mode = "audit"
+    state.visual_candidates = []
+    state.visual_audit = {
+        "completed": True,
+        "collector_version": COLLECTOR_VERSION,
+        "mode": "audit",
+        "candidate_count": 0,
+    }
+    state.table_candidates = [
+        {
+            "candidate_id": "tc001",
+            "stats": {
+                "visual_values": {
+                    "mode": "audit",
+                    "collector_version": COLLECTOR_VERSION,
+                }
+            },
+        }
+    ]
+    with tempfile.TemporaryDirectory() as temp:
+        page_dir = Path(temp)
+        (page_dir / "visual_candidates.json").write_text("[]", encoding="utf-8")
+        check(
+            _has_current_visual_audit(state, page_dir, "audit"),
+            "a matching visual audit can resume after table detection",
+        )
+        (page_dir / "visual_candidates.json").unlink()
+        check(
+            not _has_current_visual_audit(state, page_dir, "audit"),
+            "a missing visual diagnostic artifact forces table-detect replay",
+        )
+        (page_dir / "visual_candidates.json").write_text("[]", encoding="utf-8")
+        state.table_candidates[0]["stats"]["visual_values"]["collector_version"] = 0
+        check(
+            not _has_current_visual_audit(state, page_dir, "audit"),
+            "a stale per-table visual audit forces table-detect replay",
+        )
+
+
 def check_layout_map_picture_keying() -> None:
     class FakeBBox:
         l, t, r, b = 10.0, 10.0, 60.0, 60.0
@@ -201,6 +260,8 @@ def check_page_selection_bounds() -> None:
 def main() -> int:
     check_detection_config_reaches_tables()
     check_page_repair_replay_state()
+    check_visual_value_invalidation()
+    check_visual_resume_audit_freshness()
     check_layout_map_picture_keying()
     check_summary_retry_usage_accounting()
     check_page_selection_bounds()
