@@ -1,0 +1,4283 @@
+{
+ "note": "Frozen from a real Docling run; source PDF is external and not committed.",
+ "source_pdf": "danoneurdaccessible.pdf",
+ "physical_page": 199,
+ "page_size": [
+  609.4500122070312,
+  793.7000122070312
+ ],
+ "table_bbox": [
+  0.081,
+  0.122,
+  0.918,
+  0.642
+ ],
+ "raw_grid": {
+  "rows": [
+   [
+    "",
+    "KPI",
+    "Baseline year",
+    "Baseline value",
+    "Target year",
+    "Target",
+    "2023",
+    "2024",
+    "2025",
+    "ESRS coverage"
+   ],
+   [
+    "Curb GHG emissions",
+    "Percentage reduction in CO 2 e emissions in line with SBTi 1.5 °C pathway (a)",
+    "2020",
+    "21,923 ktCO e",
+    "2030",
+    "(34.8)%",
+    "(7.5)%",
+    "(16.1)%",
+    "(21.0)%",
+    ""
+   ],
+   [
+    "",
+    "Net Zero (a)",
+    "",
+    "2",
+    "2050",
+    "(b)",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "in line with 1.5 °C, leading the way on methane reduction",
+    "Percentage reduction in methane emissions from fresh milk in dairy products",
+    "2020",
+    "4,091 ktCO 2 e",
+    "2030",
+    "(30.0)%",
+    "(13.3)%",
+    "(25.0)%",
+    "(29.8)%",
+    ""
+   ],
+   [
+    "in line with 1.5 °C, leading the way on methane reduction",
+    "Percentage reduction in scope 1 & 2 CO 2 e emissions (a)",
+    "2020",
+    "1,044 ktCO 2 e",
+    "2025",
+    "(36.0)%",
+    "(20.7)%",
+    "(34.5)%",
+    "(40.2)%",
+    ""
+   ],
+   [
+    "Pioneer and scale regenerative agriculture, leading the way for regenerative dairy farming models",
+    "Volume of key ingredients Danone sources directly that comes from farms which have begun to transition to regenerative agriculture",
+    "2022",
+    "28.0%",
+    "2025",
+    "30.0%",
+    "38.0%",
+    "39.0%",
+    "42.0%",
+    ""
+   ],
+   [
+    "Pioneer and scale regenerative agriculture, leading the way for regenerative dairy farming models",
+    "Percentage of key direct commodities volume with Verified Deforestation & Conversion (vDCF) free status",
+    "2022",
+    "84.0%",
+    "2025",
+    "97% (c)",
+    "85.0%",
+    "93.0%",
+    "97.9%",
+    ""
+   ],
+   [
+    "Preserve and restore watersheds where Danone operates and drive",
+    "Percentage of production sites with a 4R approach deployed",
+    "2020",
+    "49.3%",
+    "2030",
+    "100%",
+    "94.8%",
+    "99.3%",
+    "99.3%",
+    ""
+   ],
+   [
+    "water footprint reduction across the value chain",
+    "Percentage of total water intake of production sites located in highly water-stressed areas with a watershed preservation or restoration plan in place",
+    "2020",
+    "20.0%",
+    "2030",
+    "100%",
+    "53.0%",
+    "62.0%",
+    "71.9%",
+    ""
+   ],
+   [
+    "",
+    "Percentage of reusable, recyclable or compostable packaging",
+    "2020",
+    "81.2%",
+    "2030",
+    "100%",
+    "84.0%",
+    "85.0%",
+    "84.9%",
+    ""
+   ],
+   [
+    "Drive the transition to a circular and low-carbon",
+    "Reduction in the use of virgin fossil-based packaging",
+    "2020",
+    "605.3 kt",
+    "2030",
+    "(30.0)%",
+    "(3.0)%",
+    "(8.0)%",
+    "(8.1)%",
+    ""
+   ],
+   [
+    "packaging system and recoverasmuch as Danone uses",
+    "Percentage of plastic packaging put on the market, recovered (d) by supporting the development of effective recycling systems",
+    "2022",
+    "57.0%",
+    "2040",
+    "100%",
+    "58.0%",
+    "60.0%",
+    "62.7%",
+    ""
+   ],
+   [
+    "Cut waste across the value chain",
+    "Reduction in all food waste not fit for human consumption, animal consumption or biomaterial processing (like for like)",
+    "2020",
+    "24.3 kg/t",
+    "2030",
+    "(50.0)%",
+    "(19.8)%",
+    "(18.1)%",
+    "(10.4)%",
+    ""
+   ]
+  ],
+  "num_cols": 10,
+  "header_rows": 1,
+  "cells": [
+   {
+    "r": 0,
+    "c": 0,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 1,
+    "text": "KPI",
+    "bbox": {
+     "l": 131.0702989399433,
+     "t": 107.45197415351868,
+     "r": 148.2239160835743,
+     "b": 116.18383300304413,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 2,
+    "text": "Baseline year",
+    "bbox": {
+     "l": 281.27460503578186,
+     "t": 98.14367850124836,
+     "r": 314.6298232078552,
+     "b": 117.41658169031143,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 3,
+    "text": "Baseline value",
+    "bbox": {
+     "l": 317.906888961792,
+     "t": 98.27225954830647,
+     "r": 351.24982619285583,
+     "b": 116.6961680650711,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 4,
+    "text": "Target year",
+    "bbox": {
+     "l": 356.0216405391693,
+     "t": 98.19827817380428,
+     "r": 382.16168427467346,
+     "b": 117.80090665817261,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 5,
+    "text": "Target",
+    "bbox": {
+     "l": 387.25927793979645,
+     "t": 106.3978001922369,
+     "r": 413.49471175670624,
+     "b": 115.67283783853054,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 6,
+    "text": "2023",
+    "bbox": {
+     "l": 424.0924950838089,
+     "t": 106.8780176192522,
+     "r": 441.9536038637161,
+     "b": 116.33375878632069,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 7,
+    "text": "2024",
+    "bbox": {
+     "l": 452.02041888237,
+     "t": 106.81823946535587,
+     "r": 470.1652660369873,
+     "b": 116.22167091071606,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 8,
+    "text": "2025",
+    "bbox": {
+     "l": 478.63005661964417,
+     "t": 106.18518470227718,
+     "r": 498.45502161979675,
+     "b": 116.35204462707043,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 9,
+    "text": "ESRS coverage",
+    "bbox": {
+     "l": 510.3818824291229,
+     "t": 97.87416187673807,
+     "r": 546.7470862865448,
+     "b": 118.4397047162056,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 0,
+    "text": "Curb GHG emissions",
+    "bbox": {
+     "l": 50.22177504003048,
+     "t": 128.88169640302658,
+     "r": 127.93268950283527,
+     "b": 156.95621752738953,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 1,
+    "text": "Percentage reduction in CO 2 e emissions in line with SBTi 1.5 °C pathway (a)",
+    "bbox": {
+     "l": 134.2382953464985,
+     "t": 121.69081024825573,
+     "r": 272.2197517156601,
+     "b": 143.6229203939438,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 2,
+    "text": "2020",
+    "bbox": {
+     "l": 293.109009206295,
+     "t": 134.29132157564163,
+     "r": 311.4387848377228,
+     "b": 144.64122408628464,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 3,
+    "text": "21,923 ktCO e",
+    "bbox": {
+     "l": 324.42733907699585,
+     "t": 125.6014369726181,
+     "r": 351.3218095302582,
+     "b": 146.89194494485855,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 363.09920156002045,
+     "t": 123.8826293349266,
+     "r": 383.91065442562103,
+     "b": 144.1897538304329,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 5,
+    "text": "(34.8)%",
+    "bbox": {
+     "l": 387.13655972480774,
+     "t": 123.4206762611866,
+     "r": 414.2442443370819,
+     "b": 144.7837996184826,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 6,
+    "text": "(7.5)%",
+    "bbox": {
+     "l": 415.97245240211487,
+     "t": 134.03524613380432,
+     "r": 449.1196849346161,
+     "b": 144.42351299524307,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 7,
+    "text": "(16.1)%",
+    "bbox": {
+     "l": 448.94051694869995,
+     "t": 133.3502285182476,
+     "r": 477.66113901138306,
+     "b": 144.31251177191734,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 8,
+    "text": "(21.0)%",
+    "bbox": {
+     "l": 473.7459810972214,
+     "t": 134.2124502658844,
+     "r": 501.71393954753876,
+     "b": 145.47744292020798,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 0,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 1,
+    "text": "Net Zero (a)",
+    "bbox": {
+     "l": 133.1243851184845,
+     "t": 147.04732701182365,
+     "r": 172.68822693824768,
+     "b": 157.11560547351837,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 3,
+    "text": "2",
+    "bbox": {
+     "l": 318.77825820446014,
+     "t": 145.76637271046638,
+     "r": 351.37151086330414,
+     "b": 156.64157950878143,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 4,
+    "text": "2050",
+    "bbox": {
+     "l": 367.98567855358124,
+     "t": 146.13619056344032,
+     "r": 386.3871487379074,
+     "b": 156.7517795562744,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 5,
+    "text": "(b)",
+    "bbox": {
+     "l": 388.01817321777344,
+     "t": 145.91611278057098,
+     "r": 414.2233910560608,
+     "b": 156.70566129684448,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 6,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 7,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 8,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 0,
+    "text": "in line with 1.5 °C, leading the way on methane reduction",
+    "bbox": {
+     "l": 50.40451863408089,
+     "t": 158.3494039773941,
+     "r": 125.97561591863632,
+     "b": 193.0676864385605,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 2,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 1,
+    "text": "Percentage reduction in methane emissions from fresh milk in dairy products",
+    "bbox": {
+     "l": 132.49063232541084,
+     "t": 162.36261343955994,
+     "r": 252.5486936569214,
+     "b": 193.257328748703,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 2,
+    "text": "2020",
+    "bbox": {
+     "l": 293.63272750377655,
+     "t": 171.3031033873558,
+     "r": 312.48202645778656,
+     "b": 182.9824052453041,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 3,
+    "text": "4,091 ktCO 2 e",
+    "bbox": {
+     "l": 325.2251138687134,
+     "t": 165.60253781080246,
+     "r": 351.4212121963501,
+     "b": 189.36657947301865,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 363.42257940769196,
+     "t": 171.27494251728058,
+     "r": 381.84344375133514,
+     "b": 182.47757852077484,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 5,
+    "text": "(30.0)%",
+    "bbox": {
+     "l": 388.1943621635437,
+     "t": 169.79750674962997,
+     "r": 413.67281579971313,
+     "b": 189.0589033961296,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 6,
+    "text": "(13.3)%",
+    "bbox": {
+     "l": 416.27573692798615,
+     "t": 170.9139038324356,
+     "r": 444.7754844427109,
+     "b": 183.07132041454315,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 7,
+    "text": "(25.0)%",
+    "bbox": {
+     "l": 445.2401235103607,
+     "t": 171.34272015094757,
+     "r": 473.264440536499,
+     "b": 183.36434817314148,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 8,
+    "text": "(29.8)%",
+    "bbox": {
+     "l": 472.2144808769226,
+     "t": 171.4577579498291,
+     "r": 500.4576053619385,
+     "b": 183.32385349273682,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 0,
+    "text": "in line with 1.5 °C, leading the way on methane reduction",
+    "bbox": {
+     "l": 50.40451863408089,
+     "t": 158.3494039773941,
+     "r": 125.97561591863632,
+     "b": 193.0676864385605,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 2,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 1,
+    "text": "Percentage reduction in scope 1 & 2 CO 2 e emissions (a)",
+    "bbox": {
+     "l": 132.15116614103317,
+     "t": 195.95460230112076,
+     "r": 261.5383272767067,
+     "b": 218.29021191596985,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 2,
+    "text": "2020",
+    "bbox": {
+     "l": 292.164364695549,
+     "t": 200.83424198627472,
+     "r": 312.2092922925949,
+     "b": 211.36870348453522,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 3,
+    "text": "1,044 ktCO 2 e",
+    "bbox": {
+     "l": 325.1337059736252,
+     "t": 196.712950527668,
+     "r": 352.0305474996567,
+     "b": 216.0376124382019,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 4,
+    "text": "2025",
+    "bbox": {
+     "l": 362.98575484752655,
+     "t": 201.2693817615509,
+     "r": 382.0254691839218,
+     "b": 211.99732875823975,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 5,
+    "text": "(36.0)%",
+    "bbox": {
+     "l": 389.06880164146423,
+     "t": 200.16539216041565,
+     "r": 413.9138140678406,
+     "b": 213.53892612457275,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 6,
+    "text": "(20.7)%",
+    "bbox": {
+     "l": 416.68100798130035,
+     "t": 200.6301600933075,
+     "r": 444.9488767385483,
+     "b": 212.44041275978088,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 7,
+    "text": "(34.5)%",
+    "bbox": {
+     "l": 445.9267010688782,
+     "t": 200.19293296337128,
+     "r": 473.2977571487427,
+     "b": 211.61940705776215,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 8,
+    "text": "(40.2)%",
+    "bbox": {
+     "l": 472.90704691410065,
+     "t": 200.05347311496735,
+     "r": 500.7200344800949,
+     "b": 211.74919140338898,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 0,
+    "text": "Pioneer and scale regenerative agriculture, leading the way for regenerative dairy farming models",
+    "bbox": {
+     "l": 50.58182851970196,
+     "t": 227.13193929195398,
+     "r": 124.82590401172638,
+     "b": 294.7403007745742,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 2,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 1,
+    "text": "Volume of key ingredients Danone sources directly that comes from farms which have begun to transition to regenerative agriculture",
+    "bbox": {
+     "l": 131.60978639125824,
+     "t": 221.09544467926025,
+     "r": 273.18347120285034,
+     "b": 262.6382226943969,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 2,
+    "text": "2022",
+    "bbox": {
+     "l": 292.5639360547066,
+     "t": 236.61204111576075,
+     "r": 311.3303234577179,
+     "b": 247.6145366430282,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 3,
+    "text": "28.0%",
+    "bbox": {
+     "l": 326.64377534389496,
+     "t": 236.35710144042963,
+     "r": 350.33486568927765,
+     "b": 249.49955296516413,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 4,
+    "text": "2025",
+    "bbox": {
+     "l": 364.05465269088745,
+     "t": 237.19533395767206,
+     "r": 381.80152440071106,
+     "b": 248.89412188529963,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 5,
+    "text": "30.0%",
+    "bbox": {
+     "l": 389.7236433029175,
+     "t": 235.93464541435236,
+     "r": 412.51792097091675,
+     "b": 254.16911268234247,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 6,
+    "text": "38.0%",
+    "bbox": {
+     "l": 418.6664470434189,
+     "t": 236.99793159961695,
+     "r": 443.06709611415863,
+     "b": 249.7317036390304,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 7,
+    "text": "39.0%",
+    "bbox": {
+     "l": 448.2357611656189,
+     "t": 237.09408497810358,
+     "r": 470.4262664318085,
+     "b": 249.06032443046564,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 8,
+    "text": "42.0%",
+    "bbox": {
+     "l": 474.79308331012726,
+     "t": 236.35473167896265,
+     "r": 498.42842304706573,
+     "b": 247.67234408855433,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 0,
+    "text": "Pioneer and scale regenerative agriculture, leading the way for regenerative dairy farming models",
+    "bbox": {
+     "l": 50.58182851970196,
+     "t": 227.13193929195398,
+     "r": 124.82590401172638,
+     "b": 294.7403007745742,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 2,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 1,
+    "text": "Percentage of key direct commodities volume with Verified Deforestation & Conversion (vDCF) free status",
+    "bbox": {
+     "l": 132.34376260638237,
+     "t": 264.44934666156763,
+     "r": 268.2767184972763,
+     "b": 296.4878095388412,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 2,
+    "text": "2022",
+    "bbox": {
+     "l": 292.68869096040726,
+     "t": 276.0476100444793,
+     "r": 312.13727855682373,
+     "b": 286.9691898822784,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 3,
+    "text": "84.0%",
+    "bbox": {
+     "l": 326.1664297580719,
+     "t": 276.33355307579035,
+     "r": 350.58081889152527,
+     "b": 287.2295198440551,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 4,
+    "text": "2025",
+    "bbox": {
+     "l": 363.2034375667572,
+     "t": 276.1780451536178,
+     "r": 382.12198400497437,
+     "b": 287.121628165245,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 5,
+    "text": "97% (c)",
+    "bbox": {
+     "l": 388.91060853004456,
+     "t": 275.5664134025573,
+     "r": 413.00800347328186,
+     "b": 293.09073805809015,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 6,
+    "text": "85.0%",
+    "bbox": {
+     "l": 418.79506254196167,
+     "t": 276.0214198827743,
+     "r": 443.10792112350464,
+     "b": 288.8804332017898,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 7,
+    "text": "93.0%",
+    "bbox": {
+     "l": 447.9384651184082,
+     "t": 276.5572683811187,
+     "r": 471.09837436676025,
+     "b": 289.31891274452204,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 8,
+    "text": "97.9%",
+    "bbox": {
+     "l": 474.3734338283539,
+     "t": 276.40805935859674,
+     "r": 499.01009583473206,
+     "b": 287.828099489212,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 0,
+    "text": "Preserve and restore watersheds where Danone operates and drive",
+    "bbox": {
+     "l": 50.43160738050938,
+     "t": 301.5488219261169,
+     "r": 127.14637869596481,
+     "b": 341.19176340103144,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 1,
+    "text": "Percentage of production sites with a 4R approach deployed",
+    "bbox": {
+     "l": 133.4392666220665,
+     "t": 302.38152909278864,
+     "r": 241.68880039453506,
+     "b": 322.64856410026545,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 2,
+    "text": "2020",
+    "bbox": {
+     "l": 292.83581906557083,
+     "t": 306.7648019790649,
+     "r": 312.3946615457535,
+     "b": 317.33938980102533,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 3,
+    "text": "49.3%",
+    "bbox": {
+     "l": 326.68697142601013,
+     "t": 306.7662508487701,
+     "r": 350.6385757923126,
+     "b": 317.3690793514251,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 363.3583780527115,
+     "t": 306.87624216079706,
+     "r": 382.6424344778061,
+     "b": 317.58304548263544,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 391.6189512014389,
+     "t": 305.9370553493499,
+     "r": 412.2385903596878,
+     "b": 316.9280335903167,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 6,
+    "text": "94.8%",
+    "bbox": {
+     "l": 419.1900589466095,
+     "t": 306.6700851917266,
+     "r": 443.4364058971405,
+     "b": 317.72265267372126,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 7,
+    "text": "99.3%",
+    "bbox": {
+     "l": 448.0156161785126,
+     "t": 306.8634724617004,
+     "r": 471.0828711986542,
+     "b": 317.7926158905029,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 8,
+    "text": "99.3%",
+    "bbox": {
+     "l": 474.69960832595825,
+     "t": 307.1003012657165,
+     "r": 497.88347148895264,
+     "b": 318.0252208709716,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 0,
+    "text": "water footprint reduction across the value chain",
+    "bbox": {
+     "l": 50.175782307982445,
+     "t": 323.4453196525573,
+     "r": 126.73356884717941,
+     "b": 369.293303489685,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 1,
+    "text": "Percentage of total water intake of production sites located in highly water-stressed areas with a watershed preservation or restoration plan in place",
+    "bbox": {
+     "l": 131.65988290309906,
+     "t": 327.2148611545562,
+     "r": 275.7085725069046,
+     "b": 370.2317535877227,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 2,
+    "text": "2020",
+    "bbox": {
+     "l": 292.3720311522484,
+     "t": 343.7174625396728,
+     "r": 311.5803804397583,
+     "b": 354.33443593978876,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 3,
+    "text": "20.0%",
+    "bbox": {
+     "l": 327.30138325691223,
+     "t": 343.63423848152155,
+     "r": 350.2644934654236,
+     "b": 354.29516911506647,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 362.85944962501526,
+     "t": 343.7098007202148,
+     "r": 382.1779170036316,
+     "b": 354.4685177803039,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 392.27592074871063,
+     "t": 343.53949713706965,
+     "r": 412.29428017139435,
+     "b": 356.385912656784,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 6,
+    "text": "53.0%",
+    "bbox": {
+     "l": 419.1803010702133,
+     "t": 343.4966204166412,
+     "r": 442.713076710701,
+     "b": 354.87088608741755,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 7,
+    "text": "62.0%",
+    "bbox": {
+     "l": 448.13915514945984,
+     "t": 343.8965575695037,
+     "r": 470.63814306259155,
+     "b": 355.5646736621856,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 8,
+    "text": "71.9%",
+    "bbox": {
+     "l": 475.39497101306915,
+     "t": 343.76328611373896,
+     "r": 498.4537752866745,
+     "b": 354.9528331756591,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 0,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 1,
+    "text": "Percentage of reusable, recyclable or compostable packaging",
+    "bbox": {
+     "l": 132.70829224586487,
+     "t": 372.83780360221857,
+     "r": 254.3113430738449,
+     "b": 392.8425195217132,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 2,
+    "text": "2020",
+    "bbox": {
+     "l": 292.53109061717987,
+     "t": 377.88117170333857,
+     "r": 312.09225857257843,
+     "b": 388.394808769226,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 3,
+    "text": "81.2%",
+    "bbox": {
+     "l": 326.0687597990036,
+     "t": 377.4903452396392,
+     "r": 351.04788982868195,
+     "b": 388.0784885883331,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 362.8750743865967,
+     "t": 377.39619326591486,
+     "r": 382.50348353385925,
+     "b": 388.182561635971,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 391.66427516937256,
+     "t": 376.82759785652155,
+     "r": 412.14894556999207,
+     "b": 387.8219649791717,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 6,
+    "text": "84.0%",
+    "bbox": {
+     "l": 419.82897186279297,
+     "t": 377.1979436874389,
+     "r": 443.02742624282837,
+     "b": 388.5514831542968,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 7,
+    "text": "85.0%",
+    "bbox": {
+     "l": 448.06045377254486,
+     "t": 377.2708292007446,
+     "r": 471.38597333431244,
+     "b": 388.46312665939325,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 8,
+    "text": "84.9%",
+    "bbox": {
+     "l": 475.48610532283783,
+     "t": 377.30734562873835,
+     "r": 498.71191823482513,
+     "b": 388.2714583873748,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 0,
+    "text": "Drive the transition to a circular and low-carbon",
+    "bbox": {
+     "l": 50.22177504003048,
+     "t": 393.84322190284723,
+     "r": 125.9761934876442,
+     "b": 417.583958864212,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 1,
+    "text": "Reduction in the use of virgin fossil-based packaging",
+    "bbox": {
+     "l": 131.7545130252838,
+     "t": 397.8653087615966,
+     "r": 236.20494985580444,
+     "b": 416.970202922821,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 2,
+    "text": "2020",
+    "bbox": {
+     "l": 292.7253361940384,
+     "t": 402.260761976242,
+     "r": 312.1347554922104,
+     "b": 412.87012267112726,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 3,
+    "text": "605.3 kt",
+    "bbox": {
+     "l": 321.87323772907257,
+     "t": 401.5617928504943,
+     "r": 352.3961182832718,
+     "b": 412.21000289916987,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 362.6082375049591,
+     "t": 402.04461026191706,
+     "r": 382.41824650764465,
+     "b": 412.7556865215301,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 5,
+    "text": "(30.0)%",
+    "bbox": {
+     "l": 389.10199666023254,
+     "t": 401.19547438621515,
+     "r": 414.01643896102905,
+     "b": 412.6987631320953,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 6,
+    "text": "(3.0)%",
+    "bbox": {
+     "l": 420.63270473480225,
+     "t": 401.47812676429743,
+     "r": 443.89505648612976,
+     "b": 412.6145813465118,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 7,
+    "text": "(8.0)%",
+    "bbox": {
+     "l": 449.2028852701187,
+     "t": 401.20814585685724,
+     "r": 472.68471324443817,
+     "b": 412.7721397876739,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 8,
+    "text": "(8.1)%",
+    "bbox": {
+     "l": 476.42714762687683,
+     "t": 401.7690057754516,
+     "r": 500.2608063220978,
+     "b": 412.6978545188903,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 0,
+    "text": "packaging system and recoverasmuch as Danone uses",
+    "bbox": {
+     "l": 50.57417953014374,
+     "t": 415.72780942916864,
+     "r": 128.19350370764732,
+     "b": 450.8054852485656,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 1,
+    "text": "Percentage of plastic packaging put on the market, recovered (d) by supporting the development of effective recycling systems",
+    "bbox": {
+     "l": 132.07574018836021,
+     "t": 423.33425259590143,
+     "r": 270.04882180690765,
+     "b": 463.5305149555206,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 2,
+    "text": "2022",
+    "bbox": {
+     "l": 291.9545095562935,
+     "t": 436.9952030181884,
+     "r": 311.86244690418243,
+     "b": 447.45383214950556,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 3,
+    "text": "57.0%",
+    "bbox": {
+     "l": 326.08262145519257,
+     "t": 437.049842596054,
+     "r": 351.05895483493805,
+     "b": 447.5622026920318,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 4,
+    "text": "2040",
+    "bbox": {
+     "l": 362.5721242427826,
+     "t": 437.29386663436884,
+     "r": 382.45587968826294,
+     "b": 447.81968402862543,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 390.9227373600006,
+     "t": 436.15623378753656,
+     "r": 412.47967982292175,
+     "b": 451.5066399574279,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 6,
+    "text": "58.0%",
+    "bbox": {
+     "l": 418.81655418872833,
+     "t": 436.6117436885833,
+     "r": 443.11840856075287,
+     "b": 449.3672487735748,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 7,
+    "text": "60.0%",
+    "bbox": {
+     "l": 448.31862711906433,
+     "t": 435.58862066268915,
+     "r": 470.6804575920105,
+     "b": 454.3329181671142,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 8,
+    "text": "62.7%",
+    "bbox": {
+     "l": 474.9864777326584,
+     "t": 437.2426159381866,
+     "r": 498.8379498720169,
+     "b": 449.00974631309504,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 0,
+    "text": "Cut waste across the value chain",
+    "bbox": {
+     "l": 49.67457780241966,
+     "t": 474.0287301540374,
+     "r": 119.88140413165092,
+     "b": 497.62271380424494,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 1,
+    "text": "Reduction in all food waste not fit for human consumption, animal consumption or biomaterial processing (like for like)",
+    "bbox": {
+     "l": 133.5772524178028,
+     "t": 467.06781983375544,
+     "r": 266.1548515558243,
+     "b": 507.55061459541315,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 2,
+    "text": "2020",
+    "bbox": {
+     "l": 291.36236453056335,
+     "t": 481.2830243110656,
+     "r": 312.62316608428955,
+     "b": 491.72520017623896,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 3,
+    "text": "24.3 kg/t",
+    "bbox": {
+     "l": 320.28519654273987,
+     "t": 481.72961997985834,
+     "r": 352.09234738349915,
+     "b": 492.16148185729975,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 362.98052632808685,
+     "t": 482.1364576816558,
+     "r": 383.2677289247513,
+     "b": 492.65240311622614,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 5,
+    "text": "(50.0)%",
+    "bbox": {
+     "l": 388.684779047966,
+     "t": 481.6228456497192,
+     "r": 412.97660195827484,
+     "b": 493.8583784103393,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 6,
+    "text": "(19.8)%",
+    "bbox": {
+     "l": 417.10530841350555,
+     "t": 481.65103721618647,
+     "r": 446.3836797475815,
+     "b": 492.7133784294128,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 7,
+    "text": "(18.1)%",
+    "bbox": {
+     "l": 446.55436658859253,
+     "t": 481.48127388954157,
+     "r": 472.46763849258423,
+     "b": 493.1390759944915,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 8,
+    "text": "(10.4)%",
+    "bbox": {
+     "l": 472.9588153362274,
+     "t": 481.3596425056457,
+     "r": 498.9540412425995,
+     "b": 492.4704594612121,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   }
+  ]
+ },
+ "geometry": {
+  "rules": [
+   [
+    0.1500228276248635,
+    0.0837089715218349,
+    0.9156062419800287
+   ],
+   [
+    0.18120589379513857,
+    0.21538502021335715,
+    0.4528942701264037
+   ],
+   [
+    0.18120589379513857,
+    0.578417079868674,
+    0.6817889704883083
+   ],
+   [
+    0.2001047217771235,
+    0.21538502021335715,
+    0.9156065424238142
+   ],
+   [
+    0.24451689063526008,
+    0.21538502021335715,
+    0.9156065424238142
+   ],
+   [
+    0.27569995680553516,
+    0.0837089715218349,
+    0.9156065424238142
+   ],
+   [
+    0.3314514993523906,
+    0.21538502021335715,
+    0.9156065424238142
+   ],
+   [
+    0.3758637066602912,
+    0.0837089715218349,
+    0.9156065424238142
+   ],
+   [
+    0.41082653842696326,
+    0.21538502021335715,
+    0.9156065424238142
+   ],
+   [
+    0.46657804252405477,
+    0.0837089715218349,
+    0.9156065424238142
+   ],
+   [
+    0.4977611086943298,
+    0.21538502021335715,
+    0.9156065424238142
+   ],
+   [
+    0.528944136414841,
+    0.21538502021335715,
+    0.9156065424238142
+   ],
+   [
+    0.5846956405119325,
+    0.0837089715218349,
+    0.9156065424238142
+   ],
+   [
+    0.6404471830587879,
+    0.0837089715218349,
+    0.9156065424238142
+   ]
+  ],
+  "lines": [
+   {
+    "id": "b32l0",
+    "block": 32,
+    "text": "SUSTAINABILITY REPORT",
+    "rect": [
+     0.7029054115834499,
+     0.028334491376140893,
+     0.9170394589848665,
+     0.04667013605295178
+    ]
+   },
+   {
+    "id": "b33l0",
+    "block": 33,
+    "text": "4.2 Sustainability statement – General Disclosures (ESRS 2)",
+    "rect": [
+     0.5515891022629527,
+     0.0485121921510036,
+     0.9172039018834721,
+     0.06184720471369498
+    ]
+   },
+   {
+    "id": "b0l0",
+    "block": 0,
+    "text": "PRESERVE & REGENERATE NATURE",
+    "rect": [
+     0.08371482391640693,
+     0.08404939610416226,
+     0.3937616252967258,
+     0.10738567289509267
+    ]
+   },
+   {
+    "id": "b2l0",
+    "block": 2,
+    "text": "Baseline",
+    "rect": [
+     0.459415502638948,
+     0.12332044702310777,
+     0.5113957326366776,
+     0.13601894296831102
+    ]
+   },
+   {
+    "id": "b3l0",
+    "block": 3,
+    "text": "Baseline",
+    "rect": [
+     0.5221780091372967,
+     0.12332044702310777,
+     0.5741582391350264,
+     0.13601894296831102
+    ]
+   },
+   {
+    "id": "b4l0",
+    "block": 4,
+    "text": "Target",
+    "rect": [
+     0.5877210227226637,
+     0.12332044702310777,
+     0.6282877939003703,
+     0.13601894296831102
+    ]
+   },
+   {
+    "id": "b5l0",
+    "block": 5,
+    "text": "ESRS",
+    "rect": [
+     0.8546164539641504,
+     0.12332044702310777,
+     0.8831018297126686,
+     0.13601894296831102
+    ]
+   },
+   {
+    "id": "b1l0",
+    "block": 1,
+    "text": "KPI",
+    "rect": [
+     0.21970627814344568,
+     0.13544088921692518,
+     0.24051781887025325,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b2l1",
+    "block": 2,
+    "text": "year",
+    "rect": [
+     0.4838939597679733,
+     0.13544088921692518,
+     0.5113594290125945,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b3l1",
+    "block": 3,
+    "text": "value",
+    "rect": [
+     0.5404761373024094,
+     0.13544088921692518,
+     0.5741461212356772,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l1",
+    "block": 4,
+    "text": "year Target",
+    "rect": [
+     0.6008102067563998,
+     0.13544088921692518,
+     0.6774997849323235,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l2",
+    "block": 4,
+    "text": "2023",
+    "rect": [
+     0.6986755636751045,
+     0.13544088921692518,
+     0.7267480295143958,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l3",
+    "block": 4,
+    "text": "2024",
+    "rect": [
+     0.7442084202575624,
+     0.13544088921692518,
+     0.7722808860968536,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l4",
+    "block": 4,
+    "text": "2025",
+    "rect": [
+     0.7897412768400204,
+     0.13544088921692518,
+     0.8178137426793116,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b5l1",
+    "block": 5,
+    "text": "coverage",
+    "rect": [
+     0.840555885097878,
+     0.13544088921692518,
+     0.8971622984310125,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b7l0",
+    "block": 7,
+    "text": "Percentage reduction in CO2e emissions",
+    "rect": [
+     0.21970627814344568,
+     0.1535789597816238,
+     0.44704508028809353,
+     0.16774290119310387
+    ]
+   },
+   {
+    "id": "b8l0",
+    "block": 8,
+    "text": "2030",
+    "rect": [
+     0.5998300089061552,
+     0.159801285083391,
+     0.628274674521736,
+     0.17284299323414884
+    ]
+   },
+   {
+    "id": "b8l1",
+    "block": 8,
+    "text": "(34.8) %",
+    "rect": [
+     0.6391624568650354,
+     0.159801285083391,
+     0.6805874457160672,
+     0.17284299323414884
+    ]
+   },
+   {
+    "id": "b7l3",
+    "block": 7,
+    "text": "21,923",
+    "rect": [
+     0.5357761950176606,
+     0.16302836416017527,
+     0.5741471727889266,
+     0.1760700819233741
+    ]
+   },
+   {
+    "id": "b7l1",
+    "block": 7,
+    "text": "in line with SBTi 1.5 °C pathway (a)",
+    "rect": [
+     0.2197122119082096,
+     0.16602688822753586,
+     0.4073337226417141,
+     0.17906870211514458
+    ]
+   },
+   {
+    "id": "b9l0",
+    "block": 9,
+    "text": "(7.5) % (16.1) % (21.0) %",
+    "rect": [
+     0.6954893573297117,
+     0.1692522274525009,
+     0.8222869500539246,
+     0.18229394521569972
+    ]
+   },
+   {
+    "id": "b7l2",
+    "block": 7,
+    "text": "2020",
+    "rect": [
+     0.4829272318141126,
+     0.16925238125155673,
+     0.5113718974296934,
+     0.18229409901475555
+    ]
+   },
+   {
+    "id": "b7l4",
+    "block": 7,
+    "text": "ktCO2e",
+    "rect": [
+     0.5348907871817462,
+     0.17547624454388236,
+     0.5741163272269469,
+     0.18964034936685928
+    ]
+   },
+   {
+    "id": "b9l3",
+    "block": 9,
+    "text": "2050 (b)",
+    "rect": [
+     0.6096191684737525,
+     0.18483353290042487,
+     0.650620631735136,
+     0.19787525066362371
+    ]
+   },
+   {
+    "id": "b9l2",
+    "block": 9,
+    "text": "Net Zero (a)",
+    "rect": [
+     0.21970627814344568,
+     0.1848376085754047,
+     0.2814989521021501,
+     0.19787932633860353
+    ]
+   },
+   {
+    "id": "b6l0",
+    "block": 6,
+    "text": "Curb GHG emissions",
+    "rect": [
+     0.08802527212946243,
+     0.18904124436970493,
+     0.21017715267221213,
+     0.20173974031490818
+    ]
+   },
+   {
+    "id": "b6l1",
+    "block": 6,
+    "text": "in line with 1.5 °C,",
+    "rect": [
+     0.08802527212946243,
+     0.20116168656352235,
+     0.19726770913316058,
+     0.2138601825087256
+    ]
+   },
+   {
+    "id": "b10l0",
+    "block": 10,
+    "text": "Percentage reduction in methane",
+    "rect": [
+     0.21970627814344568,
+     0.20405141702375604,
+     0.4096158936364905,
+     0.21709313478695486
+    ]
+   },
+   {
+    "id": "b11l1",
+    "block": 11,
+    "text": "4,091",
+    "rect": [
+     0.5428855462403516,
+     0.21027543411513752,
+     0.574148474711997,
+     0.22331715187833634
+    ]
+   },
+   {
+    "id": "b6l2",
+    "block": 6,
+    "text": "leading the way on",
+    "rect": [
+     0.08803740880654816,
+     0.21328212875733976,
+     0.20495853174724385,
+     0.22598062470254301
+    ]
+   },
+   {
+    "id": "b10l1",
+    "block": 10,
+    "text": "emissions from fresh milk in dairy",
+    "rect": [
+     0.21970627814344568,
+     0.21649945120651898,
+     0.4095161462996993,
+     0.22954116896971782
+    ]
+   },
+   {
+    "id": "b11l0",
+    "block": 11,
+    "text": "2020",
+    "rect": [
+     0.4829285337371832,
+     0.21649945120651898,
+     0.5113731993527639,
+     0.22954116896971782
+    ]
+   },
+   {
+    "id": "b11l3",
+    "block": 11,
+    "text": "2030",
+    "rect": [
+     0.5998300089061552,
+     0.21649945120651898,
+     0.628274674521736,
+     0.22954116896971782
+    ]
+   },
+   {
+    "id": "b11l4",
+    "block": 11,
+    "text": "(30.0) % (13.3) % (25.0) % (29.8) %",
+    "rect": [
+     0.6391687161105669,
+     0.21649945120651898,
+     0.8222907056012436,
+     0.22954116896971782
+    ]
+   },
+   {
+    "id": "b11l2",
+    "block": 11,
+    "text": "ktCO2e",
+    "rect": [
+     0.5348920891048167,
+     0.22272346829790046,
+     0.5741163272269469,
+     0.23688741932182153
+    ]
+   },
+   {
+    "id": "b6l3",
+    "block": 6,
+    "text": "methane reduction",
+    "rect": [
+     0.08803740880654816,
+     0.22540257095115718,
+     0.20662198883971514,
+     0.23810106689636043
+    ]
+   },
+   {
+    "id": "b34l0",
+    "block": 34,
+    "text": "—",
+    "rect": [
+     0.9580204920688349,
+     0.22847889811589236,
+     0.9919100503353503,
+     0.2632527492926974
+    ]
+   },
+   {
+    "id": "b10l2",
+    "block": 10,
+    "text": "products",
+    "rect": [
+     0.21970627814344568,
+     0.22894748538928195,
+     0.27034800603972126,
+     0.24198920315248076
+    ]
+   },
+   {
+    "id": "b34l1",
+    "block": 34,
+    "text": "—",
+    "rect": [
+     0.9580204920688349,
+     0.23604219738555446,
+     0.9919100503353503,
+     0.27081604856235947
+    ]
+   },
+   {
+    "id": "b34l2",
+    "block": 34,
+    "text": "—",
+    "rect": [
+     0.9580204920688349,
+     0.24360549665521658,
+     0.9919100503353503,
+     0.2783793478320216
+    ]
+   },
+   {
+    "id": "b12l3",
+    "block": 12,
+    "text": "1,044",
+    "rect": [
+     0.5428842443172811,
+     0.24807316697863524,
+     0.5741471727889266,
+     0.2611148847418341
+    ]
+   },
+   {
+    "id": "b12l0",
+    "block": 12,
+    "text": "Percentage reduction in scope 1 & 2",
+    "rect": [
+     0.21970627814344568,
+     0.24807324387816315,
+     0.4253034657492582,
+     0.261114961641362
+    ]
+   },
+   {
+    "id": "b12l5",
+    "block": 12,
+    "text": "2025",
+    "rect": [
+     0.5998300089061552,
+     0.2542971071704888,
+     0.628274674521736,
+     0.2673388249336876
+    ]
+   },
+   {
+    "id": "b12l6",
+    "block": 12,
+    "text": "(36.0) % (20.7) % (34.5) % (40.2) %",
+    "rect": [
+     0.6391624568650354,
+     0.2542971071704888,
+     0.8222907056012436,
+     0.2673388249336876
+    ]
+   },
+   {
+    "id": "b12l2",
+    "block": 12,
+    "text": "2020",
+    "rect": [
+     0.4829272318141126,
+     0.2542971840700167,
+     0.5113718974296934,
+     0.2673389018332155
+    ]
+   },
+   {
+    "id": "b12l1",
+    "block": 12,
+    "text": "CO2e emissions (a)",
+    "rect": [
+     0.21970627814344568,
+     0.26052102813746036,
+     0.3199598627132137,
+     0.27468507528579134
+    ]
+   },
+   {
+    "id": "b12l4",
+    "block": 12,
+    "text": "ktCO2e",
+    "rect": [
+     0.5348907871817462,
+     0.2605211242618703,
+     0.5741163272269469,
+     0.27468507528579134
+    ]
+   },
+   {
+    "id": "b14l0",
+    "block": 14,
+    "text": "Volume of key ingredients Danone",
+    "rect": [
+     0.21970580244078527,
+     0.2790928985516051,
+     0.4147282200538415,
+     0.2921346163148039
+    ]
+   },
+   {
+    "id": "b13l0",
+    "block": 13,
+    "text": "Pioneer and scale",
+    "rect": [
+     0.08803019189645024,
+     0.28378446185056716,
+     0.19590057724264512,
+     0.2964829577957704
+    ]
+   },
+   {
+    "id": "b14l1",
+    "block": 14,
+    "text": "sources directly that comes from farms",
+    "rect": [
+     0.21970580244078527,
+     0.29154093273436804,
+     0.44064142144361435,
+     0.3045826504975669
+    ]
+   },
+   {
+    "id": "b13l1",
+    "block": 13,
+    "text": "regenerative",
+    "rect": [
+     0.08803019189645024,
+     0.2959049040443846,
+     0.16808301291838174,
+     0.3086033999895878
+    ]
+   },
+   {
+    "id": "b15l0",
+    "block": 15,
+    "text": "2022",
+    "rect": [
+     0.48292803299754067,
+     0.2977649498257495,
+     0.5113726986131214,
+     0.3108066675889483
+    ]
+   },
+   {
+    "id": "b15l1",
+    "block": 15,
+    "text": "28.0%",
+    "rect": [
+     0.5392561853113234,
+     0.2977649498257495,
+     0.5737489345512257,
+     0.3108066675889483
+    ]
+   },
+   {
+    "id": "b15l2",
+    "block": 15,
+    "text": "2025",
+    "rect": [
+     0.5998367188173651,
+     0.2977649498257495,
+     0.6282813844329459,
+     0.3108066675889483
+    ]
+   },
+   {
+    "id": "b15l3",
+    "block": 15,
+    "text": "30.0%",
+    "rect": [
+     0.6426334338451326,
+     0.2977649498257495,
+     0.6771261830850349,
+     0.3108066675889483
+    ]
+   },
+   {
+    "id": "b15l4",
+    "block": 15,
+    "text": "38.0% 39.0% 42.0%",
+    "rect": [
+     0.6918535368592948,
+     0.2977649498257495,
+     0.8174040875777611,
+     0.3108066675889483
+    ]
+   },
+   {
+    "id": "b14l2",
+    "block": 14,
+    "text": "which have begun to transition",
+    "rect": [
+     0.21970580244078527,
+     0.303988966917131,
+     0.3945637851670703,
+     0.3170306846803298
+    ]
+   },
+   {
+    "id": "b44l0",
+    "block": 44,
+    "text": "1",
+    "rect": [
+     0.9683409363971522,
+     0.3056820061487325,
+     0.9837252605824063,
+     0.33313821359782053
+    ]
+   },
+   {
+    "id": "b13l2",
+    "block": 13,
+    "text": "agriculture,",
+    "rect": [
+     0.08803019189645024,
+     0.308025346238202,
+     0.1605670611059596,
+     0.3207238421834052
+    ]
+   },
+   {
+    "id": "b14l3",
+    "block": 14,
+    "text": "to regenerative agriculture",
+    "rect": [
+     0.21970580244078527,
+     0.3164370010998939,
+     0.37139406116775087,
+     0.32947871886309277
+    ]
+   },
+   {
+    "id": "b13l3",
+    "block": 13,
+    "text": "leading the way",
+    "rect": [
+     0.08803019189645024,
+     0.3201457884320194,
+     0.1861504628486738,
+     0.3328443036021046
+    ]
+   },
+   {
+    "id": "b13l4",
+    "block": 13,
+    "text": "for regenerative",
+    "rect": [
+     0.08803019189645024,
+     0.33226621140095486,
+     0.18928310257080733,
+     0.344964745795922
+    ]
+   },
+   {
+    "id": "b17l0",
+    "block": 17,
+    "text": "Percentage of key direct commodities",
+    "rect": [
+     0.21970547696001763,
+     0.3353994442163519,
+     0.4329344374575686,
+     0.34844114275466875
+    ]
+   },
+   {
+    "id": "b13l5",
+    "block": 13,
+    "text": "dairy farming",
+    "rect": [
+     0.08803019189645024,
+     0.3443866535947723,
+     0.17207777608305228,
+     0.3570851879897394
+    ]
+   },
+   {
+    "id": "b18l3",
+    "block": 18,
+    "text": "97% (c)",
+    "rect": [
+     0.6415619010840913,
+     0.347847363049823,
+     0.6774917730980431,
+     0.3608891769374317
+    ]
+   },
+   {
+    "id": "b18l4",
+    "block": 18,
+    "text": "85.0% 93.0% 97.9%",
+    "rect": [
+     0.6918521347882958,
+     0.3478474399493509,
+     0.817402685506762,
+     0.36088913848766774
+    ]
+   },
+   {
+    "id": "b17l1",
+    "block": 17,
+    "text": "volume with Verified Deforestation",
+    "rect": [
+     0.21970547696001763,
+     0.34784747839911484,
+     0.41525164320217395,
+     0.3608891769374317
+    ]
+   },
+   {
+    "id": "b18l0",
+    "block": 18,
+    "text": "2022",
+    "rect": [
+     0.48292773255375515,
+     0.34784747839911484,
+     0.5113723981693359,
+     0.3608891769374317
+    ]
+   },
+   {
+    "id": "b18l1",
+    "block": 18,
+    "text": "84.0%",
+    "rect": [
+     0.5392558848675378,
+     0.34784747839911484,
+     0.5737486341074401,
+     0.3608891769374317
+    ]
+   },
+   {
+    "id": "b18l2",
+    "block": 18,
+    "text": "2025",
+    "rect": [
+     0.5998364183735796,
+     0.34784747839911484,
+     0.6282810839891604,
+     0.3608891769374317
+    ]
+   },
+   {
+    "id": "b13l6",
+    "block": 13,
+    "text": "models",
+    "rect": [
+     0.08803019189645024,
+     0.3565070957885897,
+     0.13268881965551316,
+     0.36920563018355684
+    ]
+   },
+   {
+    "id": "b17l2",
+    "block": 17,
+    "text": "& Conversion (vDCF) free status",
+    "rect": [
+     0.21970547696001763,
+     0.3602955125818778,
+     0.39785564757703606,
+     0.37333721112019463
+    ]
+   },
+   {
+    "id": "b45l0",
+    "block": 45,
+    "text": "2",
+    "rect": [
+     0.9683409363971522,
+     0.3699480951256388,
+     0.9837252605824063,
+     0.3974043025747269
+    ]
+   },
+   {
+    "id": "b19l0",
+    "block": 19,
+    "text": "Preserve and",
+    "rect": [
+     0.08802904019527244,
+     0.3792246389778638,
+     0.16845827972498176,
+     0.391923173372831
+    ]
+   },
+   {
+    "id": "b20l0",
+    "block": 20,
+    "text": "Percentage of production sites",
+    "rect": [
+     0.2197049762203751,
+     0.38131134611777734,
+     0.3934780564371633,
+     0.39435304465609416
+    ]
+   },
+   {
+    "id": "b20l2",
+    "block": 20,
+    "text": "2020",
+    "rect": [
+     0.4829272318141126,
+     0.3875353632091588,
+     0.5113718974296934,
+     0.40057706174747565
+    ]
+   },
+   {
+    "id": "b20l3",
+    "block": 20,
+    "text": "49.3%",
+    "rect": [
+     0.5392553841278953,
+     0.3875353632091588,
+     0.5737481333677976,
+     0.40057706174747565
+    ]
+   },
+   {
+    "id": "b20l4",
+    "block": 20,
+    "text": "2030",
+    "rect": [
+     0.5998359176339371,
+     0.3875353632091588,
+     0.6282805832495179,
+     0.40057706174747565
+    ]
+   },
+   {
+    "id": "b20l5",
+    "block": 20,
+    "text": "100%",
+    "rect": [
+     0.646038213044488,
+     0.3875353632091588,
+     0.6774882178465812,
+     0.40057706174747565
+    ]
+   },
+   {
+    "id": "b20l6",
+    "block": 20,
+    "text": "94.8% 99.3% 99.3%",
+    "rect": [
+     0.6918539374510089,
+     0.3875353632091588,
+     0.8174044881694751,
+     0.40057706174747565
+    ]
+   },
+   {
+    "id": "b19l1",
+    "block": 19,
+    "text": "restore watersheds",
+    "rect": [
+     0.08802904019527244,
+     0.3913450811716812,
+     0.20816293997864246,
+     0.4040436155666484
+    ]
+   },
+   {
+    "id": "b20l1",
+    "block": 20,
+    "text": "with a 4R approach deployed",
+    "rect": [
+     0.2197049762203751,
+     0.39375938030054025,
+     0.38390083492326516,
+     0.40680107883885713
+    ]
+   },
+   {
+    "id": "b19l2",
+    "block": 19,
+    "text": "where Danone",
+    "rect": [
+     0.08802904019527244,
+     0.4034655233654986,
+     0.1774920109493733,
+     0.41616405776046583
+    ]
+   },
+   {
+    "id": "b21l0",
+    "block": 21,
+    "text": "Percentage of total water intake",
+    "rect": [
+     0.2197044754807326,
+     0.4142208835894177,
+     0.40013661679667034,
+     0.4272625821277346
+    ]
+   },
+   {
+    "id": "b19l3",
+    "block": 19,
+    "text": "operates and drive",
+    "rect": [
+     0.08802904019527244,
+     0.41558596555931604,
+     0.20373106866151994,
+     0.42828449995428325
+    ]
+   },
+   {
+    "id": "b21l1",
+    "block": 21,
+    "text": "of production sites located in highly",
+    "rect": [
+     0.2197044754807326,
+     0.4266689177721807,
+     0.42107421872848383,
+     0.4397106163104975
+    ]
+   },
+   {
+    "id": "b19l4",
+    "block": 19,
+    "text": "water footprint",
+    "rect": [
+     0.08802904019527244,
+     0.42770640775313346,
+     0.18364804152213235,
+     0.44040494214810066
+    ]
+   },
+   {
+    "id": "b22l0",
+    "block": 22,
+    "text": "2020",
+    "rect": [
+     0.4829267310744701,
+     0.4328929348635622,
+     0.5113713966900508,
+     0.445934633401879
+    ]
+   },
+   {
+    "id": "b22l1",
+    "block": 22,
+    "text": "20.0%",
+    "rect": [
+     0.5392548833882528,
+     0.4328929348635622,
+     0.5737476326281551,
+     0.445934633401879
+    ]
+   },
+   {
+    "id": "b22l2",
+    "block": 22,
+    "text": "2030",
+    "rect": [
+     0.5998354168942945,
+     0.4328929348635622,
+     0.6282800825098753,
+     0.445934633401879
+    ]
+   },
+   {
+    "id": "b22l3",
+    "block": 22,
+    "text": "100%",
+    "rect": [
+     0.6460377123048455,
+     0.4328929348635622,
+     0.6774877171069387,
+     0.445934633401879
+    ]
+   },
+   {
+    "id": "b22l4",
+    "block": 22,
+    "text": "53.0% 62.0% 71.9%",
+    "rect": [
+     0.6918534367113663,
+     0.4328929348635622,
+     0.8174039874298326,
+     0.445934633401879
+    ]
+   },
+   {
+    "id": "b46l0",
+    "block": 46,
+    "text": "3",
+    "rect": [
+     0.9683409363971522,
+     0.4342141841025452,
+     0.9837252605824063,
+     0.4616703915516333
+    ]
+   },
+   {
+    "id": "b21l2",
+    "block": 21,
+    "text": "water-stressed areas with a watershed",
+    "rect": [
+     0.2197044754807326,
+     0.43911695195494366,
+     0.4374851092548804,
+     0.4521586504932605
+    ]
+   },
+   {
+    "id": "b19l5",
+    "block": 19,
+    "text": "reduction across",
+    "rect": [
+     0.08802904019527244,
+     0.43982684994695087,
+     0.19042336184778536,
+     0.4525253843419181
+    ]
+   },
+   {
+    "id": "b21l3",
+    "block": 21,
+    "text": "preservation or restoration plan in place",
+    "rect": [
+     0.2197044754807326,
+     0.4515649861377066,
+     0.4469874451552388,
+     0.46460668467602345
+    ]
+   },
+   {
+    "id": "b19l6",
+    "block": 19,
+    "text": "the value chain",
+    "rect": [
+     0.08802904019527244,
+     0.4519472921407683,
+     0.18237314587377015,
+     0.4646458265357355
+    ]
+   },
+   {
+    "id": "b24l0",
+    "block": 24,
+    "text": "Percentage of reusable, recyclable",
+    "rect": [
+     0.21970382451919732,
+     0.4701366066283856,
+     0.4134418199121923,
+     0.4831783051667024
+    ]
+   },
+   {
+    "id": "b24l2",
+    "block": 24,
+    "text": "2020",
+    "rect": [
+     0.48292603003897056,
+     0.47636062371976706,
+     0.5113706956545513,
+     0.4894023222580839
+    ]
+   },
+   {
+    "id": "b24l3",
+    "block": 24,
+    "text": "81.2%",
+    "rect": [
+     0.5392541823527532,
+     0.47636062371976706,
+     0.5737469315926556,
+     0.4894023222580839
+    ]
+   },
+   {
+    "id": "b24l4",
+    "block": 24,
+    "text": "2030",
+    "rect": [
+     0.599834715858795,
+     0.47636062371976706,
+     0.6282793814743758,
+     0.4894023222580839
+    ]
+   },
+   {
+    "id": "b24l5",
+    "block": 24,
+    "text": "100%",
+    "rect": [
+     0.6456629086824148,
+     0.47636062371976706,
+     0.677112913484508,
+     0.4894023222580839
+    ]
+   },
+   {
+    "id": "b24l6",
+    "block": 24,
+    "text": "84.0% 85.0% 84.9%",
+    "rect": [
+     0.6918527356758668,
+     0.47636062371976706,
+     0.8174020846191911,
+     0.4894023222580839
+    ]
+   },
+   {
+    "id": "b24l1",
+    "block": 24,
+    "text": "or compostable packaging",
+    "rect": [
+     0.21970382451919732,
+     0.48258464081114855,
+     0.36993297800180647,
+     0.4956263393494654
+    ]
+   },
+   {
+    "id": "b23l0",
+    "block": 23,
+    "text": "Drive the transition",
+    "rect": [
+     0.08802789475334016,
+     0.4896953479092287,
+     0.2090360421378418,
+     0.5023938823041959
+    ]
+   },
+   {
+    "id": "b47l0",
+    "block": 47,
+    "text": "4",
+    "rect": [
+     0.9683409363971522,
+     0.4984802730794516,
+     0.9837252605824063,
+     0.5259364805285397
+    ]
+   },
+   {
+    "id": "b25l0",
+    "block": 25,
+    "text": "Reduction in the use of virgin",
+    "rect": [
+     0.21970284807689439,
+     0.5013201726455921,
+     0.3847093541870697,
+     0.514361871183909
+    ]
+   },
+   {
+    "id": "b23l1",
+    "block": 23,
+    "text": "to a circular",
+    "rect": [
+     0.08802789475334016,
+     0.5018157901030461,
+     0.16162113057196786,
+     0.5145143244980134
+    ]
+   },
+   {
+    "id": "b25l2",
+    "block": 25,
+    "text": "2020",
+    "rect": [
+     0.48292507863364975,
+     0.5075441897369736,
+     0.5113697442492305,
+     0.5205858882752905
+    ]
+   },
+   {
+    "id": "b25l3",
+    "block": 25,
+    "text": "605.3 kt",
+    "rect": [
+     0.5290276267074095,
+     0.5075441897369736,
+     0.574145069682428,
+     0.5205858882752905
+    ]
+   },
+   {
+    "id": "b25l4",
+    "block": 25,
+    "text": "2030",
+    "rect": [
+     0.5998337644534742,
+     0.5075441897369736,
+     0.628278430069055,
+     0.5205858882752905
+    ]
+   },
+   {
+    "id": "b25l5",
+    "block": 25,
+    "text": "(30.0) %",
+    "rect": [
+     0.6391662124123543,
+     0.5075441897369736,
+     0.6805912012633861,
+     0.5205858882752905
+    ]
+   },
+   {
+    "id": "b25l6",
+    "block": 25,
+    "text": "(3",
+    "rect": [
+     0.6954931128770306,
+     0.5075441897369736,
+     0.7060803512868858,
+     0.5205858882752905
+    ]
+   },
+   {
+    "id": "b25l7",
+    "block": 25,
+    "text": ".0) %",
+    "rect": [
+     0.7060679329437513,
+     0.5075441897369736,
+     0.7298113042775484,
+     0.5205858882752905
+    ]
+   },
+   {
+    "id": "b25l8",
+    "block": 25,
+    "text": "(8.0) %",
+    "rect": [
+     0.7410220136163127,
+     0.5075441897369736,
+     0.7753401549428661,
+     0.5205858882752905
+    ]
+   },
+   {
+    "id": "b25l9",
+    "block": 25,
+    "text": "(8.1) %",
+    "rect": [
+     0.7865509143555947,
+     0.5075441897369736,
+     0.8208690556821481,
+     0.5205858882752905
+    ]
+   },
+   {
+    "id": "b25l1",
+    "block": 25,
+    "text": "fossil‑based packaging",
+    "rect": [
+     0.21970284807689439,
+     0.5137682068283551,
+     0.3482088643134774,
+     0.5268099053666719
+    ]
+   },
+   {
+    "id": "b23l2",
+    "block": 23,
+    "text": "and low-carbon",
+    "rect": [
+     0.08802789475334016,
+     0.5139362322968636,
+     0.1830155197241846,
+     0.5266347666918307
+    ]
+   },
+   {
+    "id": "b23l3",
+    "block": 23,
+    "text": "packaging system",
+    "rect": [
+     0.08802789475334016,
+     0.5260566744906809,
+     0.19937092829818925,
+     0.5387552088856482
+    ]
+   },
+   {
+    "id": "b26l0",
+    "block": 26,
+    "text": "Percentage of plastic packaging put on",
+    "rect": [
+     0.2197021971153591,
+     0.5323398273190341,
+     0.43983968720196603,
+     0.5453815258573509
+    ]
+   },
+   {
+    "id": "b23l4",
+    "block": 23,
+    "text": "and recover as much",
+    "rect": [
+     0.08802789475334016,
+     0.5381771166844984,
+     0.21031105045262358,
+     0.5508756510794656
+    ]
+   },
+   {
+    "id": "b26l1",
+    "block": 26,
+    "text": "the market, recovered (d) by supporting",
+    "rect": [
+     0.2197021971153591,
+     0.544787861501797,
+     0.43938781974855057,
+     0.5578295600401139
+    ]
+   },
+   {
+    "id": "b23l5",
+    "block": 23,
+    "text": "as Danone uses",
+    "rect": [
+     0.08802789475334016,
+     0.5502975588783158,
+     0.18299124637001316,
+     0.562996093273283
+    ]
+   },
+   {
+    "id": "b27l0",
+    "block": 27,
+    "text": "2022",
+    "rect": [
+     0.48292142323425935,
+     0.5510118785931785,
+     0.5113660888498401,
+     0.5640535771314954
+    ]
+   },
+   {
+    "id": "b27l1",
+    "block": 27,
+    "text": "57.0%",
+    "rect": [
+     0.539249575548042,
+     0.5510118785931785,
+     0.5737423247879443,
+     0.5640535771314954
+    ]
+   },
+   {
+    "id": "b27l2",
+    "block": 27,
+    "text": "2040",
+    "rect": [
+     0.5998301090540837,
+     0.5510118785931785,
+     0.6282747746696645,
+     0.5640535771314954
+    ]
+   },
+   {
+    "id": "b27l3",
+    "block": 27,
+    "text": "100%",
+    "rect": [
+     0.6460324044646347,
+     0.5510118785931785,
+     0.6774824092667279,
+     0.5640535771314954
+    ]
+   },
+   {
+    "id": "b27l4",
+    "block": 27,
+    "text": "58.0% 60.0% 62.7%",
+    "rect": [
+     0.6918481288711555,
+     0.5510118785931785,
+     0.8173986795896219,
+     0.5640535771314954
+    ]
+   },
+   {
+    "id": "b26l2",
+    "block": 26,
+    "text": "the development of effective recycling",
+    "rect": [
+     0.21969921771448606,
+     0.55723589568456,
+     0.43436234662219564,
+     0.5702775942228768
+    ]
+   },
+   {
+    "id": "b48l0",
+    "block": 48,
+    "text": "5",
+    "rect": [
+     0.9683409363971522,
+     0.562746362056358,
+     0.9837252605824063,
+     0.590202569505446
+    ]
+   },
+   {
+    "id": "b26l3",
+    "block": 26,
+    "text": "systems",
+    "rect": [
+     0.21969921771448606,
+     0.569683929867323,
+     0.2653653711897844,
+     0.5827256284056398
+    ]
+   },
+   {
+    "id": "b29l0",
+    "block": 29,
+    "text": "Reduction in all food waste not fit",
+    "rect": [
+     0.21970119563607404,
+     0.5880919850621129,
+     0.40793971775709903,
+     0.6011336836004297
+    ]
+   },
+   {
+    "id": "b29l1",
+    "block": 29,
+    "text": "for human consumption, animal",
+    "rect": [
+     0.21970119563607404,
+     0.6005400192448759,
+     0.4007070093234717,
+     0.6135817177831927
+    ]
+   },
+   {
+    "id": "b28l0",
+    "block": 28,
+    "text": "Cut waste across",
+    "rect": [
+     0.0880252658702169,
+     0.6008723405547886,
+     0.19199805032012787,
+     0.6135708749497558
+    ]
+   },
+   {
+    "id": "b30l0",
+    "block": 30,
+    "text": "2020",
+    "rect": [
+     0.4829234261928294,
+     0.6067640363362573,
+     0.5113680918084103,
+     0.6198057348745741
+    ]
+   },
+   {
+    "id": "b30l1",
+    "block": 30,
+    "text": "24.3 kg/t",
+    "rect": [
+     0.5243496168190034,
+     0.6067640363362573,
+     0.5741558856587065,
+     0.6198057348745741
+    ]
+   },
+   {
+    "id": "b30l2",
+    "block": 30,
+    "text": "2030",
+    "rect": [
+     0.5998321120126539,
+     0.6067640363362573,
+     0.6282767776282346,
+     0.6198057348745741
+    ]
+   },
+   {
+    "id": "b30l3",
+    "block": 30,
+    "text": "(50.0) % (19.8) % (18.1) % (10.4) %",
+    "rect": [
+     0.639164559971534,
+     0.6067640363362573,
+     0.8222928087077422,
+     0.6198057348745741
+    ]
+   },
+   {
+    "id": "b29l2",
+    "block": 29,
+    "text": "consumption or biomaterial processing",
+    "rect": [
+     0.21970119563607404,
+     0.6129880534276388,
+     0.442345188077309,
+     0.6260297519659557
+    ]
+   },
+   {
+    "id": "b28l1",
+    "block": 28,
+    "text": "the value chain",
+    "rect": [
+     0.0880252658702169,
+     0.612992782748606,
+     0.18236936528946907,
+     0.6256913171435732
+    ]
+   },
+   {
+    "id": "b29l3",
+    "block": 29,
+    "text": "(like for like)",
+    "rect": [
+     0.21970119563607404,
+     0.6254360876104018,
+     0.2869407902412654,
+     0.6384777861487186
+    ]
+   },
+   {
+    "id": "b49l0",
+    "block": 49,
+    "text": "6",
+    "rect": [
+     0.9683409363971522,
+     0.6270124510332643,
+     0.9837252605824063,
+     0.6544686584823525
+    ]
+   },
+   {
+    "id": "b31l0",
+    "block": 31,
+    "text": "(a) Awaiting new SBTi standards, which may lead to adjusting current targets.",
+    "rect": [
+     0.08370891518862512,
+     0.6467435626059436,
+     0.4683673754502776,
+     0.6587556533649196
+    ]
+   },
+   {
+    "id": "b31l1",
+    "block": 31,
+    "text": "(b) Net Zero ambition is explained in section 4.3.1 Climate change.",
+    "rect": [
+     0.08370891518862512,
+     0.6594699730797823,
+     0.41290244820624544,
+     0.6714820638387583
+    ]
+   },
+   {
+    "id": "b31l2",
+    "block": 31,
+    "text": "(c) Danone’s journey to achieve and maintain deforestation and conversion-free status on these direct key commodities (palm oil, soybeans, paper and board, cocoa)",
+    "rect": [
+     0.08370891518862512,
+     0.672196460453149,
+     0.9164839384254482,
+     0.684208551212125
+    ]
+   },
+   {
+    "id": "b31l3",
+    "block": 31,
+    "text": "means at least a 97% verified deforestation- and conversion-free rate, due to the verification process and supply chain constraints. More information on these",
+    "rect": [
+     0.10231585575052911,
+     0.6836617955686032,
+     0.9166800280694614,
+     0.6956738863275792
+    ]
+   },
+   {
+    "id": "b41l0",
+    "block": 41,
+    "text": "7",
+    "rect": [
+     0.9683409363971522,
+     0.6912783862111149,
+     0.9837252605824063,
+     0.718734593660203
+    ]
+   },
+   {
+    "id": "b31l4",
+    "block": 31,
+    "text": "processes is available in section 4.3.5 Resource use and circular economy (ESRS E5).",
+    "rect": [
+     0.10231586200977463,
+     0.6959295772579182,
+     0.5315712338695487,
+     0.7079427446102851
+    ]
+   },
+   {
+    "id": "b31l5",
+    "block": 31,
+    "text": "(d) Recover means recycle or valorize through energy recovery the equivalent amount by weight of plastic packaging put on the market.",
+    "rect": [
+     0.08370679330438992,
+     0.7088334718421997,
+     0.757462598003511,
+     0.7208455626011757
+    ]
+   },
+   {
+    "id": "b42l0",
+    "block": 42,
+    "text": "A",
+    "rect": [
+     0.9665032219090819,
+     0.7555444751880213,
+     0.9855630752184051,
+     0.7830006826371093
+    ]
+   },
+   {
+    "id": "b43l1",
+    "block": 43,
+    "text": "197",
+    "rect": [
+     0.9341629520965418,
+     0.9625929936378713,
+     0.968364270864494,
+     0.9803106448709822
+    ]
+   },
+   {
+    "id": "b43l0",
+    "block": 43,
+    "text": "DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025",
+    "rect": [
+     0.5983685001115148,
+     0.9664292803872906,
+     0.9169263919735842,
+     0.9775028124079849
+    ]
+   }
+  ]
+ }
+}

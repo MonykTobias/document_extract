@@ -372,12 +372,14 @@ def _run_table_detect(
             if pdf_page is not None
             else None
         )
+        page_image = page_dir / "page.png"
         candidates = build_table_candidates(
             cells=state.detection_cells,
             page_size=tuple(state.page_size),
             picture_records=picture_map,
             layout_map=state.layout_map,
             page_geometry=page_geometry,
+            page_image_path=str(page_image) if page_image.exists() else None,
         )
         _write_reconstruction_sidecar(page_dir, candidates, page_geometry)
         overlay_path = page_dir / "table_reconstruction_overlay.png"
@@ -428,10 +430,8 @@ def _run_table_detect(
             candidates=candidates,
             output_path=page_dir / "table_candidates_overlay.png",
         )
-        statuses = [
-            (candidate.stats or {}).get("reconstruction", {}).get("status")
-            for candidate in candidates
-        ]
+        audits = [(candidate.stats or {}).get("reconstruction", {}) for candidate in candidates]
+        statuses = [audit.get("status") for audit in audits]
         return {
             "candidates": len(candidates),
             "kinds": sorted({candidate.kind for candidate in candidates}),
@@ -440,6 +440,13 @@ def _run_table_detect(
             "tables_unchanged": statuses.count("unchanged"),
             "tables_repaired": statuses.count("repaired"),
             "tables_abstained": statuses.count("abstained"),
+            "rules_dropped_invisible": sum(
+                len(audit.get("dropped_invisible_rules") or []) for audit in audits
+            ),
+            "fragments_merged": sum(len(audit.get("merged_fragments") or []) for audit in audits),
+            "collision_fallback_columns": sum(
+                len(audit.get("slot_collisions") or {}) for audit in audits
+            ),
         }
 
     _execute_stage(state, reporter, "table_detect", action)

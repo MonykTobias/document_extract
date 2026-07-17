@@ -1,0 +1,2829 @@
+{
+ "note": "Frozen from a real Docling run; source PDF is external and not committed.",
+ "source_pdf": "danoneurdaccessible.pdf",
+ "physical_page": 190,
+ "page_size": [
+  609.4500122070312,
+  793.7000122070312
+ ],
+ "table_bbox": [
+  0.082,
+  0.102,
+  0.918,
+  0.852
+ ],
+ "raw_grid": {
+  "rows": [
+   [
+    "",
+    "Type",
+    "Upstream",
+    "Own operations",
+    "Downstream",
+    "ESRS coverage"
+   ],
+   [
+    "Violations of land rights Violations of land rights by suppliers can lead to serious impacts on",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "■ the loss of access to land as a result of forced acquisitions or land disputes, potentially resulting in displacement without fair compensation and the loss of livelihoods or places of cultural significance;",
+    "Negative impact",
+    "x",
+    "",
+    "",
+    ""
+   ],
+   [
+    "■ environmental degradation or inadequate resettlement, affecting housing conditions and access to natural resources that are essential for subsistence; ■ threats or violence against land rights defenders, particularly",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "Food safety and quality",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "Food safety and quality issues can lead to adverse health impacts, arising from hazards in raw materials, packaging or finished products (chemical and microbiological contaminants, nutrients, foreign bodies, or allergens) and product misuse.",
+    "Negative impact",
+    "",
+    "",
+    "x",
+    ""
+   ],
+   [
+    "Risks to human health related to packaging Plastic packaging and additive materials used throughout the packaging lifecycle could present risks to human health.",
+    "Negative impact",
+    "",
+    "",
+    "x",
+    ""
+   ],
+   [
+    "Reputational damage in the event of food safety and quality issues",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "In the event of food quality or safety issues (spoilage, issues related to smell, taste or appearance, packaging defects, labelling…), Danone could suffer reputational damage leading to decreased",
+    "Risk",
+    "",
+    "",
+    "x",
+    ""
+   ],
+   [
+    "Product nutritional quality",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "The development and commercialization of products that are aligned with consumer preferences and evolving nutritional needs has the potential to influence dietary habits by increasing consumption of healthier products and by contributing to more balanced diets.",
+    "Positive impact",
+    "",
+    "",
+    "x",
+    ""
+   ],
+   [
+    "Supporting nutritional needs",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "The development and commercialization of specialized nutrition products support individuals with specific medical conditions - during treatment, recovery, or over the course of long-term illnesses - and contributes to reducing nutritional deficiencies among consumers.",
+    "Positive impact",
+    "",
+    "",
+    "x",
+    ""
+   ],
+   [
+    "Market share from healthy products",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "An increase in consumer demand for healthier products may lead to an increase in the market share of companies offering such products.",
+    "Opportunity",
+    "",
+    "",
+    "x",
+    ""
+   ],
+   [
+    "Regulatory scrutiny on nutritional quality Increased regulatory scrutiny could lead to exposure to significant",
+    "Risk",
+    "",
+    "",
+    "x",
+    ""
+   ],
+   [
+    "Responsible marketing practices",
+    "",
+    "",
+    "",
+    "",
+    ""
+   ],
+   [
+    "Marketing practices have the potential to positively influence consumer behavior by supporting healthier and more sustainable food choices. These practices can include providing interpretative nutritional information, promoting healthy lifestyles and diets, supporting breastfeeding, encouraging healthy hydration, marketing baby formula responsibly and offering flexitarian options.",
+    "Positive impact",
+    "",
+    "",
+    "x",
+    ""
+   ]
+  ],
+  "num_cols": 6,
+  "header_rows": 1,
+  "cells": [
+   {
+    "r": 0,
+    "c": 0,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 1,
+    "text": "Type",
+    "bbox": {
+     "l": 315.21546947956085,
+     "t": 97.00651126354933,
+     "r": 331.7350479364395,
+     "b": 105.58689164370298,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 2,
+    "text": "Upstream",
+    "bbox": {
+     "l": 339.40010637044907,
+     "t": 94.9753245562315,
+     "r": 379.6256063580513,
+     "b": 104.1431831791997,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 3,
+    "text": "Own operations",
+    "bbox": {
+     "l": 385.4675174355507,
+     "t": 87.11257976386696,
+     "r": 424.97556632757187,
+     "b": 104.42236179858446,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 4,
+    "text": "Downstream",
+    "bbox": {
+     "l": 429.874852001667,
+     "t": 96.6248040124774,
+     "r": 479.420541703701,
+     "b": 104.96020710468292,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 5,
+    "text": "ESRS coverage",
+    "bbox": {
+     "l": 490.92663937807083,
+     "t": 97.0998234897852,
+     "r": 545.2699192166328,
+     "b": 105.14412293583155,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 0,
+    "text": "Violations of land rights Violations of land rights by suppliers can lead to serious impacts on",
+    "bbox": {
+     "l": 49.7761605978012,
+     "t": 113.64037868008018,
+     "r": 285.093,
+     "b": 131.02700000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 0,
+    "text": "■ the loss of access to land as a result of forced acquisitions or land disputes, potentially resulting in displacement without fair compensation and the loss of livelihoods or places of cultural significance;",
+    "bbox": {
+     "l": 53.3010471612215,
+     "t": 143.84758642315865,
+     "r": 282.2417229413986,
+     "b": 181.55861726403236,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 1,
+    "text": "Negative impact",
+    "bbox": {
+     "l": 300.211418479681,
+     "t": 167.3301008939743,
+     "r": 331.1797271966934,
+     "b": 187.8097074329853,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 2,
+    "text": "x",
+    "bbox": {
+     "l": 373.40127515792847,
+     "t": 171.03185085952282,
+     "r": 378.26985800266266,
+     "b": 179.7033224850893,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 0,
+    "text": "■ environmental degradation or inadequate resettlement, affecting housing conditions and access to natural resources that are essential for subsistence; ■ threats or violence against land rights defenders, particularly",
+    "bbox": {
+     "l": 51.642669633030884,
+     "t": 191.66497549414635,
+     "r": 276.65323156118393,
+     "b": 227.2628561258316,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 0,
+    "text": "Food safety and quality",
+    "bbox": {
+     "l": 51.504040442407124,
+     "t": 244.71419742703438,
+     "r": 143.12908411026,
+     "b": 253.8710575401783,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 0,
+    "text": "Food safety and quality issues can lead to adverse health impacts, arising from hazards in raw materials, packaging or finished products (chemical and microbiological contaminants, nutrients, foreign bodies, or allergens) and product misuse.",
+    "bbox": {
+     "l": 52.25226642191409,
+     "t": 254.69837954640388,
+     "r": 279.94207495450974,
+     "b": 288.1953807771206,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 1,
+    "text": "Negative impact",
+    "bbox": {
+     "l": 301.34922832250595,
+     "t": 260.46379750967026,
+     "r": 331.44443291425705,
+     "b": 282.17993623018265,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 4,
+    "text": "x",
+    "bbox": {
+     "l": 472.76242685317993,
+     "t": 264.6500050127506,
+     "r": 477.39994966983795,
+     "b": 273.97237917780876,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 0,
+    "text": "Risks to human health related to packaging Plastic packaging and additive materials used throughout the packaging lifecycle could present risks to human health.",
+    "bbox": {
+     "l": 51.60528469085693,
+     "t": 298.6915854215622,
+     "r": 259.268,
+     "b": 327.49700000000007,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 1,
+    "text": "Negative impact",
+    "bbox": {
+     "l": 300.91433730721474,
+     "t": 304.9370012283325,
+     "r": 333.9794490337372,
+     "b": 323.55777537822723,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 4,
+    "text": "x",
+    "bbox": {
+     "l": 472.8184625506401,
+     "t": 308.6024264097214,
+     "r": 477.3060511946678,
+     "b": 317.5665000677109,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 0,
+    "text": "Reputational damage in the event of food safety and quality issues",
+    "bbox": {
+     "l": 51.2125721424818,
+     "t": 334.989522755146,
+     "r": 231.1772747039795,
+     "b": 346.0660905241966,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 0,
+    "text": "In the event of food quality or safety issues (spoilage, issues related to smell, taste or appearance, packaging defects, labelling…), Danone could suffer reputational damage leading to decreased",
+    "bbox": {
+     "l": 51.292052119970315,
+     "t": 352.47776514291763,
+     "r": 284.67616605758667,
+     "b": 383.65561908483505,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 1,
+    "text": "Risk",
+    "bbox": {
+     "l": 315.6502543091774,
+     "t": 357.57727897167206,
+     "r": 333.24370366334915,
+     "b": 366.85989713668823,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 4,
+    "text": "x",
+    "bbox": {
+     "l": 473.13583636283875,
+     "t": 358.22683385014534,
+     "r": 477.460263133049,
+     "b": 367.2125764787197,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 0,
+    "text": "Product nutritional quality",
+    "bbox": {
+     "l": 50.97040054202079,
+     "t": 397.2246149778366,
+     "r": 150.13389518857002,
+     "b": 406.24713456630707,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 0,
+    "text": "The development and commercialization of products that are aligned with consumer preferences and evolving nutritional needs has the potential to influence dietary habits by increasing consumption of healthier products and by contributing to more balanced diets.",
+    "bbox": {
+     "l": 50.59083984792232,
+     "t": 407.6233092546463,
+     "r": 275.9847775697708,
+     "b": 455.8964560031891,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 1,
+    "text": "Positive impact",
+    "bbox": {
+     "l": 303.7840355038643,
+     "t": 418.07832157611847,
+     "r": 332.3024131655693,
+     "b": 435.55556988716125,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 4,
+    "text": "x",
+    "bbox": {
+     "l": 473.009384393692,
+     "t": 420.9508610367775,
+     "r": 477.61820673942566,
+     "b": 429.9674225449562,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 10,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 10,
+    "end_row_offset_idx": 11,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 0,
+    "text": "Supporting nutritional needs",
+    "bbox": {
+     "l": 50.973153784871094,
+     "t": 460.26177829504013,
+     "r": 158.73401708900928,
+     "b": 469.6158934235573,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 11,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 11,
+    "end_row_offset_idx": 12,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 0,
+    "text": "The development and commercialization of specialized nutrition products support individuals with specific medical conditions - during treatment, recovery, or over the course of long-term illnesses - and contributes to reducing nutritional deficiencies among consumers.",
+    "bbox": {
+     "l": 50.79489079117774,
+     "t": 469.6085522174835,
+     "r": 273.38645961880684,
+     "b": 517.8852454423904,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 1,
+    "text": "Positive impact",
+    "bbox": {
+     "l": 302.9101729094982,
+     "t": 481.6588050723076,
+     "r": 331.7410246729851,
+     "b": 498.5646451115608,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 4,
+    "text": "x",
+    "bbox": {
+     "l": 473.1193624138832,
+     "t": 484.78098100423813,
+     "r": 477.49688202142715,
+     "b": 493.3742350935936,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 12,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 12,
+    "end_row_offset_idx": 13,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 13,
+    "c": 0,
+    "text": "Market share from healthy products",
+    "bbox": {
+     "l": 50.46172565221786,
+     "t": 524.2822021842003,
+     "r": 184.07059410214424,
+     "b": 533.3064950108528,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 13,
+    "end_row_offset_idx": 14,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 13,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 13,
+    "end_row_offset_idx": 14,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 13,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 13,
+    "end_row_offset_idx": 14,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 13,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 13,
+    "end_row_offset_idx": 14,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 13,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 13,
+    "end_row_offset_idx": 14,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 13,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 13,
+    "end_row_offset_idx": 14,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 14,
+    "c": 0,
+    "text": "An increase in consumer demand for healthier products may lead to an increase in the market share of companies offering such products.",
+    "bbox": {
+     "l": 51.25095826387405,
+     "t": 536.9733387827873,
+     "r": 255.74471095204353,
+     "b": 560.7042307257652,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 14,
+    "end_row_offset_idx": 15,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 14,
+    "c": 1,
+    "text": "Opportunity",
+    "bbox": {
+     "l": 293.95171228051186,
+     "t": 539.2585108280182,
+     "r": 334.39563620090485,
+     "b": 548.8277552127838,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 14,
+    "end_row_offset_idx": 15,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 14,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 14,
+    "end_row_offset_idx": 15,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 14,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 14,
+    "end_row_offset_idx": 15,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 14,
+    "c": 4,
+    "text": "x",
+    "bbox": {
+     "l": 473.2081639766693,
+     "t": 539.7545210123062,
+     "r": 477.574822306633,
+     "b": 548.6798671483994,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 14,
+    "end_row_offset_idx": 15,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 14,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 14,
+    "end_row_offset_idx": 15,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 15,
+    "c": 0,
+    "text": "Regulatory scrutiny on nutritional quality Increased regulatory scrutiny could lead to exposure to significant",
+    "bbox": {
+     "l": 50.12981198728084,
+     "t": 569.7314316630363,
+     "r": 278.9106783270836,
+     "b": 590.1887840628624,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 15,
+    "end_row_offset_idx": 16,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 15,
+    "c": 1,
+    "text": "Risk",
+    "bbox": {
+     "l": 316.96559143066406,
+     "t": 579.4861922264099,
+     "r": 332.9030296802521,
+     "b": 588.4609762430191,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 15,
+    "end_row_offset_idx": 16,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 15,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 15,
+    "end_row_offset_idx": 16,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 15,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 15,
+    "end_row_offset_idx": 16,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 15,
+    "c": 4,
+    "text": "x",
+    "bbox": {
+     "l": 472.85926818847656,
+     "t": 579.3030876517296,
+     "r": 477.7445373535156,
+     "b": 587.9734421372414,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 15,
+    "end_row_offset_idx": 16,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 15,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 15,
+    "end_row_offset_idx": 16,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 16,
+    "c": 0,
+    "text": "Responsible marketing practices",
+    "bbox": {
+     "l": 49.82765306532382,
+     "t": 603.8213328123093,
+     "r": 171.25001637637615,
+     "b": 612.2760615348816,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 16,
+    "end_row_offset_idx": 17,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 16,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 16,
+    "end_row_offset_idx": 17,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 16,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 16,
+    "end_row_offset_idx": 17,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 16,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 16,
+    "end_row_offset_idx": 17,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 16,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 16,
+    "end_row_offset_idx": 17,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 16,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 16,
+    "end_row_offset_idx": 17,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 17,
+    "c": 0,
+    "text": "Marketing practices have the potential to positively influence consumer behavior by supporting healthier and more sustainable food choices. These practices can include providing interpretative nutritional information, promoting healthy lifestyles and diets, supporting breastfeeding, encouraging healthy hydration, marketing baby formula responsibly and offering flexitarian options.",
+    "bbox": {
+     "l": 48.88966949284076,
+     "t": 614.8587120175362,
+     "r": 285.5823849439621,
+     "b": 666.823173224926,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 17,
+    "end_row_offset_idx": 18,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 17,
+    "c": 1,
+    "text": "Positive impact",
+    "bbox": {
+     "l": 306.89054292440414,
+     "t": 630.5995700359344,
+     "r": 334.73497527837753,
+     "b": 648.3833048343658,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 17,
+    "end_row_offset_idx": 18,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 17,
+    "c": 2,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 17,
+    "end_row_offset_idx": 18,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 17,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 17,
+    "end_row_offset_idx": 18,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 17,
+    "c": 4,
+    "text": "x",
+    "bbox": {
+     "l": 472.58412593603134,
+     "t": 633.6962468028069,
+     "r": 477.2341483235359,
+     "b": 642.5742120146751,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 17,
+    "end_row_offset_idx": 18,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 17,
+    "c": 5,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 17,
+    "end_row_offset_idx": 18,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   }
+  ]
+ },
+ "geometry": {
+  "rules": [
+   [
+    0.10724623482608903,
+    0.5501159763086054,
+    0.7900862864537208
+   ],
+   [
+    0.13748434037238288,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.30379393048944014,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.3718296727748218,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.41624188008272234,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.49656186055639423,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.5768818410300661,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.657201821503738,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.7129533640505934,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.757365609808258,
+    0.08371215121856494,
+    0.9156092464178839
+   ],
+   [
+    0.8509147314195553,
+    0.08371215121856494,
+    0.9156092464178839
+   ]
+  ],
+  "lines": [
+   {
+    "id": "b24l0",
+    "block": 24,
+    "text": "4",
+    "rect": [
+     0.030746453085853113,
+     0.010812501379385282,
+     0.06828848141589942,
+     0.07945300558344402
+    ]
+   },
+   {
+    "id": "b25l0",
+    "block": 25,
+    "text": "SUSTAINABILITY REPORT",
+    "rect": [
+     0.08307212458522484,
+     0.028331655706048786,
+     0.29720602802399426,
+     0.046667285964198196
+    ]
+   },
+   {
+    "id": "b26l0",
+    "block": 26,
+    "text": "4.2 Sustainability statement – General Disclosures (ESRS 2)",
+    "rect": [
+     0.08307212458522484,
+     0.048509351674691004,
+     0.44868675520611495,
+     0.061844354624941394
+    ]
+   },
+   {
+    "id": "b0l0",
+    "block": 0,
+    "text": "Location in the value chain",
+    "rect": [
+     0.5873641455794354,
+     0.09262969163058606,
+     0.7529944981732517,
+     0.1053281875757893
+    ]
+   },
+   {
+    "id": "b2l0",
+    "block": 2,
+    "text": "Own",
+    "rect": [
+     0.6669434421584122,
+     0.11078244039267668,
+     0.6949066966816685,
+     0.12348093633787992
+    ]
+   },
+   {
+    "id": "b1l0",
+    "block": 1,
+    "text": "Type",
+    "rect": [
+     0.5164786406000303,
+     0.1229028825864941,
+     0.545813971817772,
+     0.13560137853169732
+    ]
+   },
+   {
+    "id": "b1l1",
+    "block": 1,
+    "text": "Upstream",
+    "rect": [
+     0.5588788199048815,
+     0.1229028825864941,
+     0.6196864388388088,
+     0.13560137853169732
+    ]
+   },
+   {
+    "id": "b2l1",
+    "block": 2,
+    "text": "operations Downstream",
+    "rect": [
+     0.629825064602925,
+     0.1229028825864941,
+     0.7858266946106093,
+     0.13560137853169732
+    ]
+   },
+   {
+    "id": "b2l2",
+    "block": 2,
+    "text": "ESRS coverage",
+    "rect": [
+     0.8087510061111267,
+     0.1229028825864941,
+     0.8969996581951201,
+     0.13560137853169732
+    ]
+   },
+   {
+    "id": "b3l0",
+    "block": 3,
+    "text": "Violations of land rights",
+    "rect": [
+     0.08803265177994415,
+     0.1408597682509687,
+     0.23527985687659242,
+     0.15355826419617194
+    ]
+   },
+   {
+    "id": "b3l1",
+    "block": 3,
+    "text": "Violations of land rights by suppliers can lead to serious impacts on",
+    "rect": [
+     0.08803019189645024,
+     0.15297422189404922,
+     0.4677871183525185,
+     0.16601593004480705
+    ]
+   },
+   {
+    "id": "b3l2",
+    "block": 3,
+    "text": "local communities and indigenous peoples. These impacts include:",
+    "rect": [
+     0.08804266031354914,
+     0.16542224646437118,
+     0.46409596615160253,
+     0.17846396422757
+    ]
+   },
+   {
+    "id": "b4l0",
+    "block": 4,
+    "text": "■ the loss of access to land as a result of forced acquisitions",
+    "rect": [
+     0.08803019189645024,
+     0.18165250702842461,
+     0.43313207939447357,
+     0.19562901545303704
+    ]
+   },
+   {
+    "id": "b4l1",
+    "block": 4,
+    "text": "or land disputes, potentially resulting in displacement",
+    "rect": [
+     0.10663581175754708,
+     0.19410054121118755,
+     0.4087153885003539,
+     0.20714225897438637
+    ]
+   },
+   {
+    "id": "b4l2",
+    "block": 4,
+    "text": "without fair compensation and the loss of livelihoods or places",
+    "rect": [
+     0.10663581175754708,
+     0.20654857539395052,
+     0.45864631647406384,
+     0.21959029315714934
+    ]
+   },
+   {
+    "id": "b7l0",
+    "block": 7,
+    "text": "Negative",
+    "rect": [
+     0.4958339463221124,
+     0.2086047918710432,
+     0.5458397098353979,
+     0.221646509634242
+    ]
+   },
+   {
+    "id": "b4l4",
+    "block": 4,
+    "text": "No",
+    "rect": [
+     0.6133523327306765,
+     0.21482173420585587,
+     0.6196373663538413,
+     0.22786345196905472
+    ]
+   },
+   {
+    "id": "b4l3",
+    "block": 4,
+    "text": "of cultural significance;",
+    "rect": [
+     0.10663581175754708,
+     0.21899660957671346,
+     0.23590252662207348,
+     0.23203832733991228
+    ]
+   },
+   {
+    "id": "b7l1",
+    "block": 7,
+    "text": "impact",
+    "rect": [
+     0.5074562135730688,
+     0.22105282605380613,
+     0.5458397599093621,
+     0.23409454381700495
+    ]
+   },
+   {
+    "id": "b5l0",
+    "block": 5,
+    "text": "■ environmental degradation or inadequate resettlement,",
+    "rect": [
+     0.08803019189645024,
+     0.23521733459930463,
+     0.42276937264032705,
+     0.24919384302391706
+    ]
+   },
+   {
+    "id": "b5l1",
+    "block": 5,
+    "text": "affecting housing conditions and access to natural resources",
+    "rect": [
+     0.10663581175754708,
+     0.24766536878206757,
+     0.4497688034996493,
+     0.2607166989862566
+    ]
+   },
+   {
+    "id": "b5l2",
+    "block": 5,
+    "text": "that are essential for subsistence;",
+    "rect": [
+     0.10663710116212657,
+     0.2601204777213993,
+     0.2961351962984524,
+     0.27316219548459814
+    ]
+   },
+   {
+    "id": "b6l0",
+    "block": 6,
+    "text": "■ threats or violence against land rights defenders, particularly",
+    "rect": [
+     0.08803150007876634,
+     0.27635073828545276,
+     0.4497313982483526,
+     0.29032724671006516
+    ]
+   },
+   {
+    "id": "b6l1",
+    "block": 6,
+    "text": "in response to protests or advocacy activities.",
+    "rect": [
+     0.1066371261991087,
+     0.28879877246821567,
+     0.3628760291827058,
+     0.3018404902314145
+    ]
+   },
+   {
+    "id": "b8l0",
+    "block": 8,
+    "text": "Food safety and quality",
+    "rect": [
+     0.08803018563720472,
+     0.3072691162806221,
+     0.2318776064124318,
+     0.3199676122258253
+    ]
+   },
+   {
+    "id": "b8l1",
+    "block": 8,
+    "text": "Food safety and quality issues can lead to adverse health impacts,",
+    "rect": [
+     0.08803018563720472,
+     0.31938471380418043,
+     0.4587834690621517,
+     0.3324264315673793
+    ]
+   },
+   {
+    "id": "b9l0",
+    "block": 9,
+    "text": "Negative",
+    "rect": [
+     0.4958450627421765,
+     0.32577154642105366,
+     0.545850826255462,
+     0.33881324495937054
+    ]
+   },
+   {
+    "id": "b8l2",
+    "block": 8,
+    "text": "arising from hazards in raw materials, packaging or finished",
+    "rect": [
+     0.08803018563720472,
+     0.33183276721182536,
+     0.4254379644172407,
+     0.3448744657501422
+    ]
+   },
+   {
+    "id": "b9l2",
+    "block": 9,
+    "text": "No",
+    "rect": [
+     0.7794935899817621,
+     0.33199556351243514,
+     0.7857786236049268,
+     0.34503726205075197
+    ]
+   },
+   {
+    "id": "b9l1",
+    "block": 9,
+    "text": "impact",
+    "rect": [
+     0.5074673299931328,
+     0.3382195806038166,
+     0.5458384079123273,
+     0.35126127914213345
+    ]
+   },
+   {
+    "id": "b8l3",
+    "block": 8,
+    "text": "products (chemical and microbiological contaminants, nutrients,",
+    "rect": [
+     0.08803018563720472,
+     0.34428080139458833,
+     0.4500666434390238,
+     0.35732249993290516
+    ]
+   },
+   {
+    "id": "b8l4",
+    "block": 8,
+    "text": "foreign bodies, or allergens) and product misuse.",
+    "rect": [
+     0.08803018563720472,
+     0.3567287971275873,
+     0.36614190320522444,
+     0.36977049566590414
+    ]
+   },
+   {
+    "id": "b10l0",
+    "block": 10,
+    "text": "Risks to human health related to packaging",
+    "rect": [
+     0.08803007297078515,
+     0.3759474886959616,
+     0.3569168518819148,
+     0.3886459846411649
+    ]
+   },
+   {
+    "id": "b11l0",
+    "block": 11,
+    "text": "Negative",
+    "rect": [
+     0.49584491252028373,
+     0.3820019038785123,
+     0.5458506760335692,
+     0.3950436024168291
+    ]
+   },
+   {
+    "id": "b10l1",
+    "block": 10,
+    "text": "Plastic packaging and additive materials used throughout",
+    "rect": [
+     0.08803007297078515,
+     0.38806312466928394,
+     0.41259349184680694,
+     0.4011048232076008
+    ]
+   },
+   {
+    "id": "b11l2",
+    "block": 11,
+    "text": "No",
+    "rect": [
+     0.7794933896859051,
+     0.3882259209698938,
+     0.7857784233090698,
+     0.4012676195082106
+    ]
+   },
+   {
+    "id": "b11l1",
+    "block": 11,
+    "text": "impact",
+    "rect": [
+     0.5074671797712401,
+     0.39444993806127526,
+     0.5458382076164703,
+     0.4074916365995921
+    ]
+   },
+   {
+    "id": "b10l2",
+    "block": 10,
+    "text": "the packaging lifecycle could present risks to human health.",
+    "rect": [
+     0.08803007297078515,
+     0.4005111588520469,
+     0.42541287736115013,
+     0.4135528573903638
+    ]
+   },
+   {
+    "id": "b12l0",
+    "block": 12,
+    "text": "Reputational damage in the event of food safety",
+    "rect": [
+     0.08802997282285664,
+     0.4198055964554239,
+     0.3863612692307808,
+     0.43250409240062715
+    ]
+   },
+   {
+    "id": "b12l1",
+    "block": 12,
+    "text": "and quality issues",
+    "rect": [
+     0.08802997282285664,
+     0.43192600019947736,
+     0.19840159649818748,
+     0.44462449614468064
+    ]
+   },
+   {
+    "id": "b12l2",
+    "block": 12,
+    "text": "In the event of food quality or safety issues (spoilage, issues related",
+    "rect": [
+     0.08802997282285664,
+     0.44404167462256366,
+     0.4684228073287052,
+     0.4570833731608805
+    ]
+   },
+   {
+    "id": "b13l0",
+    "block": 13,
+    "text": "Risk",
+    "rect": [
+     0.5234165385691204,
+     0.4505912458654008,
+     0.5458130704864155,
+     0.4636329444037176
+    ]
+   },
+   {
+    "id": "b13l1",
+    "block": 13,
+    "text": "No",
+    "rect": [
+     0.7794807710469134,
+     0.4505912458654008,
+     0.7885840675261429,
+     0.4638148502370159
+    ]
+   },
+   {
+    "id": "b12l3",
+    "block": 12,
+    "text": "to smell, taste or appearance, packaging defects, labelling…),",
+    "rect": [
+     0.08802997282285664,
+     0.45648970880532663,
+     0.4298770714221977,
+     0.46953140734364346
+    ]
+   },
+   {
+    "id": "b12l4",
+    "block": 12,
+    "text": "Danone could suffer reputational damage leading to decreased",
+    "rect": [
+     0.08802997282285664,
+     0.46893774298808955,
+     0.44693636971170114,
+     0.4819794415264064
+    ]
+   },
+   {
+    "id": "b12l5",
+    "block": 12,
+    "text": "market share and revenue loss.",
+    "rect": [
+     0.08802997282285664,
+     0.4813857771708525,
+     0.26560642725369643,
+     0.4944274757091694
+    ]
+   },
+   {
+    "id": "b14l0",
+    "block": 14,
+    "text": "Product nutritional quality",
+    "rect": [
+     0.08802969115680773,
+     0.4999620116332068,
+     0.25266436052693436,
+     0.51266050757841
+    ]
+   },
+   {
+    "id": "b14l1",
+    "block": 14,
+    "text": "The development and commercialization of products that",
+    "rect": [
+     0.08802969115680773,
+     0.5120774938074732,
+     0.4119819134844078,
+     0.5251191923457901
+    ]
+   },
+   {
+    "id": "b14l2",
+    "block": 14,
+    "text": "are aligned with consumer preferences and evolving nutritional",
+    "rect": [
+     0.08802969115680773,
+     0.5245255279902362,
+     0.44608826697915493,
+     0.537567226528553
+    ]
+   },
+   {
+    "id": "b15l0",
+    "block": 15,
+    "text": "Positive",
+    "rect": [
+     0.502516016407836,
+     0.5246882858410821,
+     0.545850225367891,
+     0.5377299843793989
+    ]
+   },
+   {
+    "id": "b15l2",
+    "block": 15,
+    "text": "No",
+    "rect": [
+     0.7794803704551994,
+     0.5309123029324635,
+     0.7857653540044,
+     0.5439540014707803
+    ]
+   },
+   {
+    "id": "b14l3",
+    "block": 14,
+    "text": "needs has the potential to influence dietary habits by increasing",
+    "rect": [
+     0.08802969115680773,
+     0.5369735621729992,
+     0.44871940343080763,
+     0.550015260711316
+    ]
+   },
+   {
+    "id": "b15l1",
+    "block": 15,
+    "text": "impact",
+    "rect": [
+     0.5074542606884629,
+     0.537136320023845,
+     0.5458252885336932,
+     0.5501780185621619
+    ]
+   },
+   {
+    "id": "b14l4",
+    "block": 14,
+    "text": "consumption of healthier products and by contributing to more",
+    "rect": [
+     0.08802969115680773,
+     0.5494215963557622,
+     0.4470482850218057,
+     0.562463294894079
+    ]
+   },
+   {
+    "id": "b14l5",
+    "block": 14,
+    "text": "balanced diets.",
+    "rect": [
+     0.08802969115680773,
+     0.5618696305385251,
+     0.17310176361503576,
+     0.574911329076842
+    ]
+   },
+   {
+    "id": "b16l0",
+    "block": 16,
+    "text": "Supporting nutritional needs",
+    "rect": [
+     0.08802942200924986,
+     0.5802821843556984,
+     0.2661781968145147,
+     0.5929806803009017
+    ]
+   },
+   {
+    "id": "b16l1",
+    "block": 16,
+    "text": "The development and commercialization of specialized nutrition",
+    "rect": [
+     0.08802942200924986,
+     0.5923977049797289,
+     0.4492304082360054,
+     0.6054394035180457
+    ]
+   },
+   {
+    "id": "b16l2",
+    "block": 16,
+    "text": "products support individuals with specific medical conditions –",
+    "rect": [
+     0.08802942200924986,
+     0.6048457391624918,
+     0.44031403786533085,
+     0.6178874377008087
+    ]
+   },
+   {
+    "id": "b17l0",
+    "block": 17,
+    "text": "Positive",
+    "rect": [
+     0.5025157660380147,
+     0.6050084970133377,
+     0.5458499749980696,
+     0.6180501955516545
+    ]
+   },
+   {
+    "id": "b17l2",
+    "block": 17,
+    "text": "No",
+    "rect": [
+     0.7794801200853781,
+     0.6112325141047191,
+     0.7857651036345786,
+     0.624274212643036
+    ]
+   },
+   {
+    "id": "b16l3",
+    "block": 16,
+    "text": "during treatment, recovery, or over the course of long-term",
+    "rect": [
+     0.08802942200924986,
+     0.6172937733452548,
+     0.4241402475596704,
+     0.6303354718835716
+    ]
+   },
+   {
+    "id": "b17l1",
+    "block": 17,
+    "text": "impact",
+    "rect": [
+     0.5074540103186417,
+     0.6174565311961007,
+     0.5458249880899076,
+     0.6304982297344175
+    ]
+   },
+   {
+    "id": "b16l4",
+    "block": 16,
+    "text": "illnesses – and contributes to reducing nutritional deficiencies",
+    "rect": [
+     0.08802942200924986,
+     0.6297418075280178,
+     0.43681001206882686,
+     0.6427835060663346
+    ]
+   },
+   {
+    "id": "b16l5",
+    "block": 16,
+    "text": "among consumers.",
+    "rect": [
+     0.08802942200924986,
+     0.6421898032610167,
+     0.19715664508044833,
+     0.6552315017993336
+    ]
+   },
+   {
+    "id": "b18l0",
+    "block": 18,
+    "text": "Market share from healthy products",
+    "rect": [
+     0.08802920919490179,
+     0.6607659608238431,
+     0.3119779225894569,
+     0.6734644567690463
+    ]
+   },
+   {
+    "id": "b18l1",
+    "block": 18,
+    "text": "An increase in consumer demand for healthier products",
+    "rect": [
+     0.08802920919490179,
+     0.6728816352469293,
+     0.4045117543122947,
+     0.6859233337852463
+    ]
+   },
+   {
+    "id": "b19l0",
+    "block": 19,
+    "text": "Opportunity",
+    "rect": [
+     0.47700137873653176,
+     0.6792684486389207,
+     0.5458621930453473,
+     0.6923101471772375
+    ]
+   },
+   {
+    "id": "b19l1",
+    "block": 19,
+    "text": "No",
+    "rect": [
+     0.7794922880586915,
+     0.6792684486389207,
+     0.788595584537921,
+     0.6924920914602998
+    ]
+   },
+   {
+    "id": "b18l2",
+    "block": 18,
+    "text": "may lead to an increase in the market share of companies",
+    "rect": [
+     0.08802920919490179,
+     0.6853296694296923,
+     0.41472489013521874,
+     0.6983713679680091
+    ]
+   },
+   {
+    "id": "b18l3",
+    "block": 18,
+    "text": "offering such products.",
+    "rect": [
+     0.08802920919490179,
+     0.6977777036124553,
+     0.21944076094799628,
+     0.7108194021507721
+    ]
+   },
+   {
+    "id": "b20l0",
+    "block": 20,
+    "text": "Regulatory scrutiny on nutritional quality",
+    "rect": [
+     0.08802858327034863,
+     0.7170720258665404,
+     0.344833804011906,
+     0.7297705218117436
+    ]
+   },
+   {
+    "id": "b20l1",
+    "block": 20,
+    "text": "Increased regulatory scrutiny could lead to exposure to significant",
+    "rect": [
+     0.08802858327034863,
+     0.7291877002896267,
+     0.4618618661625086,
+     0.7422293988279436
+    ]
+   },
+   {
+    "id": "b21l0",
+    "block": 21,
+    "text": "Risk",
+    "rect": [
+     0.5234149862762286,
+     0.7293504965902364,
+     0.5458115682674879,
+     0.7423921951285534
+    ]
+   },
+   {
+    "id": "b21l1",
+    "block": 21,
+    "text": "No",
+    "rect": [
+     0.7794791686800573,
+     0.7293504965902364,
+     0.7885824651592868,
+     0.7425741394116155
+    ]
+   },
+   {
+    "id": "b20l2",
+    "block": 20,
+    "text": "enforcement, litigation or tax risks.",
+    "rect": [
+     0.08802858327034863,
+     0.7416357344723896,
+     0.2839611640353967,
+     0.7546774330107064
+    ]
+   },
+   {
+    "id": "b22l0",
+    "block": 22,
+    "text": "Responsible marketing practices",
+    "rect": [
+     0.0880282202341078,
+     0.7611567565347873,
+     0.2893440901555688,
+     0.7738552524799905
+    ]
+   },
+   {
+    "id": "b22l1",
+    "block": 22,
+    "text": "Marketing practices have the potential to positively influence",
+    "rect": [
+     0.0880282202341078,
+     0.7732724309578736,
+     0.4299625476791769,
+     0.7863141294961904
+    ]
+   },
+   {
+    "id": "b22l2",
+    "block": 22,
+    "text": "consumer behavior by supporting healthier and more sustainable",
+    "rect": [
+     0.0880282202341078,
+     0.7857204651406365,
+     0.45939241854142754,
+     0.7987621636789534
+    ]
+   },
+   {
+    "id": "b23l0",
+    "block": 23,
+    "text": "Positive",
+    "rect": [
+     0.5025144641149442,
+     0.7921072785326279,
+     0.5458486730749991,
+     0.8051489770709447
+    ]
+   },
+   {
+    "id": "b22l3",
+    "block": 22,
+    "text": "food choices. These practices can include providing interpretative",
+    "rect": [
+     0.0880282202341078,
+     0.7981684993233995,
+     0.45764658977776074,
+     0.8112101978617163
+    ]
+   },
+   {
+    "id": "b23l2",
+    "block": 23,
+    "text": "No",
+    "rect": [
+     0.7794787680883433,
+     0.7983312187244813,
+     0.7857637516375439,
+     0.8113729172627983
+    ]
+   },
+   {
+    "id": "b23l1",
+    "block": 23,
+    "text": "impact",
+    "rect": [
+     0.5074527083955711,
+     0.8045553127153908,
+     0.5458237362408013,
+     0.8175970112537077
+    ]
+   },
+   {
+    "id": "b22l4",
+    "block": 22,
+    "text": "nutritional information, promoting healthy lifestyles and diets,",
+    "rect": [
+     0.0880282202341078,
+     0.8106165335061625,
+     0.4364346075588251,
+     0.8236582320444793
+    ]
+   },
+   {
+    "id": "b22l5",
+    "block": 22,
+    "text": "supporting breastfeeding, encouraging healthy hydration,",
+    "rect": [
+     0.0880282202341078,
+     0.8230645676889254,
+     0.4155843346206682,
+     0.8361062662272423
+    ]
+   },
+   {
+    "id": "b22l6",
+    "block": 22,
+    "text": "marketing baby formula responsibly and offering flexitarian options.",
+    "rect": [
+     0.0880282202341078,
+     0.8355125249721604,
+     0.4660512042337737,
+     0.8485542235104773
+    ]
+   },
+   {
+    "id": "b27l0",
+    "block": 27,
+    "text": "188",
+    "rect": [
+     0.03166531658913381,
+     0.9625905328529779,
+     0.06586662909784043,
+     0.9803081840860887
+    ]
+   },
+   {
+    "id": "b27l1",
+    "block": 27,
+    "text": "DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025",
+    "rect": [
+     0.08307212458522484,
+     0.9664267427028692,
+     0.40162962211482583,
+     0.9775002747235635
+    ]
+   }
+  ]
+ }
+}

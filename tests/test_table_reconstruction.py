@@ -17,15 +17,25 @@ from document_extract.markdown.formatting import replace_deterministic_tables  #
 from document_extract.models import TableCandidate, VisualCandidate  # noqa: E402
 from document_extract.table_reconstruction import (  # noqa: E402
     RECONSTRUCTION_VERSION,
+    _slot_collisions,
     _tokens,
+    filter_visible_rule_segments,
     reconcile_table_grid,
 )
 from document_extract.tables import (  # noqa: E402
     build_table_candidates,
     normalize_table_grid,
     render_deterministic_docling_table,
+    verify_region_table,
 )
 from document_extract.visual_values import associate_table_cells  # noqa: E402
+
+
+def run_lengths(column: list[str]) -> list[int]:
+    """Consecutive run lengths of identical cell text (the group spans)."""
+    from itertools import groupby
+
+    return [len(list(group)) for _, group in groupby(column)]
 
 FIXTURES = Path(__file__).parent / "fixtures" / "table_reconstruction"
 
@@ -250,7 +260,7 @@ def test_danone_185_splits_at_rules_and_keeps_components_whole() -> None:
 
 def test_scale_invariance() -> None:
     """Uniform 0.5x/1x/2x rescaling must not change the reconstructed topology."""
-    for page in (183, 184, 185):
+    for page in (183, 184, 185, 190, 199, 200):
         fixture = load(page)
         baseline = reconcile(fixture)
         for scale in (0.5, 2.0):
@@ -259,8 +269,250 @@ def test_scale_invariance() -> None:
             assert scaled["grid"]["rows"] == baseline["grid"]["rows"], (page, scale)
 
 
+def test_danone_199_spanning_labels_repeat_into_every_covered_row() -> None:
+    """Each green group label is one spanning cell repeated identically into
+    every KPI row it covers (spans 3/2/2/3/1), and the genuine sub-row value
+    join stays a join -- no fragment, no glued cross-row cell."""
+    result = reconcile(load(199))
+    assert result["status"] == "repaired", result["audit"]
+    rows = body(result)
+    assert len(rows) == 11
+    column0 = [row[0] for row in rows]
+    assert run_lengths(column0) == [3, 2, 2, 3, 1]
+    # Every label carries its whole text, not a leading/trailing fragment.
+    assert "Curb GHG emissions" in column0[0] and "methane reduction" in column0[0]
+    assert column0[0] == column0[1] == column0[2]
+    assert "Preserve and restore watersheds" in column0[5] and "value chain" in column0[5]
+    assert column0[5] == column0[6]
+    # Two sub-rows genuinely share one band: that join is allowed to stand.
+    assert rows[0][4] == "2030 2050 (b)"
+    # Fragment merge is recorded, and no source restoration happened in col 0
+    # (it stays Docling's untrusted wording).
+    assert result["audit"]["merged_fragments"]
+
+
+def test_danone_200_no_cell_glues_two_rows() -> None:
+    """Group labels span 5/2/2; the collision fallback un-glues the value cells
+    Docling stacked into one band, and the emptied neighbours are refilled."""
+    result = reconcile(load(200))
+    assert result["status"] == "repaired", result["audit"]
+    rows = body(result)
+    assert len(rows) == 9
+    assert run_lengths([row[0] for row in rows]) == [5, 2, 2]
+    # None of the v2 glue artefacts survive anywhere in the table.
+    flat = [cell for row in rows for cell in row]
+    for glued in ("2025 2025", "ongoing ongoing", "15.0% 96.9% (j)", "N/A (a) N/A (a)"):
+        assert glued not in flat, glued
+    # The column the collision emptied now carries content in every KPI row.
+    assert all(row[8].strip() for row in rows[:-1])
+    assert result["audit"]["slot_collisions"]
+
+
+def test_danone_190_repaired_grid_is_authoritative_over_raw() -> None:
+    """R5a: a repaired title/detail table is reclassified from the accepted grid,
+    so it is no longer 'sectioned' and the deterministic render carries every
+    description the reconciler restored -- including Docling's two dropped tails.
+    """
+    fixture = load(190)
+    result = reconcile(fixture)
+    assert result["status"] == "repaired", result["audit"]
+    assert len(body(result)) == 9
+
+    layout_map = {
+        "blocks": [
+            {
+                "id": "b0002",
+                "type": "table",
+                "bbox": fixture["table_bbox"],
+                "_table_grid": fixture["raw_grid"],
+                # Pretend prepare-time misclassified it as sectioned off the raw
+                # grid; R5a must override that from the accepted grid.
+                "_sectioned_table": {"markdown": "STALE", "split": {}},
+            }
+        ]
+    }
+    candidates = build_table_candidates(
+        cells=[],
+        page_size=tuple(fixture["page_size"]),
+        picture_records={},
+        layout_map=layout_map,
+        page_geometry=fixture["geometry"],
+    )
+    candidate = candidates[0]
+    assert candidate.stats.get("format") != "sectioned_table"
+    assert candidate.markdown != "STALE"
+    assert (
+        render_deterministic_docling_table(candidate, {}, tuple(fixture["page_size"])) is True
+    )
+    for fragment in (
+        "local communities and indigenous peoples",
+        "in response to protests or advocacy activities",
+    ):
+        assert fragment in candidate.markdown, fragment
+
+
+def _spanning_label_fixture(*, two_components: bool) -> dict:
+    """A 3-band, 2-column table whose left label Docling split into two owners.
+
+    Rules cross only the value column, so the label column is one undivided
+    region. With one source block the two owners are fragments of one spanning
+    cell (merge); with two blocks they are separate cells sharing the region
+    (never merged). ``Delta`` is Docling-only, forcing the untrusted path.
+    """
+    rows = [["Label", "Val"], ["Alpha", "one"], ["Beta Gamma Delta", "two"], ["", "three"]]
+
+    def bbox(left, top, right, bottom):
+        return {"l": left, "t": top, "r": right, "b": bottom, "origin": "TOPLEFT"}
+
+    cells = [
+        {"r": 0, "c": 0, "text": "Label", "bbox": bbox(2, 2, 18, 5), "column_header": True,
+         "start_row_offset_idx": 0, "end_row_offset_idx": 1,
+         "start_col_offset_idx": 0, "end_col_offset_idx": 1, "row_span": 1, "col_span": 1},
+        {"r": 0, "c": 1, "text": "Val", "bbox": bbox(30, 2, 95, 5), "column_header": True,
+         "start_row_offset_idx": 0, "end_row_offset_idx": 1,
+         "start_col_offset_idx": 1, "end_col_offset_idx": 2, "row_span": 1, "col_span": 1},
+        {"r": 1, "c": 0, "text": "Alpha", "bbox": bbox(2, 14, 18, 19), "column_header": False,
+         "start_row_offset_idx": 1, "end_row_offset_idx": 2,
+         "start_col_offset_idx": 0, "end_col_offset_idx": 1, "row_span": 1, "col_span": 1},
+        {"r": 2, "c": 0, "text": "Beta Gamma Delta", "bbox": bbox(2, 37, 18, 64),
+         "column_header": False, "start_row_offset_idx": 2, "end_row_offset_idx": 4,
+         "start_col_offset_idx": 0, "end_col_offset_idx": 1, "row_span": 2, "col_span": 1},
+        {"r": 3, "c": 0, "text": "Beta Gamma Delta", "bbox": bbox(2, 37, 18, 64),
+         "column_header": False, "start_row_offset_idx": 2, "end_row_offset_idx": 4,
+         "start_col_offset_idx": 0, "end_col_offset_idx": 1, "row_span": 2, "col_span": 1},
+    ]
+    for row, text in ((1, "one"), (2, "two"), (3, "three")):
+        top = 14 + (row - 1) * 23
+        cells.append(
+            {"r": row, "c": 1, "text": text, "bbox": bbox(30, top, 95, top + 5),
+             "column_header": False, "start_row_offset_idx": row, "end_row_offset_idx": row + 1,
+             "start_col_offset_idx": 1, "end_col_offset_idx": 2, "row_span": 1, "col_span": 1}
+        )
+
+    left_blocks = (5, 6, 6) if two_components else (5, 5, 5)
+    # Header source lines keep the column's alignment above threshold, as on a
+    # real page; without them the unmatched header token would abstain the column.
+    lines = [
+        {"id": "b4c0", "block": 4, "text": "Label", "rect": [0.02, 0.055, 0.18, 0.075]},
+        {"id": "b4c1", "block": 4, "text": "Val", "rect": [0.30, 0.055, 0.95, 0.075]},
+    ]
+    for (block, text, y) in zip(left_blocks, ("Alpha", "Beta", "Gamma"), (0.16, 0.39, 0.62)):
+        lines.append({"id": f"b{block}c0", "block": block, "text": text,
+                      "rect": [0.02, y - 0.02, 0.18, y + 0.02]})
+    for block, text, y in ((7, "one", 0.16), (8, "two", 0.39), (9, "three", 0.62)):
+        lines.append({"id": f"b{block}c1", "block": block, "text": text,
+                      "rect": [0.30, y - 0.02, 0.95, y + 0.02]})
+
+    grid = {"rows": rows, "num_cols": 2, "header_rows": 1, "cells": cells}
+    geometry = {
+        "rules": [[0.05, 0.25, 1.0], [0.28, 0.25, 1.0], [0.51, 0.25, 1.0], [0.74, 0.25, 1.0]],
+        "lines": lines,
+    }
+    return reconcile_table_grid(grid, [0.0, 0.05, 1.0, 0.75], geometry, (100.0, 100.0))
+
+
+def test_r2_merges_one_component_into_a_spanning_cell() -> None:
+    result = _spanning_label_fixture(two_components=False)
+    assert result["status"] == "repaired", result["audit"]
+    column0 = [row[0] for row in body(result)]
+    assert column0 == ["Alpha Beta Gamma Delta"] * 3
+    assert result["audit"]["merged_fragments"] == [[[1, 0], [2, 0]]]
+
+
+def test_r2_refuses_to_merge_two_components_sharing_a_region() -> None:
+    """Two owners mapping to different source blocks stay two cells (page 183's
+    control): the label is not fabricated into one span."""
+    result = _spanning_label_fixture(two_components=True)
+    assert result["status"] == "repaired", result["audit"]
+    column0 = [row[0] for row in body(result)]
+    assert column0[0] == "Alpha"
+    assert column0[1] == column0[2] == "Beta Gamma Delta"
+    assert not result["audit"]["merged_fragments"]
+
+
+def test_r4_slot_collision_detection() -> None:
+    """A slot join is legal only when its segments share a home band."""
+    same = [
+        {"col_start": 4, "band_low": 0, "text": "2030", "home_band": 0},
+        {"col_start": 4, "band_low": 0, "text": "2050", "home_band": 0},
+    ]
+    assert _slot_collisions(same) == {}
+    displaced = [
+        {"col_start": 8, "band_low": 6, "text": "15.0%", "home_band": 6},
+        {"col_start": 8, "band_low": 6, "text": "96.9%", "home_band": 7},
+    ]
+    assert _slot_collisions(displaced) == {8: [6]}
+
+
+def test_r1_filters_only_invisible_rule_segments() -> None:
+    """A rule is kept only where the render shows a line: a drawn line or a
+    colour boundary survives, a uniform fill or occluded stroke does not."""
+    from PIL import Image, ImageDraw
+
+    width, height, y = 120, 120, 60
+    rule = [[0.5, 0.0, 1.0]]
+    mlh = 0.06
+
+    uniform = Image.new("RGB", (width, height), (200, 200, 200))
+    kept, dropped = filter_visible_rule_segments(rule, uniform, mlh)
+    assert kept == [] and len(dropped) == 1
+
+    dark = Image.new("RGB", (width, height), (255, 255, 255))
+    ImageDraw.Draw(dark).line((0, y, width, y), fill=(0, 0, 0), width=1)
+    assert filter_visible_rule_segments(rule, dark, mlh)[0] == rule
+
+    faint = Image.new("RGB", (width, height), (255, 255, 255))
+    ImageDraw.Draw(faint).line((0, y, width, y), fill=(210, 210, 210), width=1)
+    assert filter_visible_rule_segments(rule, faint, mlh)[0] == rule
+
+    boundary = Image.new("RGB", (width, height), (255, 255, 255))
+    ImageDraw.Draw(boundary).rectangle((0, 0, width, y), fill=(120, 160, 120))
+    assert filter_visible_rule_segments(rule, boundary, mlh)[0] == rule
+
+
+def test_r1_unreadable_image_leaves_rules_untouched() -> None:
+    kept, dropped = filter_visible_rule_segments([[0.5, 0.0, 1.0]], "/no/such/file.png", 0.05)
+    assert kept is None and dropped == []
+
+
+def test_r5b_word_coverage_gate_rejects_label_only_transcription() -> None:
+    """A VLM answer may add symbols but must keep the grid's prose."""
+    grid = {
+        "rows": [
+            ["Risk", "Description"],
+            ["Land rights", "violations by suppliers harm local communities"],
+            ["Food safety", "adverse health impacts from contamination hazards"],
+        ],
+        "num_cols": 2,
+        "header_rows": 1,
+        "cells": [
+            {"r": r, "c": c, "text": text, "start_row_offset_idx": r, "end_row_offset_idx": r + 1,
+             "start_col_offset_idx": c, "end_col_offset_idx": c + 1}
+            for r, row in enumerate(
+                [["Risk", "Description"],
+                 ["Land rights", "violations by suppliers harm local communities"],
+                 ["Food safety", "adverse health impacts from contamination hazards"]]
+            )
+            for c, text in enumerate(row)
+        ],
+    }
+    cell_texts = [cell for row in grid["rows"][1:] for cell in row]
+    label_only = (
+        "| Risk | Description |\n| --- | --- |\n| Land rights |  |\n| Food safety |  |\n"
+    )
+    faithful = (
+        "| Risk | Description |\n| --- | --- |\n"
+        "| Land rights | violations by suppliers harm local comunities |\n"
+        "| Food safety | adverse health impacts from contamination hazards |\n"
+    )
+    ok, stats = verify_region_table(label_only, cell_texts, grid)
+    assert ok is False and stats["fail"] == "word_coverage_low"
+    ok, stats = verify_region_table(faithful, cell_texts, grid)
+    assert ok is True, stats
+
+
 def test_invariants_hold_on_every_fixture() -> None:
-    for page in (183, 184, 185):
+    for page in (183, 184, 185, 190, 199, 200):
         result = reconcile(load(page))
         grid = result["grid"]
         header_rows = int(grid["header_rows"])
@@ -294,7 +546,7 @@ def test_invariants_hold_on_every_fixture() -> None:
 
 def test_raw_text_is_retained_and_verified_source_text_is_complete() -> None:
     """Raw wording is retained as a subsequence; proven columns equal source."""
-    for page in (183, 184, 185):
+    for page in (183, 184, 185, 190, 199, 200):
         fixture = load(page)
         result = reconcile(fixture)
 

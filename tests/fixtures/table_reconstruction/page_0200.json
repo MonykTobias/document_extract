@@ -1,0 +1,3580 @@
+{
+ "note": "Frozen from a real Docling run; source PDF is external and not committed.",
+ "source_pdf": "danoneurdaccessible.pdf",
+ "physical_page": 200,
+ "page_size": [
+  609.4500122070312,
+  793.7000122070312
+ ],
+ "table_bbox": [
+  0.081,
+  0.123,
+  0.916,
+  0.526
+ ],
+ "raw_grid": {
+  "rows": [
+   [
+    "",
+    "KPI",
+    "Baseline year",
+    "Baseline value",
+    "Target year",
+    "Target",
+    "2023",
+    "2024",
+    "2025",
+    "ESRS coverage"
+   ],
+   [
+    "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "Percentage of employees covered by B Corp™ certification",
+    "N/A (a)",
+    "N/A (a)",
+    "2025",
+    "95% (b)",
+    "68.0%",
+    "83.0%",
+    "98.0%",
+    "-"
+   ],
+   [
+    "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "Percentage of employees covered by Dan'Cares",
+    "N/A (a)",
+    "N/A (a)",
+    "2030",
+    "100%",
+    "98.0%",
+    "97.9%",
+    "97.8%",
+    ""
+   ],
+   [
+    "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "Percentage of women in senior leadership globally (c)",
+    "2022",
+    "42%",
+    "2030",
+    "40-60%",
+    "43.0%",
+    "44.0%",
+    "45.5%",
+    ""
+   ],
+   [
+    "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "Gender pay gap",
+    "2022",
+    "3.2%",
+    "2025",
+    "Closed (d)",
+    "2.1%",
+    "1.1%",
+    "1.1%",
+    ""
+   ],
+   [
+    "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "Inclusion index above peers",
+    "N/A (e)",
+    "N/A (e)",
+    "2025",
+    "Above peers",
+    "+2 pts",
+    "+2 pts",
+    "+2 pts",
+    ""
+   ],
+   [
+    "Equip and empower communities ( i.e. , internal, external) with skills and capabilities of the future to thrive in a fast-changing economy",
+    "Percentage of employees with access to future skilling programs",
+    "N/A (a)",
+    "N/A (a)",
+    "2025",
+    "100%",
+    "N/A (f)",
+    "ongoing",
+    "100%",
+    ""
+   ],
+   [
+    "Equip and empower communities ( i.e. , internal, external) with skills and capabilities of the future to thrive in a fast-changing economy",
+    "Percentage of key partners with access to future skilling programs (g)",
+    "N/A (a)",
+    "N/A (a)",
+    "2030",
+    "100%",
+    "N/A (f)",
+    "ongoing",
+    "15.0%",
+    "-"
+   ],
+   [
+    "Champion a renewed social contract by fostering a prosperous",
+    "Percentage of employees trained on the Danone Human Rights Policy (h)",
+    "N/A (a)",
+    "N/A (a)",
+    "2025",
+    "100%",
+    "N/A (i)",
+    "ongoing",
+    "96.9% (j)",
+    ""
+   ],
+   [
+    "and inclusive ecosystem, upholding human rights and pursuing social progress",
+    "Percentage of suppliers (k) to which the Sustainable Sourcing Policy has been deployed (measured in percentage of spend)",
+    "2023",
+    "N/A (a)",
+    "2030",
+    "100%",
+    "N/A (l)",
+    "10.0%",
+    "20.0%",
+    ""
+   ]
+  ],
+  "num_cols": 10,
+  "header_rows": 1,
+  "cells": [
+   {
+    "r": 0,
+    "c": 0,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 1,
+    "text": "KPI",
+    "bbox": {
+     "l": 133.9,
+     "t": 110.12600000000009,
+     "r": 146.584,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 2,
+    "text": "Baseline year",
+    "bbox": {
+     "l": 264.991,
+     "t": 100.50600000000009,
+     "r": 296.67,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 3,
+    "text": "Baseline value",
+    "bbox": {
+     "l": 303.242,
+     "t": 100.50600000000009,
+     "r": 334.921,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 4,
+    "text": "Target year",
+    "bbox": {
+     "l": 343.187,
+     "t": 100.50600000000009,
+     "r": 367.91,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 5,
+    "text": "Target",
+    "bbox": {
+     "l": 378.426,
+     "t": 110.12600000000009,
+     "r": 403.149,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 6,
+    "text": "2023",
+    "bbox": {
+     "l": 416.802,
+     "t": 110.12600000000009,
+     "r": 433.911,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 7,
+    "text": "2024",
+    "bbox": {
+     "l": 449.051,
+     "t": 110.12600000000009,
+     "r": 466.16,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 8,
+    "text": "2025",
+    "bbox": {
+     "l": 481.3,
+     "t": 110.12600000000009,
+     "r": 498.409,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 9,
+    "text": "ESRS coverage",
+    "bbox": {
+     "l": 512.269,
+     "t": 100.50600000000009,
+     "r": 546.783,
+     "b": 116.85800000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 0,
+    "text": "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "bbox": {
+     "l": 53.638,
+     "t": 145.0540000000001,
+     "r": 124.776,
+     "b": 219.1260000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 5,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 1,
+    "text": "Percentage of employees covered by B Corp™ certification",
+    "bbox": {
+     "l": 133.9,
+     "t": 124.59400000000005,
+     "r": 250.963,
+     "b": 141.38700000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 2,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 276.499,
+     "t": 128.58900000000006,
+     "r": 296.65,
+     "b": 136.447,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 3,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 314.75,
+     "t": 128.58900000000006,
+     "r": 334.9,
+     "b": 136.447,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 4,
+    "text": "2025",
+    "bbox": {
+     "l": 350.57,
+     "t": 129.534,
+     "r": 367.906,
+     "b": 136.447,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 5,
+    "text": "95% (b)",
+    "bbox": {
+     "l": 380.651,
+     "t": 128.58900000000006,
+     "r": 403.151,
+     "b": 136.447,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 6,
+    "text": "68.0%",
+    "bbox": {
+     "l": 412.65,
+     "t": 129.534,
+     "r": 433.672,
+     "b": 136.447,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 7,
+    "text": "83.0%",
+    "bbox": {
+     "l": 444.897,
+     "t": 129.534,
+     "r": 465.918,
+     "b": 136.447,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 8,
+    "text": "98.0%",
+    "bbox": {
+     "l": 477.144,
+     "t": 129.534,
+     "r": 498.165,
+     "b": 136.447,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 9,
+    "text": "-",
+    "bbox": {
+     "l": 528.299,
+     "t": 129.534,
+     "r": 530.746,
+     "b": 136.447,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 0,
+    "text": "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "bbox": {
+     "l": 53.638,
+     "t": 145.0540000000001,
+     "r": 124.776,
+     "b": 219.1260000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 5,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 1,
+    "text": "Percentage of employees covered by Dan'Cares",
+    "bbox": {
+     "l": 133.9,
+     "t": 149.3470000000001,
+     "r": 250.963,
+     "b": 166.1400000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 2,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 276.5,
+     "t": 153.33900000000006,
+     "r": 296.65,
+     "b": 161.197,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 3,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 314.75,
+     "t": 153.33900000000006,
+     "r": 334.9,
+     "b": 161.197,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 350.57,
+     "t": 154.28700000000003,
+     "r": 367.906,
+     "b": 161.20000000000005,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 383.975,
+     "t": 154.28700000000003,
+     "r": 403.142,
+     "b": 161.20000000000005,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 6,
+    "text": "98.0%",
+    "bbox": {
+     "l": 412.642,
+     "t": 154.28700000000003,
+     "r": 433.664,
+     "b": 161.20000000000005,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 7,
+    "text": "97.9%",
+    "bbox": {
+     "l": 444.889,
+     "t": 154.28700000000003,
+     "r": 465.911,
+     "b": 161.20000000000005,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 8,
+    "text": "97.8%",
+    "bbox": {
+     "l": 477.15,
+     "t": 154.28700000000003,
+     "r": 498.171,
+     "b": 161.20000000000005,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 0,
+    "text": "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "bbox": {
+     "l": 53.638,
+     "t": 145.0540000000001,
+     "r": 124.776,
+     "b": 219.1260000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 5,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 1,
+    "text": "Percentage of women in senior leadership globally (c)",
+    "bbox": {
+     "l": 133.9,
+     "t": 174.09400000000005,
+     "r": 241.44,
+     "b": 190.88700000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 2,
+    "text": "2022",
+    "bbox": {
+     "l": 279.32,
+     "t": 179.034,
+     "r": 296.656,
+     "b": 185.947,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 3,
+    "text": "42%",
+    "bbox": {
+     "l": 319.828,
+     "t": 179.034,
+     "r": 334.663,
+     "b": 185.947,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 350.57,
+     "t": 179.034,
+     "r": 367.906,
+     "b": 185.947,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 5,
+    "text": "40-60%",
+    "bbox": {
+     "l": 377.208,
+     "t": 179.034,
+     "r": 403.154,
+     "b": 185.947,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 6,
+    "text": "43.0%",
+    "bbox": {
+     "l": 412.649,
+     "t": 179.034,
+     "r": 433.671,
+     "b": 185.947,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 7,
+    "text": "44.0%",
+    "bbox": {
+     "l": 444.896,
+     "t": 179.034,
+     "r": 465.917,
+     "b": 185.947,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 8,
+    "text": "45.5%",
+    "bbox": {
+     "l": 477.15,
+     "t": 179.034,
+     "r": 498.172,
+     "b": 185.947,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 0,
+    "text": "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "bbox": {
+     "l": 53.638,
+     "t": 145.0540000000001,
+     "r": 124.776,
+     "b": 219.1260000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 5,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 1,
+    "text": "Gender pay gap",
+    "bbox": {
+     "l": 133.9,
+     "t": 203.404,
+     "r": 189.182,
+     "b": 210.317,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 2,
+    "text": "2022",
+    "bbox": {
+     "l": 279.318,
+     "t": 203.404,
+     "r": 296.654,
+     "b": 210.317,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 3,
+    "text": "3.2%",
+    "bbox": {
+     "l": 317.98,
+     "t": 203.404,
+     "r": 334.669,
+     "b": 210.317,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 4,
+    "text": "2025",
+    "bbox": {
+     "l": 350.568,
+     "t": 203.404,
+     "r": 367.904,
+     "b": 210.317,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 5,
+    "text": "Closed (d)",
+    "bbox": {
+     "l": 373.346,
+     "t": 202.45900000000006,
+     "r": 403.228,
+     "b": 210.317,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 6,
+    "text": "2.1%",
+    "bbox": {
+     "l": 416.98,
+     "t": 203.404,
+     "r": 433.67,
+     "b": 210.317,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 7,
+    "text": "1.1%",
+    "bbox": {
+     "l": 449.227,
+     "t": 203.404,
+     "r": 465.916,
+     "b": 210.317,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 8,
+    "text": "1.1%",
+    "bbox": {
+     "l": 481.474,
+     "t": 203.404,
+     "r": 498.163,
+     "b": 210.317,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 0,
+    "text": "Make Danone a force for good by fostering a unique, inclusive and diverse culture and empowering Danoners for positive impact",
+    "bbox": {
+     "l": 53.638,
+     "t": 145.0540000000001,
+     "r": 124.776,
+     "b": 219.1260000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 5,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 1,
+    "text": "Inclusion index above peers",
+    "bbox": {
+     "l": 133.9,
+     "t": 227.784,
+     "r": 230.199,
+     "b": 234.6980000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 2,
+    "text": "N/A (e)",
+    "bbox": {
+     "l": 276.423,
+     "t": 226.84000000000003,
+     "r": 296.648,
+     "b": 234.6980000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 3,
+    "text": "N/A (e)",
+    "bbox": {
+     "l": 314.67,
+     "t": 226.84000000000003,
+     "r": 334.898,
+     "b": 234.6980000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 4,
+    "text": "2025",
+    "bbox": {
+     "l": 350.57,
+     "t": 227.784,
+     "r": 367.905,
+     "b": 234.6980000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 5,
+    "text": "Above peers",
+    "bbox": {
+     "l": 381.737,
+     "t": 222.84400000000005,
+     "r": 403.162,
+     "b": 239.63800000000003,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 6,
+    "text": "+2 pts",
+    "bbox": {
+     "l": 412.578,
+     "t": 227.784,
+     "r": 433.911,
+     "b": 234.6980000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 7,
+    "text": "+2 pts",
+    "bbox": {
+     "l": 444.825,
+     "t": 227.784,
+     "r": 466.166,
+     "b": 234.6980000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 8,
+    "text": "+2 pts",
+    "bbox": {
+     "l": 477.072,
+     "t": 227.784,
+     "r": 498.413,
+     "b": 234.6980000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 0,
+    "text": "Equip and empower communities ( i.e. , internal, external) with skills and capabilities of the future to thrive in a fast-changing economy",
+    "bbox": {
+     "l": 53.65,
+     "t": 247.42700000000002,
+     "r": 127.864,
+     "b": 321.499,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 2,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 1,
+    "text": "Percentage of employees with access to future skilling programs",
+    "bbox": {
+     "l": 133.9,
+     "t": 256.21400000000006,
+     "r": 250.134,
+     "b": 273.00800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 2,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 276.499,
+     "t": 260.21000000000004,
+     "r": 296.649,
+     "b": 268.0680000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 3,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 314.75,
+     "t": 260.21000000000004,
+     "r": 334.899,
+     "b": 268.0680000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 4,
+    "text": "2025",
+    "bbox": {
+     "l": 350.57,
+     "t": 261.154,
+     "r": 367.905,
+     "b": 268.0680000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 383.979,
+     "t": 261.154,
+     "r": 403.147,
+     "b": 268.0680000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 6,
+    "text": "N/A (f)",
+    "bbox": {
+     "l": 414.866,
+     "t": 260.21000000000004,
+     "r": 433.898,
+     "b": 268.0680000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 7,
+    "text": "ongoing",
+    "bbox": {
+     "l": 439.53,
+     "t": 261.35300000000007,
+     "r": 466.151,
+     "b": 267.72,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 8,
+    "text": "100%",
+    "bbox": {
+     "l": 479.0,
+     "t": 261.154,
+     "r": 498.167,
+     "b": 268.0680000000001,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 0,
+    "text": "Equip and empower communities ( i.e. , internal, external) with skills and capabilities of the future to thrive in a fast-changing economy",
+    "bbox": {
+     "l": 53.65,
+     "t": 247.42700000000002,
+     "r": 127.864,
+     "b": 321.499,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 2,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 1,
+    "text": "Percentage of key partners with access to future skilling programs (g)",
+    "bbox": {
+     "l": 133.9,
+     "t": 297.09400000000005,
+     "r": 257.69,
+     "b": 313.88800000000003,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 2,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 276.5,
+     "t": 301.09000000000003,
+     "r": 296.649,
+     "b": 308.94800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 3,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 314.749,
+     "t": 301.09000000000003,
+     "r": 334.899,
+     "b": 308.94800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 350.569,
+     "t": 302.03400000000005,
+     "r": 367.905,
+     "b": 308.94800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 383.979,
+     "t": 302.03400000000005,
+     "r": 403.146,
+     "b": 308.94800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 6,
+    "text": "N/A (f)",
+    "bbox": {
+     "l": 414.865,
+     "t": 301.09000000000003,
+     "r": 433.898,
+     "b": 308.94800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 7,
+    "text": "ongoing",
+    "bbox": {
+     "l": 439.529,
+     "t": 302.22300000000007,
+     "r": 466.15,
+     "b": 308.59100000000007,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 8,
+    "text": "15.0%",
+    "bbox": {
+     "l": 477.149,
+     "t": 302.03400000000005,
+     "r": 498.171,
+     "b": 308.94800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 7,
+    "c": 9,
+    "text": "-",
+    "bbox": {
+     "l": 528.297,
+     "t": 302.03400000000005,
+     "r": 530.745,
+     "b": 308.94800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 7,
+    "end_row_offset_idx": 8,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 0,
+    "text": "Champion a renewed social contract by fostering a prosperous",
+    "bbox": {
+     "l": 53.65,
+     "t": 329.617,
+     "r": 128.834,
+     "b": 365.20900000000006,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 1,
+    "text": "Percentage of employees trained on the Danone Human Rights Policy (h)",
+    "bbox": {
+     "l": 133.9,
+     "t": 332.27400000000006,
+     "r": 248.059,
+     "b": 358.94800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 2,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 278.47,
+     "t": 341.21000000000004,
+     "r": 296.649,
+     "b": 349.06800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 3,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 314.749,
+     "t": 341.21000000000004,
+     "r": 334.899,
+     "b": 349.06800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 4,
+    "text": "2025",
+    "bbox": {
+     "l": 350.569,
+     "t": 342.15400000000005,
+     "r": 367.905,
+     "b": 349.06800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 383.979,
+     "t": 342.15400000000005,
+     "r": 403.146,
+     "b": 349.06800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 6,
+    "text": "N/A (i)",
+    "bbox": {
+     "l": 415.238,
+     "t": 341.21000000000004,
+     "r": 433.897,
+     "b": 349.06800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 7,
+    "text": "ongoing",
+    "bbox": {
+     "l": 439.529,
+     "t": 342.35300000000007,
+     "r": 466.15,
+     "b": 348.72,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 8,
+    "text": "96.9% (j)",
+    "bbox": {
+     "l": 471.519,
+     "t": 341.21000000000004,
+     "r": 498.397,
+     "b": 349.06800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 8,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 8,
+    "end_row_offset_idx": 9,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 0,
+    "text": "and inclusive ecosystem, upholding human rights and pursuing social progress",
+    "bbox": {
+     "l": 53.65,
+     "t": 368.09700000000004,
+     "r": 127.45,
+     "b": 413.309,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 1,
+    "text": "Percentage of suppliers (k) to which the Sustainable Sourcing Policy has been deployed (measured in percentage of spend)",
+    "bbox": {
+     "l": 133.899,
+     "t": 372.52000000000004,
+     "r": 253.675,
+     "b": 410.01800000000003,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 2,
+    "text": "2023",
+    "bbox": {
+     "l": 279.318,
+     "t": 388.28400000000005,
+     "r": 296.653,
+     "b": 395.19800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 3,
+    "text": "N/A (a)",
+    "bbox": {
+     "l": 314.749,
+     "t": 387.34000000000003,
+     "r": 334.899,
+     "b": 395.19800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 4,
+    "text": "2030",
+    "bbox": {
+     "l": 350.569,
+     "t": 388.28400000000005,
+     "r": 367.905,
+     "b": 395.19800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 5,
+    "text": "100%",
+    "bbox": {
+     "l": 383.979,
+     "t": 388.28400000000005,
+     "r": 403.146,
+     "b": 395.19800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 5,
+    "end_col_offset_idx": 6,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 6,
+    "text": "N/A (l)",
+    "bbox": {
+     "l": 415.238,
+     "t": 387.34000000000003,
+     "r": 433.897,
+     "b": 395.19800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 6,
+    "end_col_offset_idx": 7,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 7,
+    "text": "10.0%",
+    "bbox": {
+     "l": 444.899,
+     "t": 388.28400000000005,
+     "r": 465.921,
+     "b": 395.19800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 7,
+    "end_col_offset_idx": 8,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 8,
+    "text": "20.0%",
+    "bbox": {
+     "l": 477.146,
+     "t": 388.28400000000005,
+     "r": 498.168,
+     "b": 395.19800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 8,
+    "end_col_offset_idx": 9,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 9,
+    "c": 9,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 9,
+    "end_row_offset_idx": 10,
+    "start_col_offset_idx": 9,
+    "end_col_offset_idx": 10,
+    "row_span": 1,
+    "col_span": 1
+   }
+  ]
+ },
+ "geometry": {
+  "rules": [
+   [
+    0.1500201745911502,
+    0.08371345314163552,
+    0.9156105483409545
+   ],
+   [
+    0.1812032215365433,
+    0.21538950183315775,
+    0.915610648488883
+   ],
+   [
+    0.21238626848193642,
+    0.21538950183315775,
+    0.915610648488883
+   ],
+   [
+    0.2435693154273295,
+    0.21538950183315775,
+    0.915610648488883
+   ],
+   [
+    0.27380742097362337,
+    0.21538950183315775,
+    0.915610648488883
+   ],
+   [
+    0.3049904679190165,
+    0.08371346566012658,
+    0.915610648488883
+   ],
+   [
+    0.35790716704369224,
+    0.21538950183315775,
+    0.915610648488883
+   ],
+   [
+    0.40798902274618826,
+    0.08371346566012658,
+    0.915610648488883
+   ],
+   [
+    0.45901581984778356,
+    0.21538950183315775,
+    0.915610648488883
+   ],
+   [
+    0.5242167379358675,
+    0.08371346566012658,
+    0.9156105483409545
+   ]
+  ],
+  "lines": [
+   {
+    "id": "b29l0",
+    "block": 29,
+    "text": "4",
+    "rect": [
+     0.030747648601749646,
+     0.01081192463292587,
+     0.06828967067255043,
+     0.07945242883698461
+    ]
+   },
+   {
+    "id": "b30l0",
+    "block": 30,
+    "text": "SUSTAINABILITY REPORT",
+    "rect": [
+     0.08307348284150519,
+     0.028331117409353335,
+     0.2972074050580112,
+     0.04666674766750274
+    ]
+   },
+   {
+    "id": "b31l0",
+    "block": 31,
+    "text": "4.2 Sustainability statement – General Disclosures (ESRS 2)",
+    "rect": [
+     0.08307348284150519,
+     0.04850865957893971,
+     0.4486881072031498,
+     0.0618436625291901
+    ]
+   },
+   {
+    "id": "b0l0",
+    "block": 0,
+    "text": "THRIVING PEOPLE & COMMUNITIES",
+    "rect": [
+     0.08371482391640693,
+     0.08404939610416226,
+     0.3960128505815941,
+     0.10738567289509267
+    ]
+   },
+   {
+    "id": "b2l0",
+    "block": 2,
+    "text": "Baseline",
+    "rect": [
+     0.43480349824726106,
+     0.12332044702310777,
+     0.48678372824499067,
+     0.13601894296831102
+    ]
+   },
+   {
+    "id": "b3l0",
+    "block": 3,
+    "text": "Baseline",
+    "rect": [
+     0.49756600474560975,
+     0.12332044702310777,
+     0.5495462347433394,
+     0.13601894296831102
+    ]
+   },
+   {
+    "id": "b4l0",
+    "block": 4,
+    "text": "Target",
+    "rect": [
+     0.5631090183309767,
+     0.12332044702310777,
+     0.6036757895086833,
+     0.13601894296831102
+    ]
+   },
+   {
+    "id": "b5l0",
+    "block": 5,
+    "text": "ESRS",
+    "rect": [
+     0.8546043360648014,
+     0.12332044702310777,
+     0.8830897118133194,
+     0.13601894296831102
+    ]
+   },
+   {
+    "id": "b1l0",
+    "block": 1,
+    "text": "KPI",
+    "rect": [
+     0.21970627814344568,
+     0.13544088921692518,
+     0.24051781887025325,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b2l1",
+    "block": 2,
+    "text": "year",
+    "rect": [
+     0.4592819553762863,
+     0.13544088921692518,
+     0.48674742462090753,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b3l1",
+    "block": 3,
+    "text": "value",
+    "rect": [
+     0.5158641329107224,
+     0.13544088921692518,
+     0.5495341669179545,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l1",
+    "block": 4,
+    "text": "year",
+    "rect": [
+     0.5761982023647129,
+     0.13544088921692518,
+     0.6036515036360207,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l2",
+    "block": 4,
+    "text": "Target",
+    "rect": [
+     0.6209296752232722,
+     0.13544088921692518,
+     0.6614964464009789,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l3",
+    "block": 4,
+    "text": "2023",
+    "rect": [
+     0.6838985866022702,
+     0.13544088921692518,
+     0.7119710524415614,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l4",
+    "block": 4,
+    "text": "2024",
+    "rect": [
+     0.7368138477344887,
+     0.13544088921692518,
+     0.7648863135737798,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b4l5",
+    "block": 4,
+    "text": "2025",
+    "rect": [
+     0.789729108866707,
+     0.13544088921692518,
+     0.8178015747059982,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b5l1",
+    "block": 5,
+    "text": "coverage",
+    "rect": [
+     0.840543767198529,
+     0.13544088921692518,
+     0.8971744163303615,
+     0.14813938516212843
+    ]
+   },
+   {
+    "id": "b7l0",
+    "block": 7,
+    "text": "Percentage of employees covered",
+    "rect": [
+     0.21970627814344568,
+     0.1535789597816238,
+     0.4117857487294483,
+     0.16662066793238162
+    ]
+   },
+   {
+    "id": "b9l0",
+    "block": 9,
+    "text": "N/A (a)",
+    "rect": [
+     0.4536857892793445,
+     0.1598028615237134,
+     0.4867495778013704,
+     0.1728446850237631
+    ]
+   },
+   {
+    "id": "b11l0",
+    "block": 11,
+    "text": "N/A (a)",
+    "rect": [
+     0.516449247183014,
+     0.1598028615237134,
+     0.549511082820434,
+     0.1728446850237631
+    ]
+   },
+   {
+    "id": "b15l0",
+    "block": 15,
+    "text": "95% (b)",
+    "rect": [
+     0.6245808183267505,
+     0.1598028615237134,
+     0.6614993006169413,
+     0.1728446850237631
+    ]
+   },
+   {
+    "id": "b13l0",
+    "block": 13,
+    "text": "2025",
+    "rect": [
+     0.5752235627245004,
+     0.15980297687300526,
+     0.6036682283400812,
+     0.1728446850237631
+    ]
+   },
+   {
+    "id": "b15l1",
+    "block": 15,
+    "text": "68.0%",
+    "rect": [
+     0.6770858735438116,
+     0.15980297687300526,
+     0.7115786227837139,
+     0.1728446850237631
+    ]
+   },
+   {
+    "id": "b15l2",
+    "block": 15,
+    "text": "83.0%",
+    "rect": [
+     0.729997178832854,
+     0.15980297687300526,
+     0.7644899280727563,
+     0.1728446850237631
+    ]
+   },
+   {
+    "id": "b15l3",
+    "block": 15,
+    "text": "98.0%",
+    "rect": [
+     0.7829084841218965,
+     0.15980297687300526,
+     0.8174012333617987,
+     0.1728446850237631
+    ]
+   },
+   {
+    "id": "b15l4",
+    "block": 15,
+    "text": "-",
+    "rect": [
+     0.8668458179577053,
+     0.15980297687300526,
+     0.8708612491511212,
+     0.1728446850237631
+    ]
+   },
+   {
+    "id": "b7l1",
+    "block": 7,
+    "text": "by B Corp™ certification",
+    "rect": [
+     0.21970627814344568,
+     0.16602698435194577,
+     0.3534248688738135,
+     0.17906870211514458
+    ]
+   },
+   {
+    "id": "b6l0",
+    "block": 6,
+    "text": "Make Danone a",
+    "rect": [
+     0.08803740880654816,
+     0.17944741306527592,
+     0.18318287943120784,
+     0.19214590901047918
+    ]
+   },
+   {
+    "id": "b8l0",
+    "block": 8,
+    "text": "Percentage of employees covered",
+    "rect": [
+     0.21970627814344568,
+     0.1847660151149098,
+     0.4117857487294483,
+     0.19780773287810863
+    ]
+   },
+   {
+    "id": "b10l0",
+    "block": 10,
+    "text": "N/A (a)",
+    "rect": [
+     0.45368774216395036,
+     0.19098593730642946,
+     0.4867495778013704,
+     0.20402775119403818
+    ]
+   },
+   {
+    "id": "b12l0",
+    "block": 12,
+    "text": "N/A (a)",
+    "rect": [
+     0.516449247183014,
+     0.19098593730642946,
+     0.549511082820434,
+     0.20402775119403818
+    ]
+   },
+   {
+    "id": "b14l0",
+    "block": 14,
+    "text": "2030",
+    "rect": [
+     0.5752235627245004,
+     0.1909900322062913,
+     0.6036682283400812,
+     0.2040317499694901
+    ]
+   },
+   {
+    "id": "b16l0",
+    "block": 16,
+    "text": "100%",
+    "rect": [
+     0.6300355755486429,
+     0.1909900322062913,
+     0.6614855803507361,
+     0.2040317499694901
+    ]
+   },
+   {
+    "id": "b16l1",
+    "block": 16,
+    "text": "98.0%",
+    "rect": [
+     0.6770734051267127,
+     0.1909900322062913,
+     0.711566154366615,
+     0.2040317499694901
+    ]
+   },
+   {
+    "id": "b16l2",
+    "block": 16,
+    "text": "97.9%",
+    "rect": [
+     0.7299847104157551,
+     0.1909900322062913,
+     0.7644774596556574,
+     0.2040317499694901
+    ]
+   },
+   {
+    "id": "b16l3",
+    "block": 16,
+    "text": "97.8%",
+    "rect": [
+     0.782918498914747,
+     0.1909900322062913,
+     0.8174112481546493,
+     0.2040317499694901
+    ]
+   },
+   {
+    "id": "b6l1",
+    "block": 6,
+    "text": "force for good by",
+    "rect": [
+     0.08803740880654816,
+     0.19156785525909334,
+     0.19299369598834437,
+     0.2042663512042966
+    ]
+   },
+   {
+    "id": "b8l1",
+    "block": 8,
+    "text": "by Dan’Cares",
+    "rect": [
+     0.21970627814344568,
+     0.19721404929767278,
+     0.2932059945745861,
+     0.2102557670608716
+    ]
+   },
+   {
+    "id": "b6l2",
+    "block": 6,
+    "text": "fostering a unique,",
+    "rect": [
+     0.08801312293388565,
+     0.20368829745291075,
+     0.2047350892002577,
+     0.216386793398114
+    ]
+   },
+   {
+    "id": "b6l3",
+    "block": 6,
+    "text": "inclusive and",
+    "rect": [
+     0.08801312293388565,
+     0.21580873964672817,
+     0.1686961310551816,
+     0.22850723559193142
+    ]
+   },
+   {
+    "id": "b17l0",
+    "block": 17,
+    "text": "Percentage of women in senior",
+    "rect": [
+     0.21970625310646355,
+     0.2159451594092609,
+     0.3961604435912286,
+     0.22898687717245972
+    ]
+   },
+   {
+    "id": "b17l2",
+    "block": 17,
+    "text": "2022",
+    "rect": [
+     0.4583148268307116,
+     0.22216917650064238,
+     0.4867594924462924,
+     0.2352108942638412
+    ]
+   },
+   {
+    "id": "b17l3",
+    "block": 17,
+    "text": "42%",
+    "rect": [
+     0.524781304464825,
+     0.22216917650064238,
+     0.5491232599672977,
+     0.2352108942638412
+    ]
+   },
+   {
+    "id": "b17l4",
+    "block": 17,
+    "text": "2030",
+    "rect": [
+     0.5752235126505361,
+     0.22216917650064238,
+     0.6036681782661169,
+     0.2352108942638412
+    ]
+   },
+   {
+    "id": "b17l5",
+    "block": 17,
+    "text": "40-60%",
+    "rect": [
+     0.6189317741235579,
+     0.22216917650064238,
+     0.6615052594186873,
+     0.2352108942638412
+    ]
+   },
+   {
+    "id": "b17l6",
+    "block": 17,
+    "text": "43.0%",
+    "rect": [
+     0.6770843212509198,
+     0.22216917650064238,
+     0.711577070490822,
+     0.2352108942638412
+    ]
+   },
+   {
+    "id": "b17l7",
+    "block": 17,
+    "text": "44.0%",
+    "rect": [
+     0.7299956265399622,
+     0.22216917650064238,
+     0.7644883757798644,
+     0.2352108942638412
+    ]
+   },
+   {
+    "id": "b17l8",
+    "block": 17,
+    "text": "45.5%",
+    "rect": [
+     0.7829194503200678,
+     0.22216917650064238,
+     0.81741219955997,
+     0.2352108942638412
+    ]
+   },
+   {
+    "id": "b6l4",
+    "block": 6,
+    "text": "diverse culture",
+    "rect": [
+     0.08801131401192702,
+     0.22792918184054559,
+     0.1807890685331303,
+     0.24062767778574884
+    ]
+   },
+   {
+    "id": "b17l1",
+    "block": 17,
+    "text": "leadership globally (c)",
+    "rect": [
+     0.21970625310646355,
+     0.22839309746761396,
+     0.3373829984269765,
+     0.2414349113552227
+    ]
+   },
+   {
+    "id": "b6l5",
+    "block": 6,
+    "text": "and empowering",
+    "rect": [
+     0.08802345694825828,
+     0.240049624034363,
+     0.19216499691694602,
+     0.25274811997956625
+    ]
+   },
+   {
+    "id": "b6l6",
+    "block": 6,
+    "text": "Danoners for",
+    "rect": [
+     0.08801033131037855,
+     0.25217006622818045,
+     0.1682695885091869,
+     0.26486856217338367
+    ]
+   },
+   {
+    "id": "b18l0",
+    "block": 18,
+    "text": "Gender pay gap",
+    "rect": [
+     0.21970612792155292,
+     0.2528735431096062,
+     0.3104147886843657,
+     0.26591526087280504
+    ]
+   },
+   {
+    "id": "b18l1",
+    "block": 18,
+    "text": "2022",
+    "rect": [
+     0.4583120226887135,
+     0.2528735431096062,
+     0.48675668830429425,
+     0.26591526087280504
+    ]
+   },
+   {
+    "id": "b18l2",
+    "block": 18,
+    "text": "3.2%",
+    "rect": [
+     0.521748274376081,
+     0.2528735431096062,
+     0.5491329743163627,
+     0.26591526087280504
+    ]
+   },
+   {
+    "id": "b18l3",
+    "block": 18,
+    "text": "2025 Closed (d)",
+    "rect": [
+     0.575220708508538,
+     0.2528735431096062,
+     0.6616253868589294,
+     0.26591526087280504
+    ]
+   },
+   {
+    "id": "b18l4",
+    "block": 18,
+    "text": "2.1%",
+    "rect": [
+     0.6841904677398986,
+     0.2528735431096062,
+     0.7115751176062162,
+     0.26591526087280504
+    ]
+   },
+   {
+    "id": "b18l5",
+    "block": 18,
+    "text": "1.1%",
+    "rect": [
+     0.7371017229549768,
+     0.2528735431096062,
+     0.7644864228952586,
+     0.26591526087280504
+    ]
+   },
+   {
+    "id": "b18l6",
+    "block": 18,
+    "text": "1.1%",
+    "rect": [
+     0.7900130282440192,
+     0.2528735431096062,
+     0.817397728184301,
+     0.26591526087280504
+    ]
+   },
+   {
+    "id": "b6l7",
+    "block": 6,
+    "text": "positive impact",
+    "rect": [
+     0.08801033131037855,
+     0.26429050842199786,
+     0.18290445567147234,
+     0.2769890043672011
+    ]
+   },
+   {
+    "id": "b19l4",
+    "block": 19,
+    "text": "Above",
+    "rect": [
+     0.6263635516020715,
+     0.27736673484835145,
+     0.6615047086050806,
+     0.29040845261155024
+    ]
+   },
+   {
+    "id": "b19l1",
+    "block": 19,
+    "text": "N/A (e)",
+    "rect": [
+     0.45356060436871304,
+     0.2835907327148509,
+     0.48674752476883604,
+     0.2966324697029317
+    ]
+   },
+   {
+    "id": "b19l2",
+    "block": 19,
+    "text": "N/A (e)",
+    "rect": [
+     0.5163175025830654,
+     0.2835907327148509,
+     0.5495089797139354,
+     0.2966324697029317
+    ]
+   },
+   {
+    "id": "b19l0",
+    "block": 19,
+    "text": "Inclusion index above peers",
+    "rect": [
+     0.21970587755173165,
+     0.28359075193973293,
+     0.37771650004221236,
+     0.2966324697029317
+    ]
+   },
+   {
+    "id": "b19l3",
+    "block": 19,
+    "text": "2025",
+    "rect": [
+     0.5752230119108935,
+     0.28359075193973293,
+     0.6036676775264743,
+     0.2966324697029317
+    ]
+   },
+   {
+    "id": "b19l6",
+    "block": 19,
+    "text": "+2 pts",
+    "rect": [
+     0.6769678992840324,
+     0.28359075193973293,
+     0.711971953772918,
+     0.2966324697029317
+    ]
+   },
+   {
+    "id": "b19l7",
+    "block": 19,
+    "text": "+2 pts",
+    "rect": [
+     0.7298792045730749,
+     0.28359075193973293,
+     0.7648956774050951,
+     0.2966324697029317
+    ]
+   },
+   {
+    "id": "b19l8",
+    "block": 19,
+    "text": "+2 pts",
+    "rect": [
+     0.7827904597881531,
+     0.28359075193973293,
+     0.8178069826941375,
+     0.2966324697029317
+    ]
+   },
+   {
+    "id": "b19l5",
+    "block": 19,
+    "text": "peers",
+    "rect": [
+     0.6295185117937706,
+     0.2898147690311144,
+     0.6615171770221795,
+     0.3028564867943132
+    ]
+   },
+   {
+    "id": "b20l0",
+    "block": 20,
+    "text": "Equip and empower",
+    "rect": [
+     0.08802969115680773,
+     0.30842891496073394,
+     0.20980272460451332,
+     0.3211274109059372
+    ]
+   },
+   {
+    "id": "b21l0",
+    "block": 21,
+    "text": "Percentage of employees with",
+    "rect": [
+     0.21970575236682102,
+     0.31941064816997194,
+     0.39026148023245133,
+     0.33245234670828877
+    ]
+   },
+   {
+    "id": "b20l1",
+    "block": 20,
+    "text": "communities (i.e.,",
+    "rect": [
+     0.08802969115680773,
+     0.32054935715455135,
+     0.19722716174060706,
+     0.3332478723246366
+    ]
+   },
+   {
+    "id": "b21l2",
+    "block": 21,
+    "text": "N/A (a)",
+    "rect": [
+     0.4536851383178092,
+     0.32563454991206153,
+     0.4867489268398351,
+     0.33867636379967025
+    ]
+   },
+   {
+    "id": "b21l3",
+    "block": 21,
+    "text": "N/A (a)",
+    "rect": [
+     0.5164485962214788,
+     0.32563454991206153,
+     0.5495103817849345,
+     0.33867636379967025
+    ]
+   },
+   {
+    "id": "b21l6",
+    "block": 21,
+    "text": "N/A (f)",
+    "rect": [
+     0.6807212433485501,
+     0.32563454991206153,
+     0.7119494705629685,
+     0.33867636379967025
+    ]
+   },
+   {
+    "id": "b21l4",
+    "block": 21,
+    "text": "2025",
+    "rect": [
+     0.5752228616890008,
+     0.32563466526135343,
+     0.6036675273045816,
+     0.33867636379967025
+    ]
+   },
+   {
+    "id": "b21l5",
+    "block": 21,
+    "text": "100%",
+    "rect": [
+     0.63004213523796,
+     0.32563466526135343,
+     0.6614920899660889,
+     0.33867636379967025
+    ]
+   },
+   {
+    "id": "b21l8",
+    "block": 21,
+    "text": "100%",
+    "rect": [
+     0.7859534318141327,
+     0.32563466526135343,
+     0.8174034366162258,
+     0.33867636379967025
+    ]
+   },
+   {
+    "id": "b21l7",
+    "block": 21,
+    "text": "ongoing",
+    "rect": [
+     0.7211903202219999,
+     0.32615300652930823,
+     0.764870690496933,
+     0.33816509728828426
+    ]
+   },
+   {
+    "id": "b21l1",
+    "block": 21,
+    "text": "access to future skilling programs",
+    "rect": [
+     0.21970575236682102,
+     0.3318586823527349,
+     0.4104258149712941,
+     0.34490038089105174
+    ]
+   },
+   {
+    "id": "b20l2",
+    "block": 20,
+    "text": "internal, external)",
+    "rect": [
+     0.08802969115680773,
+     0.3326698185732508,
+     0.2004532895540002,
+     0.345368314518454
+    ]
+   },
+   {
+    "id": "b20l3",
+    "block": 20,
+    "text": "with skills and",
+    "rect": [
+     0.08802969115680773,
+     0.3447902607670682,
+     0.17675196783168418,
+     0.3574887567122714
+    ]
+   },
+   {
+    "id": "b20l4",
+    "block": 20,
+    "text": "capabilities of",
+    "rect": [
+     0.08802969115680773,
+     0.3569107029608856,
+     0.1743963758868224,
+     0.36960919890608884
+    ]
+   },
+   {
+    "id": "b20l5",
+    "block": 20,
+    "text": "the future to thrive",
+    "rect": [
+     0.08802969115680773,
+     0.36903114515470303,
+     0.2077871348769267,
+     0.38172964109990626
+    ]
+   },
+   {
+    "id": "b22l0",
+    "block": 22,
+    "text": "Percentage of key partners with",
+    "rect": [
+     0.2197054519230355,
+     0.3709164908807541,
+     0.3995390090702977,
+     0.38395818941907095
+    ]
+   },
+   {
+    "id": "b22l2",
+    "block": 22,
+    "text": "N/A (a)",
+    "rect": [
+     0.45368679075862955,
+     0.3771404310726077,
+     0.4867486263960496,
+     0.39018220651045243
+    ]
+   },
+   {
+    "id": "b22l3",
+    "block": 22,
+    "text": "N/A (a)",
+    "rect": [
+     0.5164481455558004,
+     0.3771404310726077,
+     0.549510081341149,
+     0.39018220651045243
+    ]
+   },
+   {
+    "id": "b22l6",
+    "block": 22,
+    "text": "N/A (f)",
+    "rect": [
+     0.6807207426089076,
+     0.3771404310726077,
+     0.711949170119183,
+     0.39018220651045243
+    ]
+   },
+   {
+    "id": "b22l4",
+    "block": 22,
+    "text": "2030",
+    "rect": [
+     0.5752224110233225,
+     0.3771405079721356,
+     0.6036670766389033,
+     0.39018220651045243
+    ]
+   },
+   {
+    "id": "b22l5",
+    "block": 22,
+    "text": "100%",
+    "rect": [
+     0.6300416845722817,
+     0.3771405079721356,
+     0.6614916893743749,
+     0.39018220651045243
+    ]
+   },
+   {
+    "id": "b22l8",
+    "block": 22,
+    "text": "15.0%",
+    "rect": [
+     0.7829177478052832,
+     0.3771405079721356,
+     0.8174104970451854,
+     0.39018220651045243
+    ]
+   },
+   {
+    "id": "b22l9",
+    "block": 22,
+    "text": "-",
+    "rect": [
+     0.8668426132239931,
+     0.3771405079721356,
+     0.870858044417409,
+     0.39018220651045243
+    ]
+   },
+   {
+    "id": "b22l7",
+    "block": 22,
+    "text": "ongoing",
+    "rect": [
+     0.7211900197782144,
+     0.37764619926774734,
+     0.7648703900531475,
+     0.38965829002672336
+    ]
+   },
+   {
+    "id": "b20l6",
+    "block": 20,
+    "text": "in a fast-changing",
+    "rect": [
+     0.08802969115680773,
+     0.38115158734852045,
+     0.19829204718289387,
+     0.3938500832937237
+    ]
+   },
+   {
+    "id": "b22l1",
+    "block": 22,
+    "text": "access to future skilling programs (g)",
+    "rect": [
+     0.2197054519230355,
+     0.3833644481639892,
+     0.4228240033353266,
+     0.3964062236018339
+    ]
+   },
+   {
+    "id": "b20l7",
+    "block": 20,
+    "text": "economy",
+    "rect": [
+     0.08802969115680773,
+     0.39327202954233786,
+     0.14421115179231242,
+     0.4059705254875411
+    ]
+   },
+   {
+    "id": "b23l0",
+    "block": 23,
+    "text": "Champion",
+    "rect": [
+     0.08802942200924986,
+     0.41198210763303944,
+     0.1504033357672618,
+     0.42468060357824267
+    ]
+   },
+   {
+    "id": "b24l0",
+    "block": 24,
+    "text": "Percentage of employees trained",
+    "rect": [
+     0.2197054519230355,
+     0.4152404944301287,
+     0.40702118599383147,
+     0.4282821929684456
+    ]
+   },
+   {
+    "id": "b23l1",
+    "block": 23,
+    "text": "a renewed social",
+    "rect": [
+     0.08802942200924986,
+     0.42410254982685686,
+     0.19098222484431754,
+     0.43680104577206014
+    ]
+   },
+   {
+    "id": "b25l0",
+    "block": 25,
+    "text": "N/A(a)",
+    "rect": [
+     0.4569192153730275,
+     0.427688259464544,
+     0.4867486263960496,
+     0.4407299580028608
+    ]
+   },
+   {
+    "id": "b25l1",
+    "block": 25,
+    "text": "N/A (a)",
+    "rect": [
+     0.5164481455558004,
+     0.427688259464544,
+     0.549510081341149,
+     0.4407299580028608
+    ]
+   },
+   {
+    "id": "b25l2",
+    "block": 25,
+    "text": "2025",
+    "rect": [
+     0.5752224110233225,
+     0.427688259464544,
+     0.6036670766389033,
+     0.4407299580028608
+    ]
+   },
+   {
+    "id": "b25l3",
+    "block": 25,
+    "text": "100%",
+    "rect": [
+     0.6300416845722817,
+     0.427688259464544,
+     0.6614916893743749,
+     0.4407299580028608
+    ]
+   },
+   {
+    "id": "b25l4",
+    "block": 25,
+    "text": "N/A (i)",
+    "rect": [
+     0.681331795194682,
+     0.427688259464544,
+     0.711948368935755,
+     0.4407299580028608
+    ]
+   },
+   {
+    "id": "b25l5",
+    "block": 25,
+    "text": "ongoing 96.9% (j)",
+    "rect": [
+     0.7211900197782144,
+     0.427688259464544,
+     0.8177812947504759,
+     0.4407299580028608
+    ]
+   },
+   {
+    "id": "b24l1",
+    "block": 24,
+    "text": "on the Danone Human",
+    "rect": [
+     0.2197054519230355,
+     0.4276885286128917,
+     0.3490968008845866,
+     0.4407302271512085
+    ]
+   },
+   {
+    "id": "b23l2",
+    "block": 23,
+    "text": "contract by fostering",
+    "rect": [
+     0.08802942200924986,
+     0.43622299202067427,
+     0.21139309874615794,
+     0.44892148796587755
+    ]
+   },
+   {
+    "id": "b24l2",
+    "block": 24,
+    "text": "Rights Policy (h)",
+    "rect": [
+     0.2197054519230355,
+     0.44013633209707087,
+     0.3031099487052325,
+     0.4531782613339715
+    ]
+   },
+   {
+    "id": "b23l3",
+    "block": 23,
+    "text": "a prosperous",
+    "rect": [
+     0.08802942200924986,
+     0.4483434342144917,
+     0.16819151068042607,
+     0.46104193015969497
+    ]
+   },
+   {
+    "id": "b23l4",
+    "block": 23,
+    "text": "and inclusive",
+    "rect": [
+     0.08802942200924986,
+     0.4604638764083091,
+     0.1687136319056879,
+     0.4731623723535124
+    ]
+   },
+   {
+    "id": "b26l0",
+    "block": 26,
+    "text": "Percentage of suppliers (k) to which",
+    "rect": [
+     0.21970517651623211,
+     0.46713671759440434,
+     0.41623634770920126,
+     0.4801784161327212
+    ]
+   },
+   {
+    "id": "b23l5",
+    "block": 23,
+    "text": "ecosystem,",
+    "rect": [
+     0.08802942200924986,
+     0.4725843186021265,
+     0.15728790496442294,
+     0.4852828145473298
+    ]
+   },
+   {
+    "id": "b26l1",
+    "block": 26,
+    "text": "the Sustainable Sourcing Policy",
+    "rect": [
+     0.21970515147925,
+     0.4795847517771673,
+     0.3957227470696966,
+     0.49262645031548413
+    ]
+   },
+   {
+    "id": "b23l6",
+    "block": 23,
+    "text": "upholding human",
+    "rect": [
+     0.08802942200924986,
+     0.48470472234618,
+     0.1969561238905988,
+     0.49740321829138323
+    ]
+   },
+   {
+    "id": "b27l1",
+    "block": 27,
+    "text": "N/A (a)",
+    "rect": [
+     0.5164472942984082,
+     0.4858086919690209,
+     0.5495096306754708,
+     0.4988504674068656
+    ]
+   },
+   {
+    "id": "b27l4",
+    "block": 27,
+    "text": "N/A (l)",
+    "rect": [
+     0.6813314947508966,
+     0.4858086919690209,
+     0.7119480184180053,
+     0.4988504674068656
+    ]
+   },
+   {
+    "id": "b27l0",
+    "block": 27,
+    "text": "2023",
+    "rect": [
+     0.45831102120942846,
+     0.4858087688685488,
+     0.48675568682500925,
+     0.4988504674068656
+    ]
+   },
+   {
+    "id": "b27l2",
+    "block": 27,
+    "text": "2030",
+    "rect": [
+     0.575222110579537,
+     0.4858087688685488,
+     0.6036667761951178,
+     0.4988504674068656
+    ]
+   },
+   {
+    "id": "b27l3",
+    "block": 27,
+    "text": "100%",
+    "rect": [
+     0.6300412839805677,
+     0.4858087688685488,
+     0.6614912887826608,
+     0.4988504674068656
+    ]
+   },
+   {
+    "id": "b27l5",
+    "block": 27,
+    "text": "10.0%",
+    "rect": [
+     0.7300008843062087,
+     0.4858087688685488,
+     0.764493633546111,
+     0.4988504674068656
+    ]
+   },
+   {
+    "id": "b27l6",
+    "block": 27,
+    "text": "20.0%",
+    "rect": [
+     0.7829121895952511,
+     0.4858087688685488,
+     0.8174048887611891,
+     0.4988504674068656
+    ]
+   },
+   {
+    "id": "b26l2",
+    "block": 26,
+    "text": "has been deployed (measured",
+    "rect": [
+     0.21970515147925,
+     0.4920327859599303,
+     0.3910464897700393,
+     0.5050744844982471
+    ]
+   },
+   {
+    "id": "b23l7",
+    "block": 23,
+    "text": "rights and pursuing",
+    "rect": [
+     0.08802942200924986,
+     0.4968251645399974,
+     0.20912250735561497,
+     0.5095236604852007
+    ]
+   },
+   {
+    "id": "b26l3",
+    "block": 26,
+    "text": "in percentage of spend)",
+    "rect": [
+     0.21970515147925,
+     0.5044808201426932,
+     0.35428413810038806,
+     0.5175225186810101
+    ]
+   },
+   {
+    "id": "b23l8",
+    "block": 23,
+    "text": "social progress",
+    "rect": [
+     0.08802942200924986,
+     0.5089456067338148,
+     0.18028502400896365,
+     0.5216441026790181
+    ]
+   },
+   {
+    "id": "b28l0",
+    "block": 28,
+    "text": "(a) Unable to calculate this data when baseline defined.",
+    "rect": [
+     0.08371340932691679,
+     0.5305127714351474,
+     0.3618525173533827,
+     0.5425248621941234
+    ]
+   },
+   {
+    "id": "b28l1",
+    "block": 28,
+    "text": "(b) Over 95% of employees covered by certification, excluding M&A.",
+    "rect": [
+     0.08371340932691679,
+     0.5432392203587502,
+     0.4195339686250561,
+     0.5552513111177262
+    ]
+   },
+   {
+    "id": "b28l2",
+    "block": 28,
+    "text": "(c) Senior leadership includes executives (excluding Executive Committee) and directors, as per Danone classification.",
+    "rect": [
+     0.08371340932691679,
+     0.5559657077321168,
+     0.6669030825432246,
+     0.5679777984910929
+    ]
+   },
+   {
+    "id": "b28l3",
+    "block": 28,
+    "text": "(d) Closing the gender pay gap equals to a target of +/-3% by 2025. The 2025 data does not include US employees.",
+    "rect": [
+     0.08371340932691679,
+     0.5686921566557195,
+     0.6573008991581465,
+     0.5807042474146955
+    ]
+   },
+   {
+    "id": "b28l4",
+    "block": 28,
+    "text": "(e) Inclusion index introduced in 2023.",
+    "rect": [
+     0.08371340932691679,
+     0.5814186055793222,
+     0.27746664598278115,
+     0.5934306963382983
+    ]
+   },
+   {
+    "id": "b28l5",
+    "block": 28,
+    "text": "(f) Program designed in 2023.",
+    "rect": [
+     0.08371340932691679,
+     0.5941450929526889,
+     0.23825430042716095,
+     0.6061571837116649
+    ]
+   },
+   {
+    "id": "b28l6",
+    "block": 28,
+    "text": "(g) Key partners defined as being 10,000 dairy farmers and workers.",
+    "rect": [
+     0.08371340932691679,
+     0.6068715418762916,
+     0.42481754800015104,
+     0.6188836326352676
+    ]
+   },
+   {
+    "id": "b28l7",
+    "block": 28,
+    "text": "(h) Enabling due diligence to be deployed in Danone operations.",
+    "rect": [
+     0.08371340932691679,
+     0.6195979907998943,
+     0.40584294561496786,
+     0.6316100815588703
+    ]
+   },
+   {
+    "id": "b28l8",
+    "block": 28,
+    "text": "(i) E-learning designed in 2023 and launched in 2024.",
+    "rect": [
+     0.08371340932691679,
+     0.632324478173261,
+     0.3566954498489719,
+     0.644336568932237
+    ]
+   },
+   {
+    "id": "b28l9",
+    "block": 28,
+    "text": "(j) 96.9% completion achieved; remaining gap driven by practical issues leading to some training sessions being postponed.",
+    "rect": [
+     0.08371340932691679,
+     0.6450509655466276,
+     0.7050245417506198,
+     0.6570630947553676
+    ]
+   },
+   {
+    "id": "b28l10",
+    "block": 28,
+    "text": "(k) Suppliers with a direct commercial relationship with Danone (Tier 1), excluding farmers.",
+    "rect": [
+     0.08371340932691679,
+     0.6577774144702303,
+     0.5368610975271574,
+     0.6697895052292063
+    ]
+   },
+   {
+    "id": "b28l11",
+    "block": 28,
+    "text": "(l) Policy launched in 2024.",
+    "rect": [
+     0.08371340932691679,
+     0.670503901843597,
+     0.22303567098961877,
+     0.682515992602573
+    ]
+   },
+   {
+    "id": "b32l0",
+    "block": 32,
+    "text": "198",
+    "rect": [
+     0.03166651210503034,
+     0.9625902252548661,
+     0.06586783087298248,
+     0.980307876487977
+    ]
+   },
+   {
+    "id": "b32l1",
+    "block": 32,
+    "text": "DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025",
+    "rect": [
+     0.08307348284150519,
+     0.9664264351047576,
+     0.4016309490748785,
+     0.9774999671254518
+    ]
+   }
+  ]
+ }
+}

@@ -36,7 +36,7 @@ from typing import Any
 from .layout.geometry import bbox_to_normalized_rect
 from .layout.reading_order import extract_divider_segments
 
-RECONSTRUCTION_VERSION = 2
+RECONSTRUCTION_VERSION = 3
 
 # A y position is a row boundary only when the rule segments sitting on it cover
 # at least this fraction of the table's width. Partial rules stopping at a
@@ -50,6 +50,14 @@ LINE_COLUMN_OVERLAP_MIN = 0.5
 # A column's Docling text must be this well located in the source stream before
 # its geometry is allowed to move anything.
 ALIGN_MATCH_MIN = 0.8
+# A rule segment is visible only when the rendered page differs by more than this
+# many grayscale levels (0-255) between the line and a strip to one side. It is an
+# antialiasing floor, not a tunable: a faint hairline clears it, occluded strokes
+# and butted same-colour fills do not.
+RULE_VISIBILITY_EPSILON = 18.0
+# The above/below sample strips sit this fraction of a median line height off the
+# rule, keeping them in the neighbouring rows rather than on the line itself.
+RULE_VISIBILITY_OFFSET_FRAC = 0.3
 
 
 # Docling and PyMuPDF disagree on typography for identical source glyphs
@@ -520,18 +528,299 @@ def _corridor_is_clear(lines: list[dict[str, Any]], y: float) -> bool:
     )
 
 
+def _owner_component(owner: dict[str, Any], aligned: dict[tuple[int, int], Any]) -> int | None:
+    """The single source block an owner's aligned tokens all land in, else None.
+
+    A block shared by every aligned token identifies the PDF text component that
+    owner is a fragment of. Mixed blocks (owner spanning components) or no
+    alignment yield ``None`` and never merge.
+    """
+    located = aligned.get(owner["key"]) or []
+    blocks = {int(line["block"]) for line in located if line is not None}
+    return next(iter(blocks)) if len(blocks) == 1 else None
+
+
+def _merge_fragment_owners(
+    owners: list[dict[str, Any]],
+    aligned: dict[tuple[int, int], list[dict[str, Any] | None]],
+    owner_primary: dict[tuple[int, int], int],
+    source_components: dict[int, list[dict[str, Any]]],
+    effective_dividing: dict[int, list[bool]],
+    bands: list[tuple[float, float]],
+    row_band: dict[int, int],
+    header_rows: int,
+    source_verified: dict[int, list[dict[str, Any]]],
+) -> tuple[list[dict[str, Any]], list[list[tuple[int, int]]]]:
+    """R2: fold Docling fragments of one source component into one spanning owner.
+
+    Docling can emit a single visual label (one PDF text block) as several
+    stacked owners. In the Docling-only (untrusted) path those fragments would
+    each pin to their own raw band. A PDF text block is indivisible, so
+    same-column owners whose aligned tokens all map to one source component are
+    fragments of one cell and become a single owner spanning the component's
+    bands -- text concatenated in source order, wording still Docling's.
+
+    Merges only when every precondition holds, else the owners are returned
+    unchanged (today's behaviour): (a) the component crosses no effective cut for
+    its column, (b) no band in its range is owned by a different component, and
+    (c) each fragment has a non-empty alignment. ``aligned`` and ``owner_primary``
+    are extended in place for the merged owner. Returns the owner list to feed
+    the Docling-only path plus the merged fragment-key groups for the audit.
+    """
+    num_bands = len(bands)
+    merged: dict[tuple[int, int], dict[str, Any]] = {}
+    dropped: set[tuple[int, int]] = set()
+    merged_keys: list[list[tuple[int, int]]] = []
+
+    for column in sorted({owner["col_start"] for owner in owners}):
+        if column in source_verified:
+            continue
+        regions = _regions(effective_dividing.get(column, []), num_bands)
+        column_owners = [
+            owner
+            for owner in owners
+            if owner["col_start"] == column
+            and owner["col_end"] - owner["col_start"] == 1
+            and owner["row_start"] >= header_rows
+            and owner["text"].strip()
+        ]
+        home_band = {owner["key"]: row_band.get(owner["row_start"]) for owner in column_owners}
+        component = {owner["key"]: _owner_component(owner, aligned) for owner in column_owners}
+        components_by_block = {
+            component_entry["block"]: component_entry
+            for component_entry in source_components.get(column, [])
+        }
+
+        by_block: dict[int, list[dict[str, Any]]] = {}
+        for owner in column_owners:
+            block = component[owner["key"]]
+            if block is not None:
+                by_block.setdefault(block, []).append(owner)
+
+        for block, fragments in by_block.items():
+            if len(fragments) < 2:
+                continue
+            source_component = components_by_block.get(block)
+            if source_component is None:
+                continue
+            # (c) every fragment is actually located in the source stream.
+            if any(
+                not [line for line in (aligned.get(fragment["key"]) or []) if line is not None]
+                for fragment in fragments
+            ):
+                continue
+            component_bands = sorted(
+                {
+                    _band_of((line["rect"][1] + line["rect"][3]) / 2, bands)
+                    for line in source_component["lines"]
+                }
+            )
+            if not component_bands:
+                continue
+            low, high = component_bands[0], component_bands[-1]
+            # A spanning cell covers more than one band. A component whose lines
+            # all fall in one band cannot span; two owners collapsed onto it are
+            # a slot collision for R4 to separate, never a merge.
+            if high <= low:
+                continue
+            # (a) the whole component sits in one region: no rule cuts through it.
+            if len({regions[band] for band in range(low, high + 1)}) != 1:
+                continue
+            # (b) no band it covers is owned by a fragment of another component.
+            if any(
+                home_band[owner["key"]] is not None
+                and low <= home_band[owner["key"]] <= high
+                and component[owner["key"]] not in (None, block)
+                for owner in column_owners
+            ):
+                continue
+
+            fragments.sort(key=lambda owner: (owner["row_start"], owner["col_start"]))
+            key = fragments[0]["key"]
+            merged[key] = {
+                "key": key,
+                "row_start": min(fragment["row_start"] for fragment in fragments),
+                "row_end": max(fragment["row_end"] for fragment in fragments),
+                "col_start": column,
+                "col_end": column + 1,
+                "text": " ".join(fragment["text"] for fragment in fragments),
+                "column_header": False,
+                "bboxes": [bbox for fragment in fragments for bbox in fragment["bboxes"]],
+                "positions": [pos for fragment in fragments for pos in fragment["positions"]],
+            }
+            aligned[key] = [
+                line for fragment in fragments for line in (aligned.get(fragment["key"]) or [])
+            ]
+            primaries = [
+                owner_primary[fragment["key"]]
+                for fragment in fragments
+                if fragment["key"] in owner_primary
+            ]
+            if primaries:
+                owner_primary[key] = int(_median([float(value) for value in primaries]))
+            merged_keys.append([fragment["key"] for fragment in fragments])
+            dropped.update(fragment["key"] for fragment in fragments if fragment["key"] != key)
+
+    prepare_owners = [
+        merged.get(owner["key"], owner) for owner in owners if owner["key"] not in dropped
+    ]
+    return prepare_owners, merged_keys
+
+
+def filter_visible_rule_segments(
+    rules: list[list[float]],
+    page_image: Any,
+    median_line_height: float,
+) -> tuple[list[list[float]] | None, list[dict[str, Any]]]:
+    """R1: keep only rule segments the rendered page actually draws.
+
+    A vector rule is row-boundary evidence for a column only where the page shows
+    a visible line there. For each normalized ``[y, x0, x1]`` segment this samples
+    the rendered image along the line and in a strip just above and below; the
+    segment survives when some pair of samples differs by more than a fixed
+    perceptual floor. That uniformly rejects white-on-fill strokes, strokes a
+    later fill occluded, and butted same-colour rectangles, while a faint hairline
+    -- which still differs from the paper beside it -- survives.
+
+    Returns ``(kept, dropped)``. ``kept is None`` means the image was unreadable,
+    which the caller treats as "no filtering" rather than as a reason to drop a
+    rule (audit ``rule_visibility: "unchecked"``).
+    """
+    try:
+        from PIL import Image
+    except Exception:
+        return None, []
+    try:
+        image = page_image if hasattr(page_image, "convert") else Image.open(page_image)
+        gray = image.convert("L")
+    except Exception:
+        return None, []
+
+    width, height = gray.size
+    if width < 2 or height < 2:
+        return None, []
+    pixels = gray.load()
+    offset = max(2, round(max(median_line_height, 0.0) * height * RULE_VISIBILITY_OFFSET_FRAC))
+
+    def sample(x: float, y: float) -> float:
+        xi = min(max(int(round(x)), 0), width - 1)
+        yi = min(max(int(round(y)), 0), height - 1)
+        return float(pixels[xi, yi])
+
+    kept: list[list[float]] = []
+    dropped: list[dict[str, Any]] = []
+    for rule in rules:
+        try:
+            y, x0, x1 = float(rule[0]), float(rule[1]), float(rule[2])
+        except (TypeError, ValueError, IndexError):
+            continue
+        if x1 <= x0:
+            kept.append(list(rule))
+            continue
+        y_px = y * height
+        count = min(64, max(8, int((x1 - x0) * width) // 6))
+        diffs: list[float] = []
+        for index in range(count):
+            x_px = (x0 + (x1 - x0) * (index + 0.5) / count) * width
+            up = sample(x_px, y_px - offset)
+            down = sample(x_px, y_px + offset)
+            on = [sample(x_px, y_px + delta) for delta in (-1, 0, 1)]
+            dark, light = min(on), max(on)
+            diffs.append(
+                max(
+                    abs(dark - up), abs(dark - down),
+                    abs(light - up), abs(light - down), abs(up - down),
+                )
+            )
+        median_diff = _median(diffs) if diffs else 0.0
+        if median_diff > RULE_VISIBILITY_EPSILON:
+            kept.append(list(rule))
+        else:
+            dropped.append({"y": round(y, 6), "x0": round(x0, 6), "x1": round(x1, 6),
+                            "contrast": round(median_diff, 2)})
+    return kept, dropped
+
+
+def _slot_collisions(segments: list[dict[str, Any]]) -> dict[int, list[int]]:
+    """Columns whose ``(band, column)`` slots glue tokens of different rows.
+
+    A slot with two or more non-empty segments is a legal sub-row merge only
+    when every segment's home band is that slot's band. Any other segment was
+    displaced there; its column is returned so the caller can rebuild it.
+    """
+    by_slot: dict[tuple[int, int], list[dict[str, Any]]] = {}
+    for segment in segments:
+        if not segment["text"].strip():
+            continue
+        by_slot.setdefault((segment["band_low"], segment["col_start"]), []).append(segment)
+    collisions: dict[int, list[int]] = {}
+    for (band, column), group in by_slot.items():
+        if len(group) < 2:
+            continue
+        if any(segment.get("home_band") != band for segment in group):
+            collisions.setdefault(column, []).append(band)
+    return collisions
+
+
+def _raw_home_segments(
+    owners: list[dict[str, Any]],
+    column: int,
+    row_band: dict[int, int],
+    header_rows: int,
+    page_size: tuple[float, float],
+) -> list[dict[str, Any]]:
+    """One segment per raw body owner in a column, pinned to its home band.
+
+    The collision fallback: no growth, no merge, no alignment -- Docling's own
+    rows placed at the row-level band evidence, which never glues two rows.
+    """
+    segments: list[dict[str, Any]] = []
+    for owner in owners:
+        if owner["row_start"] < header_rows or owner["col_start"] != column:
+            continue
+        if owner["col_end"] - owner["col_start"] != 1 or not owner["text"].strip():
+            continue
+        band = row_band.get(owner["row_start"])
+        if band is None:
+            continue
+        rects = [
+            rect
+            for rect in (bbox_to_normalized_rect(bbox, page_size) for bbox in owner["bboxes"])
+            if rect
+        ]
+        segments.append(
+            {
+                "owner": owner["key"],
+                "col_start": column,
+                "col_end": column + 1,
+                "band_low": band,
+                "band_high": band,
+                "home_band": band,
+                "text": owner["text"],
+                "order": (band, 0),
+                "top": min((rect[1] for rect in rects), default=0.0),
+                "rect": _union(rects),
+                "column_header": owner["column_header"],
+            }
+        )
+    return segments
+
+
 def reconcile_table_grid(
     grid: dict[str, Any] | None,
     table_bbox: list[float] | None,
     geometry: dict[str, Any] | None,
     page_size: tuple[float, float],
+    page_image_path: Any | None = None,
 ) -> dict[str, Any]:
     """Rebuild a Docling grid's body rows from the page's rule bands.
 
     Returns ``{"status", "grid", "audit"}``. ``unchanged`` hands back the exact
     input grid (valid tables must stay byte-identical), ``repaired`` a grid whose
     rows follow the source rules, and ``abstained`` the untouched input grid when
-    the evidence cannot justify either.
+    the evidence cannot justify either. A ``page_image_path`` enables the R1
+    visible-rule filter; without it every extracted rule is trusted (today's
+    behaviour, audit ``rule_visibility: "unchecked"``).
     """
     audit: dict[str, Any] = {"version": RECONSTRUCTION_VERSION}
     if not grid or not table_bbox or not geometry:
@@ -542,7 +831,25 @@ def reconcile_table_grid(
     if not rows or num_cols < 1 or header_rows >= len(rows):
         return {"status": "unchanged", "grid": grid, "audit": {**audit, "reason": "no_body"}}
 
-    boundaries = _boundaries(geometry.get("rules") or [], table_bbox)
+    # R1: a rule only bounds rows where the rendered page draws a visible line.
+    rules = geometry.get("rules") or []
+    audit["rule_visibility"] = "unchecked"
+    if page_image_path is not None:
+        table_lines = [
+            line
+            for line in (geometry.get("lines") or [])
+            if table_bbox[1] <= (line["rect"][1] + line["rect"][3]) / 2 <= table_bbox[3]
+        ]
+        heights = [line["rect"][3] - line["rect"][1] for line in table_lines]
+        kept, dropped = filter_visible_rule_segments(
+            rules, page_image_path, _median(heights) if heights else 0.0
+        )
+        if kept is not None:
+            rules = kept
+            audit["rule_visibility"] = "checked"
+            audit["dropped_invisible_rules"] = dropped
+
+    boundaries = _boundaries(rules, table_bbox)
     audit["boundaries"] = [round(boundary["y"], 6) for boundary in boundaries]
     if len(boundaries) < 2:
         return {"status": "unchanged", "grid": grid, "audit": {**audit, "reason": "no_rule_bands"}}
@@ -751,6 +1058,7 @@ def reconcile_table_grid(
                     "col_end": column + 1,
                     "band_low": min(region_bands),
                     "band_high": max(region_bands),
+                    "home_band": min(region_bands),
                     "text": " ".join(component["text"] for component in component_group),
                     "order": (min(region_bands), 0),
                     "top": min(rect[1] for rect in rects),
@@ -761,8 +1069,25 @@ def reconcile_table_grid(
 
     # Untrusted columns retain the former Docling-only construction. They may
     # use source geometry to place existing text, but never receive PDF text.
+    # First fold each source component's Docling fragments into one owner (R2),
+    # so a label split across raw rows becomes one cell spanning its bands.
+    prepare_owners, merged_fragments = _merge_fragment_owners(
+        owners,
+        aligned,
+        owner_primary,
+        source_components,
+        effective_dividing,
+        bands,
+        row_band,
+        header_rows,
+        source_verified,
+    )
+    audit["merged_fragments"] = [
+        [list(key) for key in group] for group in merged_fragments
+    ]
+
     prepared: list[dict[str, Any]] = []
-    for owner in owners:
+    for owner in prepare_owners:
         if owner["row_start"] < header_rows:
             continue
         column = owner["col_start"]
@@ -858,6 +1183,7 @@ def reconcile_table_grid(
                     "col_end": owner["col_end"],
                     "band_low": low,
                     "band_high": high,
+                    "home_band": row_band.get(owner["row_start"], group["band"]),
                     "text": " ".join(group["tokens"]),
                     "order": (group["band"], index),
                     "top": min((rect[1] for rect in rects), default=0.0),
@@ -865,6 +1191,29 @@ def reconcile_table_grid(
                     "column_header": owner["column_header"],
                 }
             )
+
+    # R4: a slot join is legal only when its segments share a home band -- two
+    # sub-rows of one visual row. A segment whose home band differs from the slot
+    # it landed in was displaced by permissive alignment onto a neighbour's row;
+    # rebuild that whole column from raw owners at their home bands, no growth or
+    # merge, then re-check. A column that still collides forces abstention.
+    collisions = _slot_collisions(segments)
+    if collisions:
+        for column in collisions:
+            segments = [segment for segment in segments if segment["col_start"] != column]
+            segments.extend(
+                _raw_home_segments(prepare_owners, column, row_band, header_rows, page_size)
+            )
+        audit["slot_collisions"] = {
+            str(column): sorted(bands) for column, bands in sorted(collisions.items())
+        }
+        residual = _slot_collisions(segments)
+        if residual:
+            audit["reason"] = "slot_collision"
+            audit["unresolved_collisions"] = {
+                str(column): sorted(bands) for column, bands in sorted(residual.items())
+            }
+            return {"status": "abstained", "grid": grid, "audit": audit}
 
     used_bands = sorted(
         {
@@ -1151,6 +1500,18 @@ def render_reconstruction_overlay(
                     width=3,
                 )
 
+        # Rules R1 dropped as invisible: drawn as dashed magenta so a reviewer
+        # sees exactly where a vector rule was present but the page shows no line.
+        for dropped in audit.get("dropped_invisible_rules") or []:
+            y = float(dropped.get("y", -1.0))
+            if not top <= y <= bottom:
+                continue
+            x0 = max(float(dropped.get("x0", left)), left) * width
+            x1 = min(float(dropped.get("x1", right)), right) * width
+            for start in range(int(x0), int(x1), 12):
+                draw.line((start, y * height, min(start + 6, x1), y * height),
+                          fill="#d633ff", width=2)
+
         # Raw cells whose row the repair changed.
         for cell in (stats.get("grid_raw") or {}).get("cells", []):
             box = cell.get("bbox")
@@ -1185,6 +1546,7 @@ def render_reconstruction_overlay(
 __all__ = [
     "RECONSTRUCTION_VERSION",
     "extract_table_page_geometry",
+    "filter_visible_rule_segments",
     "reconcile_table_grid",
     "render_reconstruction_overlay",
 ]

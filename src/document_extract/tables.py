@@ -72,6 +72,12 @@ TABLE_MERGE_MIN_ANCHOR = 0.9
 TABLE_REGIONS_MAX_PER_PAGE = 3
 TABLE_NUMERIC_COVERAGE_MIN = 0.9
 TABLE_WORD_COVERAGE_MIN = 0.8
+# A VLM transcription of a grid-backed crop may add symbols but never delete
+# source prose: it must carry at least this fraction of the accepted grid's
+# distinctive body words (runs of >=3 letters). One value for all documents;
+# the slack absorbs VLM typo drift, not dropped descriptions.
+WORD_COVERAGE_MIN = 0.85
+_DISTINCTIVE_WORD_RE = re.compile(r"[^\W\d_]{3,}", re.UNICODE)
 
 # Deterministic grid-shape normalization (title/detail + regular tables).
 GRID_MIN_RECORDS = 2
@@ -952,6 +958,7 @@ def build_table_candidates(
     picture_records: dict[int, PictureRecord],
     layout_map: dict[str, Any],
     page_geometry: dict[str, Any] | None = None,
+    page_image_path: Any | None = None,
 ) -> list[TableCandidate]:
     candidates: list[TableCandidate] = []
     blocks = layout_map.get("blocks", [])
@@ -971,7 +978,7 @@ def build_table_candidates(
             # first-stage evidence and the accepted ``grid`` is what every later
             # stage normalizes, renders, and associates symbols against.
             reconciled = reconcile_table_grid(
-                grid, block.get("bbox"), page_geometry, page_size
+                grid, block.get("bbox"), page_geometry, page_size, page_image_path
             )
             candidate_stats["grid"] = reconciled["grid"]
             candidate_stats["reconstruction_version"] = RECONSTRUCTION_VERSION
@@ -987,6 +994,30 @@ def build_table_candidates(
                 "first_row": list(block["first_row"]),
             })
         sectioned = block.get("_sectioned_table") or {}
+        # R5: once the grid is repaired, the accepted grid -- not grid_raw -- is
+        # authoritative for classification too. The prepare-time split was read
+        # off the raw grid, whose invented rows can make a title/detail table
+        # (page 190) look sectioned; recompute the split from the accepted grid
+        # so it flows to the deterministic renderer that carries the full text.
+        if candidate_stats.get("reconstruction", {}).get("status") == "repaired":
+            accepted = candidate_stats.get("grid") or {}
+            recomputed = sp.split_sectioned_grid(
+                accepted.get("rows") or [],
+                header_rows=int(accepted.get("header_rows") or 0),
+            )
+            sectioned = (
+                {
+                    "markdown": sp.render_sectioned_tables(recomputed),
+                    "split": recomputed,
+                    "section_titles": recomputed["section_titles"],
+                    "section_qualifiers": recomputed["section_qualifiers"],
+                    "section_kinds": recomputed["section_kinds"],
+                    "data_row_count": recomputed["data_row_count"],
+                    "source_row_count": len(accepted.get("rows") or []),
+                }
+                if recomputed
+                else {}
+            )
         if sectioned.get("markdown"):
             # A section-banded table (page 154 / page 43): pre-split into labeled
             # subtables deterministically. This wins over the KPI check — a
@@ -1389,6 +1420,20 @@ def word_tokens(text: str) -> set[str]:
     return {token.lower() for token in WORD_TOKEN_RE.findall(text or "")}
 
 
+def _distinctive_words(text: str) -> set[str]:
+    """Lowercased runs of >=3 letters -- the words a transcription must keep."""
+    return {match.lower() for match in _DISTINCTIVE_WORD_RE.findall(text or "")}
+
+
+def _grid_body_distinctive_words(grid: dict[str, Any]) -> set[str]:
+    header_rows = int(grid.get("header_rows") or 0)
+    words: set[str] = set()
+    for row in (grid.get("rows") or [])[header_rows:]:
+        for cell in row:
+            words |= _distinctive_words(str(cell))
+    return words
+
+
 def _grid_expected_shape(grid: dict[str, Any]) -> tuple[int, list[str], int, int]:
     """(num_cols, flat header labels, min logical records, raw body rows) for a grid.
 
@@ -1465,6 +1510,17 @@ def verify_region_table(
         if min_records and not (min_records <= body_rows <= max(raw_body, min_records)):
             stats["fail"] = "record_count_mismatch"
             return False, stats
+        # R5: the grid is the source of truth for this crop. A VLM answer that
+        # keeps the numbers but drops the descriptions (page 190's label-only
+        # re-transcription) must be rejected -- source prose is never optional.
+        source_body_words = _grid_body_distinctive_words(grid)
+        if source_body_words:
+            present = source_body_words & _distinctive_words(markdown)
+            coverage = len(present) / len(source_body_words)
+            stats["word_coverage"] = round(coverage, 3)
+            if coverage < WORD_COVERAGE_MIN:
+                stats["fail"] = "word_coverage_low"
+                return False, stats
 
     source_numbers = set().union(*(numeric_tokens(text) for text in cell_texts)) if cell_texts else set()
     table_numbers = numeric_tokens(markdown)
