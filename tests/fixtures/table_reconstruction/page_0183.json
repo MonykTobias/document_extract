@@ -1,0 +1,1492 @@
+{
+ "note": "Frozen from a real Docling run; source PDF is external and not committed.",
+ "source_pdf": "danoneurdaccessible.pdf",
+ "physical_page": 183,
+ "printed_footer": 181,
+ "page_size": [
+  609.4500122070312,
+  793.7000122070312
+ ],
+ "table_bbox": [
+  0.083,
+  0.09,
+  0.919,
+  0.67
+ ],
+ "raw_grid": {
+  "rows": [
+   [
+    "Stakeholder Group",
+    "",
+    "Engagement channels",
+    "Example initiatives",
+    "ESRS coverage"
+   ],
+   [
+    "Civil Society and Other Organizations",
+    "Industry Bodies",
+    "■ Strategic partnerships ■ Co-design of projects",
+    "■ Contribution to international climate efforts and regenerative landscape initiatives under coalitions such as the COP28 Action Agenda lead by the World Business Council for Sustainable Development, of which Danone is a member. ■ Participation in water-focused platforms, including, the Water Resilience Coalition to support sustainable water governance and collective watershed preservation. ■ Engagement in the Consumer Goods Forum Plastic Waste Coalition to pursue voluntary and transparent initiatives to improve plastic collection and recycling, and work in partnership with the Human Rights Coalition.",
+    ""
+   ],
+   [
+    "Civil Society and Other Organizations",
+    "Non- Governmental Organizations (NGOs)",
+    "■ Regular consultations ■ Participation in multi- stakeholder coalitions ■ Danone Ethics Line (DEL)",
+    "■ Contribution to the Business Coalition for a Global Plastics Treaty in collaboration with the WWF to advocate for a legally binding UN agreement on plastic pollution. ■ Partnership with the Ellen MacArthur Foundation, including renewed signatory of the Global Commitments and active member of the Business Coalition for a Global Plastics Treaty. ■ Consultation of NGOs such as the Earthworm Foundation and the Fair Labor Association to inform human rights risk assessments and/or mitigation plans. ■ Methane leadership through pre-competitive collaborations",
+    ""
+   ],
+   [
+    "Civil Society and Other Organizations",
+    "Academia and Scientific Bodies",
+    "■ Joint research initiatives ■ Participation in scientific networks ■ Expertise sharing ■ Open-source platforms ■ Collaboration on socially oriented projects",
+    "■ Research on ecosystem dependencies and high-impact commodities using tools such as the WWF Biodiversity Risk Filter and State of Nature indicators to support water and biodiversity programs. ■ Development of water stewardship practices through a long-standing network of hydrogeologists and agronomists focused on water processing and treatment, such as the Ramsar Convention on Wetlands whose aim is to facilitate and promote the sustainable conservation and wise use of wetlands as ecosystems. ■ Collaboration with universities to co-develop social impact projects and gather insights on community needs across",
+    ""
+   ],
+   [
+    "Civil Society and Other Organizations",
+    "",
+    "■ Danone Ethics Line (DEL)",
+    "the value chain.",
+    ""
+   ]
+  ],
+  "num_cols": 5,
+  "header_rows": 1,
+  "cells": [
+   {
+    "r": 0,
+    "c": 0,
+    "text": "Stakeholder Group",
+    "bbox": {
+     "l": 50.366076156496995,
+     "t": 83.19483888149261,
+     "r": 122.14773178100586,
+     "b": 92.59788197278976,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 2,
+    "text": "Engagement channels",
+    "bbox": {
+     "l": 167.30301916599274,
+     "t": 83.11900202929974,
+     "r": 251.68262898921967,
+     "b": 93.19525633752346,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 3,
+    "text": "Example initiatives",
+    "bbox": {
+     "l": 282.8935918211937,
+     "t": 82.45322798192501,
+     "r": 354.20796751976013,
+     "b": 92.32836683094501,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 4,
+    "text": "ESRS coverage",
+    "bbox": {
+     "l": 519.0928238630295,
+     "t": 73.41970854252577,
+     "r": 551.6275900602341,
+     "b": 90.64749625325203,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 0,
+    "text": "Civil Society and Other Organizations",
+    "bbox": {
+     "l": 50.98983738571405,
+     "t": 301.3295991420746,
+     "r": 102.07995980978012,
+     "b": 329.349454164505,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 4,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 1,
+    "text": "Industry Bodies",
+    "bbox": {
+     "l": 108.28867085278034,
+     "t": 146.81357991695404,
+     "r": 139.720299243927,
+     "b": 166.13673102855682,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 2,
+    "text": "■ Strategic partnerships ■ Co-design of projects",
+    "bbox": {
+     "l": 163.20303156971931,
+     "t": 116.17998820543289,
+     "r": 265.1035088300705,
+     "b": 233.23750686645508,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 3,
+    "text": "■ Contribution to international climate efforts and regenerative landscape initiatives under coalitions such as the COP28 Action Agenda lead by the World Business Council for Sustainable Development, of which Danone is a member. ■ Participation in water-focused platforms, including, the Water Resilience Coalition to support sustainable water governance and collective watershed preservation. ■ Engagement in the Consumer Goods Forum Plastic Waste Coalition to pursue voluntary and transparent initiatives to improve plastic collection and recycling, and work in partnership with the Human Rights Coalition.",
+    "bbox": {
+     "l": 283.66633355617523,
+     "t": 97.21189510822296,
+     "r": 504.8871797323227,
+     "b": 220.30397427082062,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 0,
+    "text": "Civil Society and Other Organizations",
+    "bbox": {
+     "l": 50.98983738571405,
+     "t": 301.3295991420746,
+     "r": 102.07995980978012,
+     "b": 329.349454164505,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 4,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 1,
+    "text": "Non- Governmental Organizations (NGOs)",
+    "bbox": {
+     "l": 108.62217895686626,
+     "t": 285.547226190567,
+     "r": 158.1807118654251,
+     "b": 325.8408100605011,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 2,
+    "text": "■ Regular consultations ■ Participation in multi- stakeholder coalitions ■ Danone Ethics Line (DEL)",
+    "bbox": {
+     "l": 166.3629648089409,
+     "t": 235.40600000000006,
+     "r": 263.63163501024246,
+     "b": 333.67036056518555,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 3,
+    "text": "■ Contribution to the Business Coalition for a Global Plastics Treaty in collaboration with the WWF to advocate for a legally binding UN agreement on plastic pollution. ■ Partnership with the Ellen MacArthur Foundation, including renewed signatory of the Global Commitments and active member of the Business Coalition for a Global Plastics Treaty. ■ Consultation of NGOs such as the Earthworm Foundation and the Fair Labor Association to inform human rights risk assessments and/or mitigation plans. ■ Methane leadership through pre-competitive collaborations",
+    "bbox": {
+     "l": 277.56228029727936,
+     "t": 225.3595359325409,
+     "r": 506.1107748746872,
+     "b": 325.66400000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 0,
+    "text": "Civil Society and Other Organizations",
+    "bbox": {
+     "l": 50.98983738571405,
+     "t": 301.3295991420746,
+     "r": 102.07995980978012,
+     "b": 329.349454164505,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 4,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 1,
+    "text": "Academia and Scientific Bodies",
+    "bbox": {
+     "l": 106.0621765255928,
+     "t": 443.71560168266296,
+     "r": 157.261024415493,
+     "b": 480.0690348148346,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 2,
+    "text": "■ Joint research initiatives ■ Participation in scientific networks ■ Expertise sharing ■ Open-source platforms ■ Collaboration on socially oriented projects",
+    "bbox": {
+     "l": 166.3629648089409,
+     "t": 414.97297716140747,
+     "r": 265.2882245182991,
+     "b": 503.244900226593,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 3,
+    "text": "■ Research on ecosystem dependencies and high-impact commodities using tools such as the WWF Biodiversity Risk Filter and State of Nature indicators to support water and biodiversity programs. ■ Development of water stewardship practices through a long-standing network of hydrogeologists and agronomists focused on water processing and treatment, such as the Ramsar Convention on Wetlands whose aim is to facilitate and promote the sustainable conservation and wise use of wetlands as ecosystems. ■ Collaboration with universities to co-develop social impact projects and gather insights on community needs across",
+    "bbox": {
+     "l": 277.2866886854172,
+     "t": 388.0716724395752,
+     "r": 505.9954434633255,
+     "b": 521.750497341156,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 0,
+    "text": "Civil Society and Other Organizations",
+    "bbox": {
+     "l": 50.98983738571405,
+     "t": 301.3295991420746,
+     "r": 102.07995980978012,
+     "b": 329.349454164505,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 4,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 2,
+    "text": "■ Danone Ethics Line (DEL)",
+    "bbox": {
+     "l": 167.20066785812378,
+     "t": 495.4772324562073,
+     "r": 267.27103412151337,
+     "b": 519.9778599739075,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 3,
+    "text": "the value chain.",
+    "bbox": {
+     "l": 282.28763073682785,
+     "t": 497.52632689476013,
+     "r": 489.21666860580444,
+     "b": 529.8531324863434,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   }
+  ]
+ },
+ "geometry": {
+  "rules": [
+   [
+    0.11952901192334871,
+    0.08371524328585754,
+    0.9156148547018802
+   ],
+   [
+    0.2707196357792279,
+    0.17724241727455625,
+    0.270769603781746
+   ],
+   [
+    0.2707196357792279,
+    0.45905456950461526,
+    0.9156148547018802
+   ],
+   [
+    0.49089098176935203,
+    0.17724241727455625,
+    0.9156148547018802
+   ],
+   [
+    0.667594946501383,
+    0.08371524328585754,
+    0.9156148547018802
+   ]
+  ],
+  "lines": [
+   {
+    "id": "b28l0",
+    "block": 28,
+    "text": "SUSTAINABILITY REPORT",
+    "rect": [
+     0.7029145751189081,
+     0.028329877404465603,
+     0.917048672594289,
+     0.04666552208127649
+    ]
+   },
+   {
+    "id": "b29l0",
+    "block": 29,
+    "text": "4.2 Sustainability statement – General Disclosures (ESRS 2)",
+    "rect": [
+     0.55159731439309,
+     0.048507424380272474,
+     0.9172121140136095,
+     0.06184243694296385
+    ]
+   },
+   {
+    "id": "b1l0",
+    "block": 1,
+    "text": "ESRS",
+    "rect": [
+     0.8669335475430758,
+     0.09283055319751697,
+     0.895418923291594,
+     0.10552904914272022
+    ]
+   },
+   {
+    "id": "b0l0",
+    "block": 0,
+    "text": "Stakeholder Group",
+    "rect": [
+     0.08803035463683406,
+     0.10495099539133439,
+     0.20381737113890927,
+     0.11764949133653764
+    ]
+   },
+   {
+    "id": "b0l1",
+    "block": 0,
+    "text": "Engagement channels",
+    "rect": [
+     0.2750793196630743,
+     0.10495099539133439,
+     0.41108296064116306,
+     0.11764949133653764
+    ]
+   },
+   {
+    "id": "b0l2",
+    "block": 0,
+    "text": "Example initiatives",
+    "rect": [
+     0.4633667890841562,
+     0.10495099539133439,
+     0.5808415610698563,
+     0.11764949133653764
+    ]
+   },
+   {
+    "id": "b1l1",
+    "block": 1,
+    "text": "coverage",
+    "rect": [
+     0.8528729786768036,
+     0.10495099539133439,
+     0.9094794921578664,
+     0.11764949133653764
+    ]
+   },
+   {
+    "id": "b9l0",
+    "block": 9,
+    "text": "■ Contribution to international climate efforts and regenerative",
+    "rect": [
+     0.46336989366993986,
+     0.12329754057622816,
+     0.8275394084602367,
+     0.1372740393883996
+    ]
+   },
+   {
+    "id": "b9l1",
+    "block": 9,
+    "text": "landscape initiatives under coalitions such as the COP28 Action",
+    "rect": [
+     0.48197552604952776,
+     0.1357454978594632,
+     0.8376777838545315,
+     0.14878727329730795
+    ]
+   },
+   {
+    "id": "b9l2",
+    "block": 9,
+    "text": "Agenda lead by the World Business Council for Sustainable",
+    "rect": [
+     0.48197552604952776,
+     0.14819353204222616,
+     0.8142209357441877,
+     0.16123523058054298
+    ]
+   },
+   {
+    "id": "b9l3",
+    "block": 9,
+    "text": "Development, of which Danone is a member.",
+    "rect": [
+     0.48197552604952776,
+     0.1606415662249891,
+     0.7357579380502941,
+     0.17368327437574693
+    ]
+   },
+   {
+    "id": "b10l0",
+    "block": 10,
+    "text": "■ Participation in water-focused platforms, including, the Water",
+    "rect": [
+     0.46336989366993986,
+     0.17687189407612947,
+     0.8277764085330441,
+     0.1908484025007419
+    ]
+   },
+   {
+    "id": "b3l0",
+    "block": 3,
+    "text": "Industry",
+    "rect": [
+     0.18155451166918657,
+     0.18309591116751092,
+     0.22859235376574738,
+     0.19613762893070977
+    ]
+   },
+   {
+    "id": "b10l1",
+    "block": 10,
+    "text": "Resilience Coalition to support sustainable water governance",
+    "rect": [
+     0.48197552604952776,
+     0.1893199282588924,
+     0.8263422401228855,
+     0.20236164602209122
+    ]
+   },
+   {
+    "id": "b3l1",
+    "block": 3,
+    "text": "Bodies",
+    "rect": [
+     0.18155451166918657,
+     0.1955439453502739,
+     0.21990056512474576,
+     0.2085856631134727
+    ]
+   },
+   {
+    "id": "b10l2",
+    "block": 10,
+    "text": "and collective watershed preservation.",
+    "rect": [
+     0.48197552604952776,
+     0.20176796244165537,
+     0.6989832181114725,
+     0.2148096802048542
+    ]
+   },
+   {
+    "id": "b11l0",
+    "block": 11,
+    "text": "■ Engagement in the Consumer Goods Forum Plastic Waste",
+    "rect": [
+     0.46336989366993986,
+     0.21799829990523673,
+     0.8097567416831402,
+     0.23197480832984915
+    ]
+   },
+   {
+    "id": "b30l0",
+    "block": 30,
+    "text": "—",
+    "rect": [
+     0.9580305068616854,
+     0.22847459174232876,
+     0.9919200651282009,
+     0.26324844291913374
+    ]
+   },
+   {
+    "id": "b11l1",
+    "block": 11,
+    "text": "Coalition to pursue voluntary and transparent initiatives",
+    "rect": [
+     0.48197552604952776,
+     0.23044625718847175,
+     0.7962388744414375,
+     0.24348805185119848
+    ]
+   },
+   {
+    "id": "b30l1",
+    "block": 30,
+    "text": "—",
+    "rect": [
+     0.9580305068616854,
+     0.23603789101199088,
+     0.9919200651282009,
+     0.2708117421887959
+    ]
+   },
+   {
+    "id": "b11l2",
+    "block": 11,
+    "text": "to improve plastic collection and recycling, and work",
+    "rect": [
+     0.48197552604952776,
+     0.2428942913712347,
+     0.7763615636656906,
+     0.25593600913443354
+    ]
+   },
+   {
+    "id": "b30l2",
+    "block": 30,
+    "text": "—",
+    "rect": [
+     0.9580305068616854,
+     0.24360119028165297,
+     0.9919200651282009,
+     0.278375041458458
+    ]
+   },
+   {
+    "id": "b11l3",
+    "block": 11,
+    "text": "in partnership with the Human Rights Coalition.",
+    "rect": [
+     0.48197552604952776,
+     0.25534232555399766,
+     0.7498620712654662,
+     0.26838404331719645
+    ]
+   },
+   {
+    "id": "b4l0",
+    "block": 4,
+    "text": "■ Strategic partnerships",
+    "rect": [
+     0.2750814728435372,
+     0.26073329005940565,
+     0.4190007560167123,
+     0.2747097984840181
+    ]
+   },
+   {
+    "id": "b13l0",
+    "block": 13,
+    "text": "■ Contribution to the Business Coalition for a Global Plastics",
+    "rect": [
+     0.46337009396579687,
+     0.27407789583820524,
+     0.8099192817711041,
+     0.2880544042628177
+    ]
+   },
+   {
+    "id": "b5l0",
+    "block": 5,
+    "text": "■ Co-design of projects",
+    "rect": [
+     0.2750814728435372,
+     0.276963627522987,
+     0.4140500683559686,
+     0.29094013594759943
+    ]
+   },
+   {
+    "id": "b13l1",
+    "block": 13,
+    "text": "Treaty in collaboration with the WWF to advocate for a legally",
+    "rect": [
+     0.48197572634538477,
+     0.2865259300209682,
+     0.8261681830231434,
+     0.299567647784167
+    ]
+   },
+   {
+    "id": "b6l0",
+    "block": 6,
+    "text": "■ Regular consultations",
+    "rect": [
+     0.2750814728435372,
+     0.29319396498656836,
+     0.41625727862625883,
+     0.30717047341118076
+    ]
+   },
+   {
+    "id": "b13l2",
+    "block": 13,
+    "text": "binding UN agreement on plastic pollution.",
+    "rect": [
+     0.48197587656727753,
+     0.2989739642037311,
+     0.7256464523748029,
+     0.31201568196692997
+    ]
+   },
+   {
+    "id": "b40l0",
+    "block": 40,
+    "text": "1",
+    "rect": [
+     0.9683512516337883,
+     0.30567769977516884,
+     0.9837355758190424,
+     0.33313390722425695
+    ]
+   },
+   {
+    "id": "b7l0",
+    "block": 7,
+    "text": "■ Participation in multi-",
+    "rect": [
+     0.2750814728435372,
+     0.3094243024501497,
+     0.4141248287845977,
+     0.32340081087476213
+    ]
+   },
+   {
+    "id": "b14l0",
+    "block": 14,
+    "text": "■ Partnership with the Ellen MacArthur Foundation, including",
+    "rect": [
+     0.46337024418768963,
+     0.3152043016673125,
+     0.8159797837385603,
+     0.3291808100919249
+    ]
+   },
+   {
+    "id": "b7l1",
+    "block": 7,
+    "text": "stakeholder coalitions",
+    "rect": [
+     0.2936871052231251,
+     0.32187225973338474,
+     0.4172423837250002,
+     0.3349140543961115
+    ]
+   },
+   {
+    "id": "b14l1",
+    "block": 14,
+    "text": "renewed signatory of the Global Commitments and active",
+    "rect": [
+     0.48197587656727753,
+     0.3276522781754295,
+     0.8072505397722977,
+     0.34069405361327426
+    ]
+   },
+   {
+    "id": "b8l0",
+    "block": 8,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.2750814478065551,
+     0.338102616421848,
+     0.4340273518013458,
+     0.3520791056215785
+    ]
+   },
+   {
+    "id": "b14l2",
+    "block": 14,
+    "text": "member of the Business Coalition for a Global Plastics Treaty.",
+    "rect": [
+     0.48197587656727753,
+     0.3401003123581925,
+     0.8280260773188076,
+     0.3531420108965093
+    ]
+   },
+   {
+    "id": "b12l0",
+    "block": 12,
+    "text": "Non-",
+    "rect": [
+     0.18155467440957038,
+     0.35633061137200983,
+     0.20943817362626335,
+     0.3693723099103267
+    ]
+   },
+   {
+    "id": "b15l0",
+    "block": 15,
+    "text": "■ Consultation of NGOs such as the Earthworm Foundation",
+    "rect": [
+     0.46337024418768963,
+     0.35633061137200983,
+     0.8060160663315784,
+     0.3703071005717403
+    ]
+   },
+   {
+    "id": "b12l1",
+    "block": 12,
+    "text": "Governmental",
+    "rect": [
+     0.18155467440957038,
+     0.3687786455547728,
+     0.2622871493483024,
+     0.3818203440930896
+    ]
+   },
+   {
+    "id": "b15l1",
+    "block": 15,
+    "text": "and the Fair Labor Association to inform human rights risk",
+    "rect": [
+     0.48197587656727753,
+     0.3687786455547728,
+     0.810904487017774,
+     0.3818203440930896
+    ]
+   },
+   {
+    "id": "b41l0",
+    "block": 41,
+    "text": "2",
+    "rect": [
+     0.9683512516337883,
+     0.36994378875207523,
+     0.9837355758190424,
+     0.39739999620116334
+    ]
+   },
+   {
+    "id": "b2l0",
+    "block": 2,
+    "text": "Civil Society",
+    "rect": [
+     0.08802756301332698,
+     0.37531260619344187,
+     0.15355877166162138,
+     0.3883543047317587
+    ]
+   },
+   {
+    "id": "b12l2",
+    "block": 12,
+    "text": "Organizations",
+    "rect": [
+     0.18155467440957038,
+     0.38122667973753577,
+     0.2607408152582179,
+     0.3942683782758526
+    ]
+   },
+   {
+    "id": "b15l2",
+    "block": 15,
+    "text": "assessments and/or mitigation plans.",
+    "rect": [
+     0.48197587656727753,
+     0.38122667973753577,
+     0.693022763924593,
+     0.3942683782758526
+    ]
+   },
+   {
+    "id": "b2l1",
+    "block": 2,
+    "text": "and Other",
+    "rect": [
+     0.08802756301332698,
+     0.3877510663849786,
+     0.14587710006450527,
+     0.40080233891452166
+    ]
+   },
+   {
+    "id": "b12l3",
+    "block": 12,
+    "text": "(NGOs)",
+    "rect": [
+     0.18155467440957038,
+     0.39367471392029874,
+     0.2220331401513175,
+     0.40671641245861556
+    ]
+   },
+   {
+    "id": "b16l0",
+    "block": 16,
+    "text": "■ Methane leadership through pre-competitive collaborations",
+    "rect": [
+     0.46337024418768963,
+     0.39745697875135316,
+     0.8200325701093084,
+     0.4114334679510836
+    ]
+   },
+   {
+    "id": "b2l2",
+    "block": 2,
+    "text": "Organizations",
+    "rect": [
+     0.08802756301332698,
+     0.40019910056774155,
+     0.1672137163804656,
+     0.4132407991060584
+    ]
+   },
+   {
+    "id": "b16l1",
+    "block": 16,
+    "text": "such as the Dairy Methane Action Alliance (DMAA) and active",
+    "rect": [
+     0.48197587656727753,
+     0.4099050129341161,
+     0.8230005040445242,
+     0.42294671147243296
+    ]
+   },
+   {
+    "id": "b16l2",
+    "block": 16,
+    "text": "participation in the Global Methane Hub’s Enteric Fermentation",
+    "rect": [
+     0.48197587656727753,
+     0.42235304711687904,
+     0.8386508712018522,
+     0.4353947456551959
+    ]
+   },
+   {
+    "id": "b42l0",
+    "block": 42,
+    "text": "3",
+    "rect": [
+     0.9683512516337883,
+     0.4342098777289816,
+     0.9837355758190424,
+     0.4616660851780697
+    ]
+   },
+   {
+    "id": "b16l3",
+    "block": 16,
+    "text": "R&D Accelerator, driving innovative solutions toward",
+    "rect": [
+     0.48197587656727753,
+     0.434801081299642,
+     0.7780825557430882,
+     0.44784277983795884
+    ]
+   },
+   {
+    "id": "b16l4",
+    "block": 16,
+    "text": "commercialization for dairy farmers worldwide.",
+    "rect": [
+     0.48197587656727753,
+     0.447249115482405,
+     0.7474806035995769,
+     0.4602908140207218
+    ]
+   },
+   {
+    "id": "b17l0",
+    "block": 17,
+    "text": "■ Participation, co-funding and Board membership in L3F",
+    "rect": [
+     0.46337024418768963,
+     0.4634794144962224,
+     0.7946181805144379,
+     0.4774559036959528
+    ]
+   },
+   {
+    "id": "b17l1",
+    "block": 17,
+    "text": "Livelihoods Fund.",
+    "rect": [
+     0.48197587656727753,
+     0.4759274486789853,
+     0.580204169578885,
+     0.48896914721730217
+    ]
+   },
+   {
+    "id": "b25l0",
+    "block": 25,
+    "text": "■ Research on ecosystem dependencies and high-impact",
+    "rect": [
+     0.4633735490693303,
+     0.4949648880600487,
+     0.7936237115843813,
+     0.5089413772597792
+    ]
+   },
+   {
+    "id": "b43l0",
+    "block": 43,
+    "text": "4",
+    "rect": [
+     0.9683512516337883,
+     0.498475966705888,
+     0.9837355758190424,
+     0.5259321741549761
+    ]
+   },
+   {
+    "id": "b25l1",
+    "block": 25,
+    "text": "commodities using tools such as the WWF Biodiversity Risk",
+    "rect": [
+     0.4819791814489182,
+     0.5074129222428116,
+     0.813725804385658,
+     0.5204546207811285
+    ]
+   },
+   {
+    "id": "b25l2",
+    "block": 25,
+    "text": "Filter and State of Nature indicators to support water",
+    "rect": [
+     0.48197913137495396,
+     0.5198609564255746,
+     0.7808044262179665,
+     0.5329026549638914
+    ]
+   },
+   {
+    "id": "b19l0",
+    "block": 19,
+    "text": "■ Joint research initiatives",
+    "rect": [
+     0.27508490291008847,
+     0.5204258988074498,
+     0.4274964049397365,
+     0.5343928140159541
+    ]
+   },
+   {
+    "id": "b25l3",
+    "block": 25,
+    "text": "and biodiversity programs.",
+    "rect": [
+     0.48197913137495396,
+     0.5323089906083376,
+     0.6334804139194004,
+     0.5453506891466544
+    ]
+   },
+   {
+    "id": "b20l0",
+    "block": 20,
+    "text": "■ Participation in scientific",
+    "rect": [
+     0.27508490291008847,
+     0.5366561978212672,
+     0.43030224945266654,
+     0.5506231130297714
+    ]
+   },
+   {
+    "id": "b26l0",
+    "block": 26,
+    "text": "■ Development of water stewardship practices through a",
+    "rect": [
+     0.46337349899536606,
+     0.5485392896221549,
+     0.7930126089246425,
+     0.5625157788218854
+    ]
+   },
+   {
+    "id": "b20l1",
+    "block": 20,
+    "text": "networks",
+    "rect": [
+     0.29369053528967637,
+     0.5490946580128039,
+     0.34569152094558875,
+     0.562145930542347
+    ]
+   },
+   {
+    "id": "b18l0",
+    "block": 18,
+    "text": "Academia",
+    "rect": [
+     0.1815579542542289,
+     0.560987285355154,
+     0.23683860930981152,
+     0.5740289838934708
+    ]
+   },
+   {
+    "id": "b26l1",
+    "block": 26,
+    "text": "long‑standing network of hydrogeologists and agronomists",
+    "rect": [
+     0.48197913137495396,
+     0.560987285355154,
+     0.8182275539198951,
+     0.5740290223432347
+    ]
+   },
+   {
+    "id": "b44l0",
+    "block": 44,
+    "text": "5",
+    "rect": [
+     0.9683512516337883,
+     0.5627420556827943,
+     0.9837355758190424,
+     0.5901982631318825
+    ]
+   },
+   {
+    "id": "b21l0",
+    "block": 21,
+    "text": "■ Expertise sharing",
+    "rect": [
+     0.2750850781689634,
+     0.5653249570266213,
+     0.3919189785231766,
+     0.5793014462263517
+    ]
+   },
+   {
+    "id": "b18l1",
+    "block": 18,
+    "text": "and Scientific",
+    "rect": [
+     0.1815579542542289,
+     0.5734353195379169,
+     0.25613012981474936,
+     0.5864770180762338
+    ]
+   },
+   {
+    "id": "b26l2",
+    "block": 26,
+    "text": "focused on water processing and treatment, such as",
+    "rect": [
+     0.48197913137495396,
+     0.5734353195379169,
+     0.7783227104756436,
+     0.5864770180762338
+    ]
+   },
+   {
+    "id": "b22l0",
+    "block": 22,
+    "text": "■ Open-source platforms",
+    "rect": [
+     0.2750850781689634,
+     0.5815456820492124,
+     0.42505244496645994,
+     0.5955317452401692
+    ]
+   },
+   {
+    "id": "b18l2",
+    "block": 18,
+    "text": "Bodies",
+    "rect": [
+     0.1815579542542289,
+     0.5858833537206798,
+     0.21990402022827918,
+     0.5989250522589967
+    ]
+   },
+   {
+    "id": "b26l3",
+    "block": 26,
+    "text": "the Ramsar Convention on Wetlands whose aim is to facilitate",
+    "rect": [
+     0.48197913137495396,
+     0.5858833537206798,
+     0.8295258426221371,
+     0.5989250522589967
+    ]
+   },
+   {
+    "id": "b23l0",
+    "block": 23,
+    "text": "■ Collaboration on socially",
+    "rect": [
+     0.2750850781689634,
+     0.5977759810630299,
+     0.43129997319039953,
+     0.6117620442539865
+    ]
+   },
+   {
+    "id": "b26l4",
+    "block": 26,
+    "text": "and promote the sustainable conservation and wise use",
+    "rect": [
+     0.48197913137495396,
+     0.5983313879034428,
+     0.7978137506911459,
+     0.6113730864417597
+    ]
+   },
+   {
+    "id": "b23l1",
+    "block": 23,
+    "text": "oriented projects",
+    "rect": [
+     0.2936907105485513,
+     0.610233589237019,
+     0.3905472273094588,
+     0.6232753262250998
+    ]
+   },
+   {
+    "id": "b26l5",
+    "block": 26,
+    "text": "of wetlands as ecosystems.",
+    "rect": [
+     0.48197913137495396,
+     0.6107794220862057,
+     0.6349394190158283,
+     0.6238211206245226
+    ]
+   },
+   {
+    "id": "b24l0",
+    "block": 24,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.2750850781689634,
+     0.6264543527093741,
+     0.43403100720073623,
+     0.6404308419091046
+    ]
+   },
+   {
+    "id": "b45l0",
+    "block": 45,
+    "text": "6",
+    "rect": [
+     0.9683512516337883,
+     0.6270081446597008,
+     0.9837355758190424,
+     0.6544643521087888
+    ]
+   },
+   {
+    "id": "b27l0",
+    "block": 27,
+    "text": "■ Collaboration with universities to co-develop social impact",
+    "rect": [
+     0.46337349899536606,
+     0.6270097211000232,
+     0.8088751895424732,
+     0.6409862102997536
+    ]
+   },
+   {
+    "id": "b27l1",
+    "block": 27,
+    "text": "projects and gather insights on community needs across",
+    "rect": [
+     0.48197913137495396,
+     0.6394577168330221,
+     0.8027270080636107,
+     0.6524994153713389
+    ]
+   },
+   {
+    "id": "b27l2",
+    "block": 27,
+    "text": "the value chain.",
+    "rect": [
+     0.48197913137495396,
+     0.6519057510157851,
+     0.5701440097167526,
+     0.6649474495541019
+    ]
+   },
+   {
+    "id": "b37l0",
+    "block": 37,
+    "text": "7",
+    "rect": [
+     0.9683512516337883,
+     0.6912742336366071,
+     0.9837355758190424,
+     0.7187304410856952
+    ]
+   },
+   {
+    "id": "b38l0",
+    "block": 38,
+    "text": "A",
+    "rect": [
+     0.966513537145718,
+     0.7555403226135136,
+     0.9855733904550411,
+     0.7829965300626016
+    ]
+   },
+   {
+    "id": "b39l1",
+    "block": 39,
+    "text": "181",
+    "rect": [
+     0.9341729668893923,
+     0.9625895331591149,
+     0.9683742856573445,
+     0.9803071843922258
+    ]
+   },
+   {
+    "id": "b39l0",
+    "block": 39,
+    "text": "DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025",
+    "rect": [
+     0.5983773632031875,
+     0.9664257430090062,
+     0.9169352049912927,
+     0.9774992750297005
+    ]
+   }
+  ]
+ },
+ "visual_values_blanked": [
+  [
+   1,
+   4,
+   "ALL"
+  ],
+  [
+   2,
+   4,
+   "ALL"
+  ],
+  [
+   3,
+   4,
+   "ALL"
+  ]
+ ]
+}

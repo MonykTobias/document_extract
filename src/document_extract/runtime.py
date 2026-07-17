@@ -321,8 +321,8 @@ def clear_downstream_artifacts(page_dir: Path, stage: str) -> None:
     groups: dict[str, tuple[str, ...]] = {
         "picture_triage": ("image_summaries.jsonl",),
         "picture_extract": ("image_summaries.jsonl",),
-        "table_detect": ("table_candidates.json", "table_candidates_overlay.png", "visual_candidates.json"),
-        "table_extract": ("table_candidates.json", "table_candidates_overlay.png", "table_candidates", "visual_candidates.json"),
+        "table_detect": ("table_candidates.json", "table_candidates_overlay.png", "table_reconstruction.json", "table_reconstruction_overlay.png", "visual_candidates.json"),
+        "table_extract": ("table_candidates.json", "table_candidates_overlay.png", "table_candidates", "table_reconstruction.json", "table_reconstruction_overlay.png", "visual_candidates.json"),
         "page_refine": ("page_vlm.md", "page_repair.md", "docling_final.md"),
         "page_repair": ("page_repair.md", "docling_final.md"),
         "finalize": ("docling_final.md", "image_summaries.jsonl"),

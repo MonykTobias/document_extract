@@ -37,6 +37,7 @@ from .llm import ollama as ollama_client
 from .markdown import postprocess as sp
 from .markdown.formatting import normalize_pipe_tables
 from .models import PictureRecord, TableCandidate
+from .table_reconstruction import RECONSTRUCTION_VERSION, reconcile_table_grid
 # Accessed via the module so apply_detection_config's runtime overrides of the
 # picture thresholds are visible here; a from-import would freeze the defaults.
 from . import pictures
@@ -950,6 +951,7 @@ def build_table_candidates(
     page_size: tuple[float, float],
     picture_records: dict[int, PictureRecord],
     layout_map: dict[str, Any],
+    page_geometry: dict[str, Any] | None = None,
 ) -> list[TableCandidate]:
     candidates: list[TableCandidate] = []
     blocks = layout_map.get("blocks", [])
@@ -963,7 +965,22 @@ def build_table_candidates(
         # and symbol placement all read from it.
         grid = block.get("_table_grid")
         if grid:
-            candidate_stats["grid"] = grid
+            # Docling infers row boundaries from local text fragments and can
+            # invent rows the page's own rules do not support. Reconcile before
+            # anything downstream copies the grid; ``grid_raw`` stays as
+            # first-stage evidence and the accepted ``grid`` is what every later
+            # stage normalizes, renders, and associates symbols against.
+            reconciled = reconcile_table_grid(
+                grid, block.get("bbox"), page_geometry, page_size
+            )
+            candidate_stats["grid"] = reconciled["grid"]
+            candidate_stats["reconstruction_version"] = RECONSTRUCTION_VERSION
+            candidate_stats["reconstruction"] = {
+                "status": reconciled["status"],
+                **reconciled["audit"],
+            }
+            if reconciled["status"] != "unchanged":
+                candidate_stats["grid_raw"] = grid
         if block.get("headerless") and block.get("first_row"):
             candidate_stats.update({
                 "headerless": True,
@@ -1141,6 +1158,12 @@ def render_deterministic_docling_table(
         or stats.get("kpi_panel")
         or (existing_format and not resumable_deterministic)
     ):
+        return False
+    # An abstained grid is one the source geometry contradicts but could not
+    # uniquely repair. Rendering it here would stamp "verified" on a structure
+    # we know is wrong and splice it over the VLM's attempt; leave it for
+    # refinement and the diagnostics sidecar instead.
+    if (stats.get("reconstruction") or {}).get("status") == "abstained":
         return False
     normalized = normalize_table_grid(stats.get("grid"))
     if normalized is None:

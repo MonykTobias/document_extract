@@ -1,0 +1,2089 @@
+{
+ "note": "Frozen from a real Docling run; source PDF is external and not committed.",
+ "source_pdf": "danoneurdaccessible.pdf",
+ "physical_page": 185,
+ "printed_footer": 183,
+ "page_size": [
+  609.4500122070312,
+  793.7000122070312
+ ],
+ "table_bbox": [
+  0.081,
+  0.091,
+  0.917,
+  0.755
+ ],
+ "raw_grid": {
+  "rows": [
+   [
+    "Stakeholder Group",
+    "",
+    "Engagement channels",
+    "Example initiatives",
+    "ESRS coverage"
+   ],
+   [
+    "Workers in the value chain",
+    "Farmers and Agricultural Partners",
+    "■ Long-term contractual partnerships (Cost Performance Model Contracts) ■ Co-development of projects ■ Direct financial support and training sessions ■ Danone Ethics Line (DEL)",
+    "■ Engagement with farmers, including smallholders, in the Regenerative Agriculture Program, which protects biodiversity and supports the transition towards more resilient agricultural models. ■ Establishment of long-term CPM contracts to enhance visibility on food and milk pricing and improve financial resilience. ■ Launch of the Danone Milk Academy to equip dairy farmer partners with the knowledge and tools they need to adapt and thrive as modern, resilient businesses. ■ Engagement with strategic partners such as Corteva and Zoetis as part of the Partner for Growth program. Agricultural",
+    ""
+   ],
+   [
+    "",
+    "Suppliers and Sub- Contractors",
+    "■ Environmental and social risk assessments ■ Human rights due diligence ■ Third-party audits ■ Co-developed action plans",
+    "sustainability is one of the identified pillars of collaboration under the Partner for Growth. ■ Implementation of the RESPECT program to assess and monitor suppliers' environmental and social performance through third-party audits. ■ Collaboration with key suppliers to co-develop circular packaging solutions, involving internal coordination across procurement, R&I, and operations teams and guided investments with partners for manufacture of recycled materials for incorporation in Danone products.",
+    ""
+   ],
+   [
+    "Consumers and Patients",
+    "Consumers and patients including end consumers, healthcare institutions and retailers",
+    "workshops ■ Danone Ethics Line (DEL) ■ Local contact centers and consumer feedback channels ■ Educational campaigns ■ Co-development initiatives",
+    "(RTDD) to support supply chain transparency and better working conditions for truck drivers. ■ Incorporation of decarbonization plans through Danone's dairy ingredients Supplier Engagement Program. ■ Engagement through local contact centers, surveys, and ethical channels to co-develop quality and food safety strategies",
+    ""
+   ],
+   [
+    "",
+    "",
+    "■ Specialized medical sessions ■ Danone Ethics Line (DEL)",
+    "aligned with the standards and methodologies. ■ Collaboration with consumers, patients and other stakeholders through 360° reviews and consultations to shape the 'Health through Food' ambition. ■ Joint development of circular packaging initiatives such as reuse and return systems with retail and hospitality clients.",
+    ""
+   ],
+   [
+    "Financial",
+    "Shareholders, Investors, Other financial stakeholders (analysts, regulators)",
+    "■ Annual Shareholders' Meeting ■ Investor communications and events ■ Regular exchanges with investors and financial analysts",
+    "■ Participation in non-financial ratings and ESG rankings to support transparency and continuous improvement in sustainability performance. Dialogue with investors through analyst presentations, roadshows and publication calls to respond to financial and sustainability-related topics.",
+    ""
+   ],
+   [
+    "Community and Stakeholders",
+    "",
+    "■ Impact investment partnerships ■ Regulatory and voluntary publications",
+    "■ ■ Organization of the Annual Shareholders' Meeting, including open Q&A sessions with management and responses to written questions from shareholders.",
+    ""
+   ]
+  ],
+  "num_cols": 5,
+  "header_rows": 1,
+  "cells": [
+   {
+    "r": 0,
+    "c": 0,
+    "text": "Stakeholder Group",
+    "bbox": {
+     "l": 49.78604482114315,
+     "t": 83.14110679924488,
+     "r": 119.75765997171402,
+     "b": 92.16230823844671,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 2,
+    "text": "Engagement channels",
+    "bbox": {
+     "l": 167.19202706217766,
+     "t": 83.3987372815609,
+     "r": 254.35621106624603,
+     "b": 92.72877018898726,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 3,
+    "text": "Example initiatives",
+    "bbox": {
+     "l": 282.4799915552139,
+     "t": 83.56762985885143,
+     "r": 355.3789278268814,
+     "b": 92.39938176050782,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 4,
+    "text": "ESRS coverage",
+    "bbox": {
+     "l": 519.6791019439697,
+     "t": 74.23085522651672,
+     "r": 551.8271400928497,
+     "b": 90.98257705569267,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 0,
+    "text": "Workers in the value chain",
+    "bbox": {
+     "l": 51.270602360367775,
+     "t": 221.94009259343147,
+     "r": 100.85557425022125,
+     "b": 251.31368985772133,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 1,
+    "text": "Farmers and Agricultural Partners",
+    "bbox": {
+     "l": 108.67370793223381,
+     "t": 150.9640451669693,
+     "r": 154.61538591980934,
+     "b": 184.5514678657055,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 2,
+    "text": "■ Long-term contractual partnerships (Cost Performance Model Contracts) ■ Co-development of projects ■ Direct financial support and training sessions ■ Danone Ethics Line (DEL)",
+    "bbox": {
+     "l": 165.28566175699234,
+     "t": 103.76554320007563,
+     "r": 271.925389111042,
+     "b": 211.173,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 3,
+    "text": "■ Engagement with farmers, including smallholders, in the Regenerative Agriculture Program, which protects biodiversity and supports the transition towards more resilient agricultural models. ■ Establishment of long-term CPM contracts to enhance visibility on food and milk pricing and improve financial resilience. ■ Launch of the Danone Milk Academy to equip dairy farmer partners with the knowledge and tools they need to adapt and thrive as modern, resilient businesses. ■ Engagement with strategic partners such as Corteva and Zoetis as part of the Partner for Growth program. Agricultural",
+    "bbox": {
+     "l": 285.3392013311386,
+     "t": 96.41374912112951,
+     "r": 504.068718791008,
+     "b": 220.40872764587402,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 0,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 1,
+    "text": "Suppliers and Sub- Contractors",
+    "bbox": {
+     "l": 108.67370793223381,
+     "t": 267.96118783950806,
+     "r": 157.17781262099743,
+     "b": 324.62800000000004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 2,
+    "text": "■ Environmental and social risk assessments ■ Human rights due diligence ■ Third-party audits ■ Co-developed action plans",
+    "bbox": {
+     "l": 167.7386429309845,
+     "t": 243.78882545232773,
+     "r": 274.63535809516907,
+     "b": 322.98848938941956,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 3,
+    "text": "sustainability is one of the identified pillars of collaboration under the Partner for Growth. ■ Implementation of the RESPECT program to assess and monitor suppliers' environmental and social performance through third-party audits. ■ Collaboration with key suppliers to co-develop circular packaging solutions, involving internal coordination across procurement, R&I, and operations teams and guided investments with partners for manufacture of recycled materials for incorporation in Danone products.",
+    "bbox": {
+     "l": 284.0851622223854,
+     "t": 220.06096929311752,
+     "r": 502.12933325767517,
+     "b": 323.12300000000005,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 0,
+    "text": "Consumers and Patients",
+    "bbox": {
+     "l": 51.270602360367775,
+     "t": 381.9369697570801,
+     "r": 96.93612636625767,
+     "b": 450.1902712583542,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 1,
+    "text": "Consumers and patients including end consumers, healthcare institutions and retailers",
+    "bbox": {
+     "l": 108.67370793223381,
+     "t": 376.19243901968,
+     "r": 158.4901292026043,
+     "b": 468.72531086206436,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 2,
+    "text": "workshops ■ Danone Ethics Line (DEL) ■ Local contact centers and consumer feedback channels ■ Educational campaigns ■ Co-development initiatives",
+    "bbox": {
+     "l": 167.42523574829102,
+     "t": 337.0330000000001,
+     "r": 273.2689514160156,
+     "b": 452.07399636507034,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 3,
+    "text": "(RTDD) to support supply chain transparency and better working conditions for truck drivers. ■ Incorporation of decarbonization plans through Danone's dairy ingredients Supplier Engagement Program. ■ Engagement through local contact centers, surveys, and ethical channels to co-develop quality and food safety strategies",
+    "bbox": {
+     "l": 286.2215899825096,
+     "t": 341.4737101197243,
+     "r": 512.3009314537048,
+     "b": 404.871273458004,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 0,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 2,
+    "text": "■ Specialized medical sessions ■ Danone Ethics Line (DEL)",
+    "bbox": {
+     "l": 166.30501025915146,
+     "t": 392.1038207411766,
+     "r": 274.0950422883034,
+     "b": 475.7332494854927,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 3,
+    "text": "aligned with the standards and methodologies. ■ Collaboration with consumers, patients and other stakeholders through 360° reviews and consultations to shape the 'Health through Food' ambition. ■ Joint development of circular packaging initiatives such as reuse and return systems with retail and hospitality clients.",
+    "bbox": {
+     "l": 282.402,
+     "t": 390.8491452932358,
+     "r": 512.8594102859497,
+     "b": 472.03901982307434,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 0,
+    "text": "Financial",
+    "bbox": {
+     "l": 51.270602360367775,
+     "t": 463.04002249240875,
+     "r": 97.54140918701887,
+     "b": 530.3117100000381,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 1,
+    "text": "Shareholders, Investors, Other financial stakeholders (analysts, regulators)",
+    "bbox": {
+     "l": 108.67370793223381,
+     "t": 468.0265901684761,
+     "r": 159.65063253045082,
+     "b": 564.6868268847466,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 2,
+    "text": "■ Annual Shareholders' Meeting ■ Investor communications and events ■ Regular exchanges with investors and financial analysts",
+    "bbox": {
+     "l": 166.8534272313118,
+     "t": 468.247476875782,
+     "r": 273.7007754445076,
+     "b": 549.2964387536049,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 3,
+    "text": "■ Participation in non-financial ratings and ESG rankings to support transparency and continuous improvement in sustainability performance. Dialogue with investors through analyst presentations, roadshows and publication calls to respond to financial and sustainability-related topics.",
+    "bbox": {
+     "l": 285.99001520872116,
+     "t": 479.86598575115204,
+     "r": 502.2634508609772,
+     "b": 561.3246183395386,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 5,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 5,
+    "end_row_offset_idx": 6,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 0,
+    "text": "Community and Stakeholders",
+    "bbox": {
+     "l": 51.270602360367775,
+     "t": 508.403028011322,
+     "r": 97.15946128219366,
+     "b": 571.6733113527298,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 1,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 2,
+    "text": "■ Impact investment partnerships ■ Regulatory and voluntary publications",
+    "bbox": {
+     "l": 165.19588017463684,
+     "t": 479.6797775030136,
+     "r": 280.53987646102905,
+     "b": 592.0603502988815,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 3,
+    "text": "■ ■ Organization of the Annual Shareholders' Meeting, including open Q&A sessions with management and responses to written questions from shareholders.",
+    "bbox": {
+     "l": 281.796089053154,
+     "t": 515.7036289572716,
+     "r": 509.288422703743,
+     "b": 576.4247314333916,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 6,
+    "c": 4,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 6,
+    "end_row_offset_idx": 7,
+    "start_col_offset_idx": 4,
+    "end_col_offset_idx": 5,
+    "row_span": 1,
+    "col_span": 1
+   }
+  ]
+ },
+ "geometry": {
+  "rules": [
+   [
+    0.11953001161721169,
+    0.08371338428993466,
+    0.9156109489326685
+   ],
+   [
+    0.3000138188451675,
+    0.17724030164956658,
+    0.9156109489326685
+   ],
+   [
+    0.4804975876233593,
+    0.08371338428993466,
+    0.9156109489326685
+   ],
+   [
+    0.5938905555152687,
+    0.08371338428993466,
+    0.9156109489326685
+   ],
+   [
+    0.752640672114178,
+    0.08371338428993466,
+    0.9156109489326685
+   ]
+  ],
+  "lines": [
+   {
+    "id": "b50l0",
+    "block": 50,
+    "text": "SUSTAINABILITY REPORT",
+    "rect": [
+     0.702910168610054,
+     0.028331107796912346,
+     0.9170442660854348,
+     0.04666675247372324
+    ]
+   },
+   {
+    "id": "b51l0",
+    "block": 51,
+    "text": "4.2 Sustainability statement – General Disclosures (ESRS 2)",
+    "rect": [
+     0.5515937090676638,
+     0.04850880857177506,
+     0.9172085086881833,
+     0.06184382113446644
+    ]
+   },
+   {
+    "id": "b1l0",
+    "block": 1,
+    "text": "ESRS",
+    "rect": [
+     0.8669326462117193,
+     0.09283132219279619,
+     0.8954180219602375,
+     0.10552981813799943
+    ]
+   },
+   {
+    "id": "b0l0",
+    "block": 0,
+    "text": "Stakeholder Group",
+    "rect": [
+     0.08802937193528561,
+     0.1049517643866136,
+     0.2038163821781153,
+     0.11765026033181684
+    ]
+   },
+   {
+    "id": "b0l1",
+    "block": 0,
+    "text": "Engagement channels",
+    "rect": [
+     0.2750783432207714,
+     0.1049517643866136,
+     0.41108200923584226,
+     0.11765026033181684
+    ]
+   },
+   {
+    "id": "b0l2",
+    "block": 0,
+    "text": "Example initiatives",
+    "rect": [
+     0.46336583767883543,
+     0.1049517643866136,
+     0.5808406096645354,
+     0.11765026033181684
+    ]
+   },
+   {
+    "id": "b1l1",
+    "block": 1,
+    "text": "coverage",
+    "rect": [
+     0.852872077345447,
+     0.1049517643866136,
+     0.9094784906785813,
+     0.11765026033181684
+    ]
+   },
+   {
+    "id": "b8l0",
+    "block": 8,
+    "text": "■ Engagement with farmers, including smallholders,",
+    "rect": [
+     0.46337254759004526,
+     0.12360336999877192,
+     0.7652029813237132,
+     0.13757994571047127
+    ]
+   },
+   {
+    "id": "b8l1",
+    "block": 8,
+    "text": "in the Regenerative Agriculture Program, which protects",
+    "rect": [
+     0.48197817996963316,
+     0.13605140418153486,
+     0.7997419488326206,
+     0.1490931027198517
+    ]
+   },
+   {
+    "id": "b8l2",
+    "block": 8,
+    "text": "biodiversity and supports the transition towards more",
+    "rect": [
+     0.48197817996963316,
+     0.14849943836429783,
+     0.7866357396510385,
+     0.16154114651505566
+    ]
+   },
+   {
+    "id": "b4l0",
+    "block": 4,
+    "text": "■ Long-term contractual",
+    "rect": [
+     0.2750840766896783,
+     0.1547234554556793,
+     0.42051223862767695,
+     0.16869995426785075
+    ]
+   },
+   {
+    "id": "b8l3",
+    "block": 8,
+    "text": "resilient agricultural models.",
+    "rect": [
+     0.48197817996963316,
+     0.1609474725470608,
+     0.642404545754534,
+     0.1739891806978186
+    ]
+   },
+   {
+    "id": "b4l1",
+    "block": 4,
+    "text": "partnerships",
+    "rect": [
+     0.2936897090692662,
+     0.16717148002600127,
+     0.36570548356978094,
+     0.18021319778920009
+    ]
+   },
+   {
+    "id": "b9l0",
+    "block": 9,
+    "text": "■ Establishment of long-term CPM contracts to enhance visibility",
+    "rect": [
+     0.46337254759004526,
+     0.17717780039820114,
+     0.8346875670052234,
+     0.19115430882281356
+    ]
+   },
+   {
+    "id": "b4l2",
+    "block": 4,
+    "text": "(Cost Performance",
+    "rect": [
+     0.2936897090692662,
+     0.17961951420876424,
+     0.3989262289327566,
+     0.19266123197196305
+    ]
+   },
+   {
+    "id": "b9l1",
+    "block": 9,
+    "text": "on food and milk pricing and improve financial resilience.",
+    "rect": [
+     0.48197817996963316,
+     0.1896258345809641,
+     0.803720024848704,
+     0.20266939793283303
+    ]
+   },
+   {
+    "id": "b3l0",
+    "block": 3,
+    "text": "Farmers and",
+    "rect": [
+     0.18155714055230981,
+     0.1915121800008782,
+     0.2530740907394312,
+     0.204553897764077
+    ]
+   },
+   {
+    "id": "b4l3",
+    "block": 4,
+    "text": "Model Contracts)",
+    "rect": [
+     0.2936897090692662,
+     0.19206754839152718,
+     0.39028431396015056,
+     0.205109266154726
+    ]
+   },
+   {
+    "id": "b3l1",
+    "block": 3,
+    "text": "Agricultural",
+    "rect": [
+     0.18155714055230981,
+     0.20396021418364116,
+     0.24683893078466201,
+     0.21700193194683998
+    ]
+   },
+   {
+    "id": "b10l0",
+    "block": 10,
+    "text": "■ Launch of the Danone Milk Academy to equip dairy farmer",
+    "rect": [
+     0.46336874196876204,
+     0.20585801763321554,
+     0.8111522529928958,
+     0.219834526057828
+    ]
+   },
+   {
+    "id": "b5l0",
+    "block": 5,
+    "text": "■ Co-development of projects",
+    "rect": [
+     0.2750840766896783,
+     0.20829788585510853,
+     0.4505656304928009,
+     0.22227439427972095
+    ]
+   },
+   {
+    "id": "b3l2",
+    "block": 3,
+    "text": "Partners",
+    "rect": [
+     0.18155712803381877,
+     0.2164082483664041,
+     0.22980459436633852,
+     0.22944996612960292
+    ]
+   },
+   {
+    "id": "b10l1",
+    "block": 10,
+    "text": "partners with the knowledge and tools they need to adapt",
+    "rect": [
+     0.48197437434834994,
+     0.2183060518159785,
+     0.810017376667075,
+     0.23134776957917733
+    ]
+   },
+   {
+    "id": "b6l0",
+    "block": 6,
+    "text": "■ Direct financial support",
+    "rect": [
+     0.2750840766896783,
+     0.22452822331868988,
+     0.42531328024625176,
+     0.2385047317433023
+    ]
+   },
+   {
+    "id": "b52l0",
+    "block": 52,
+    "text": "—",
+    "rect": [
+     0.9580252991694032,
+     0.22847589903430343,
+     0.9919148574359186,
+     0.2632497502111084
+    ]
+   },
+   {
+    "id": "b10l2",
+    "block": 10,
+    "text": "and thrive as modern, resilient businesses.",
+    "rect": [
+     0.48197437434834994,
+     0.23075408599874148,
+     0.7228376034240176,
+     0.2437958037619403
+    ]
+   },
+   {
+    "id": "b52l1",
+    "block": 52,
+    "text": "—",
+    "rect": [
+     0.9580252991694032,
+     0.23603919830396553,
+     0.9919148574359186,
+     0.27081304948077056
+    ]
+   },
+   {
+    "id": "b6l1",
+    "block": 6,
+    "text": "and training sessions",
+    "rect": [
+     0.2936897090692662,
+     0.2369761806019249,
+     0.41366610119807967,
+     0.25001797526465164
+    ]
+   },
+   {
+    "id": "b52l2",
+    "block": 52,
+    "text": "—",
+    "rect": [
+     0.9580252991694032,
+     0.24360249757362765,
+     0.9919148574359186,
+     0.27837634875043266
+    ]
+   },
+   {
+    "id": "b11l0",
+    "block": 11,
+    "text": "■ Engagement with strategic partners such as Corteva and Zoetis",
+    "rect": [
+     0.46336874196876204,
+     0.2469843465627949,
+     0.8404573395362289,
+     0.2609704674283975
+    ]
+   },
+   {
+    "id": "b7l0",
+    "block": 7,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.2750840766896783,
+     0.25320651806550626,
+     0.4340300057214512,
+     0.26718302649011866
+    ]
+   },
+   {
+    "id": "b11l1",
+    "block": 11,
+    "text": "as part of the Partner for Growth program. Agricultural",
+    "rect": [
+     0.48197437434834994,
+     0.25943238074555786,
+     0.7924218863683546,
+     0.27247409850875665
+    ]
+   },
+   {
+    "id": "b11l2",
+    "block": 11,
+    "text": "sustainability is one of the identified pillars of collaboration",
+    "rect": [
+     0.48197437434834994,
+     0.2718804149283208,
+     0.8132848530564497,
+     0.2849221326915196
+    ]
+   },
+   {
+    "id": "b11l3",
+    "block": 11,
+    "text": "under the Partner for Growth.",
+    "rect": [
+     0.48197437434834994,
+     0.28432844911108374,
+     0.6512833105780549,
+     0.2973701668742826
+    ]
+   },
+   {
+    "id": "b2l0",
+    "block": 2,
+    "text": "Workers in the",
+    "rect": [
+     0.08803019189645024,
+     0.287974794026537,
+     0.17068306595672467,
+     0.30101651178973576
+    ]
+   },
+   {
+    "id": "b2l1",
+    "block": 2,
+    "text": "value chain",
+    "rect": [
+     0.08803019189645024,
+     0.3004228282092999,
+     0.15137911459016112,
+     0.31346454597249873
+    ]
+   },
+   {
+    "id": "b22l0",
+    "block": 22,
+    "text": "■ Implementation of the RESPECT program to assess and",
+    "rect": [
+     0.4633723973681525,
+     0.3041000867349775,
+     0.794894538723148,
+     0.3180669827185998
+    ]
+   },
+   {
+    "id": "b62l0",
+    "block": 62,
+    "text": "1",
+    "rect": [
+     0.968345843645649,
+     0.3056788532680877,
+     0.9837301678309031,
+     0.33313506071717575
+    ]
+   },
+   {
+    "id": "b22l1",
+    "block": 22,
+    "text": "monitor suppliers’ environmental and social performance",
+    "rect": [
+     0.4819780297477404,
+     0.3165288960357601,
+     0.8057309952530883,
+     0.32958983868093933
+    ]
+   },
+   {
+    "id": "b22l2",
+    "block": 22,
+    "text": "through third-party audits.",
+    "rect": [
+     0.4819778294518834,
+     0.32897694944340505,
+     0.6324317148860582,
+     0.3420186479817219
+    ]
+   },
+   {
+    "id": "b16l0",
+    "block": 16,
+    "text": "■ Environmental and social",
+    "rect": [
+     0.27508392646778557,
+     0.33143788813594854,
+     0.43541415024132146,
+     0.3454047648946888
+    ]
+   },
+   {
+    "id": "b16l1",
+    "block": 16,
+    "text": "risk assessments",
+    "rect": [
+     0.29368955884737347,
+     0.34387623297819336,
+     0.3892616283512376,
+     0.35691800841603816
+    ]
+   },
+   {
+    "id": "b23l0",
+    "block": 23,
+    "text": "■ Collaboration with key suppliers to co-develop circular",
+    "rect": [
+     0.4633721970722955,
+     0.34520724845722245,
+     0.7870008789983685,
+     0.35919331164817914
+    ]
+   },
+   {
+    "id": "b23l1",
+    "block": 23,
+    "text": "packaging solutions, involving internal coordination across",
+    "rect": [
+     0.4819778294518834,
+     0.3576552826399854,
+     0.8124776106787336,
+     0.3706970196280662
+    ]
+   },
+   {
+    "id": "b17l0",
+    "block": 17,
+    "text": "■ Human rights due diligence",
+    "rect": [
+     0.27508392646778557,
+     0.36011610598323696,
+     0.45045321444305386,
+     0.3740830211917412
+    ]
+   },
+   {
+    "id": "b63l0",
+    "block": 63,
+    "text": "2",
+    "rect": [
+     0.968345843645649,
+     0.3699449422449941,
+     0.9837301678309031,
+     0.39740114969408213
+    ]
+   },
+   {
+    "id": "b23l2",
+    "block": 23,
+    "text": "procurement, R&I, and operations teams and guided",
+    "rect": [
+     0.4819778294518834,
+     0.3701033552725123,
+     0.7805783923433304,
+     0.38314505381082914
+    ]
+   },
+   {
+    "id": "b15l0",
+    "block": 15,
+    "text": "Suppliers",
+    "rect": [
+     0.181556977811926,
+     0.3719992746836526,
+     0.2341690160536128,
+     0.3850409732219695
+    ]
+   },
+   {
+    "id": "b18l0",
+    "block": 18,
+    "text": "■ Third-party audits",
+    "rect": [
+     0.27508392646778557,
+     0.37633683100582815,
+     0.39400032788431794,
+     0.3903133202055586
+    ]
+   },
+   {
+    "id": "b23l3",
+    "block": 23,
+    "text": "investments with partners for manufacture of recycled",
+    "rect": [
+     0.4819778294518834,
+     0.3825513894552753,
+     0.7888712917850957,
+     0.3955930879935921
+    ]
+   },
+   {
+    "id": "b15l1",
+    "block": 15,
+    "text": "and Sub-",
+    "rect": [
+     0.181556977811926,
+     0.3844473088664156,
+     0.23207402153721263,
+     0.3974890074047324
+    ]
+   },
+   {
+    "id": "b19l0",
+    "block": 19,
+    "text": "■ Co-developed action plans",
+    "rect": [
+     0.27508392646778557,
+     0.3925575560284193,
+     0.44334516514343336,
+     0.406543619219376
+    ]
+   },
+   {
+    "id": "b23l4",
+    "block": 23,
+    "text": "materials for incorporation in Danone products.",
+    "rect": [
+     0.4819778294518834,
+     0.39499942363803825,
+     0.7520217613436807,
+     0.4080411221763551
+    ]
+   },
+   {
+    "id": "b15l2",
+    "block": 15,
+    "text": "Contractors",
+    "rect": [
+     0.181556977811926,
+     0.39689534304917856,
+     0.24822300019358595,
+     0.4099370415874954
+    ]
+   },
+   {
+    "id": "b20l0",
+    "block": 20,
+    "text": "■ Capacity-building",
+    "rect": [
+     0.27508392646778557,
+     0.4087878550422367,
+     0.39119450840837,
+     0.4227643442419671
+    ]
+   },
+   {
+    "id": "b24l0",
+    "block": 24,
+    "text": "■ Partnership with the Road Transport Due Diligence Foundation",
+    "rect": [
+     0.4633721970722955,
+     0.4112297226518556,
+     0.837393213515684,
+     0.4252157858428123
+    ]
+   },
+   {
+    "id": "b20l1",
+    "block": 20,
+    "text": "workshops",
+    "rect": [
+     0.29368955884737347,
+     0.42123588922499966,
+     0.3552427540720398,
+     0.4342777031126084
+    ]
+   },
+   {
+    "id": "b24l1",
+    "block": 24,
+    "text": "(RTDD) to support supply chain transparency and better",
+    "rect": [
+     0.4819778294518834,
+     0.42367775683461856,
+     0.797525524952908,
+     0.4367194553729354
+    ]
+   },
+   {
+    "id": "b64l0",
+    "block": 64,
+    "text": "3",
+    "rect": [
+     0.968345843645649,
+     0.4342110312219004,
+     0.9837301678309031,
+     0.4616672386709885
+    ]
+   },
+   {
+    "id": "b24l2",
+    "block": 24,
+    "text": "working conditions for truck drivers.",
+    "rect": [
+     0.4819778294518834,
+     0.4361257910173815,
+     0.6857920334125537,
+     0.44916748955569835
+    ]
+   },
+   {
+    "id": "b21l0",
+    "block": 21,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.27508392646778557,
+     0.4374663035881089,
+     0.4340298554995584,
+     0.45144279278783933
+    ]
+   },
+   {
+    "id": "b25l0",
+    "block": 25,
+    "text": "■ Incorporation of decarbonization plans through Danone’s dairy",
+    "rect": [
+     0.4633721970722955,
+     0.4523560900311989,
+     0.8386029003440982,
+     0.4663421532221556
+    ]
+   },
+   {
+    "id": "b25l1",
+    "block": 25,
+    "text": "ingredients Supplier Engagement Program.",
+    "rect": [
+     0.4819778294518834,
+     0.4648041242139619,
+     0.7282157474806036,
+     0.4778458227522787
+    ]
+   },
+   {
+    "id": "b36l0",
+    "block": 36,
+    "text": "■ Engagement through local contact centers, surveys, and ethical",
+    "rect": [
+     0.46337189662850997,
+     0.48406772510664237,
+     0.8398868468614992,
+     0.49803464031514655
+    ]
+   },
+   {
+    "id": "b31l0",
+    "block": 31,
+    "text": "■ Local contact centers and",
+    "rect": [
+     0.27508342572814304,
+     0.4864904062840449,
+     0.4381819385414195,
+     0.5004573214925491
+    ]
+   },
+   {
+    "id": "b30l0",
+    "block": 30,
+    "text": "Consumers",
+    "rect": [
+     0.18155647707228348,
+     0.4940357110641733,
+     0.24616493522582206,
+     0.5070774096024901
+    ]
+   },
+   {
+    "id": "b36l1",
+    "block": 36,
+    "text": "channels to co-develop quality and food safety strategies",
+    "rect": [
+     0.48197752900809787,
+     0.49647754022402835,
+     0.803224242528639,
+     0.5095575347272501
+    ]
+   },
+   {
+    "id": "b65l0",
+    "block": 65,
+    "text": "4",
+    "rect": [
+     0.968345843645649,
+     0.4984771201988068,
+     0.9837301678309031,
+     0.5259333276478949
+    ]
+   },
+   {
+    "id": "b31l1",
+    "block": 31,
+    "text": "consumer feedback",
+    "rect": [
+     0.29368905810773094,
+     0.4989288280258176,
+     0.4051607379259905,
+     0.5119705650138985
+    ]
+   },
+   {
+    "id": "b30l1",
+    "block": 30,
+    "text": "and patients",
+    "rect": [
+     0.18155647707228348,
+     0.5064837452469363,
+     0.2520633227340104,
+     0.5195255206847811
+    ]
+   },
+   {
+    "id": "b36l2",
+    "block": 36,
+    "text": "aligned with the standards and methodologies.",
+    "rect": [
+     0.48197752900809787,
+     0.5089255744067913,
+     0.7486543873956221,
+     0.5219672729451081
+    ]
+   },
+   {
+    "id": "b31l2",
+    "block": 31,
+    "text": "channels",
+    "rect": [
+     0.29368905810773094,
+     0.5113864361998068,
+     0.34419363341591863,
+     0.5244281347381237
+    ]
+   },
+   {
+    "id": "b30l2",
+    "block": 30,
+    "text": "including end",
+    "rect": [
+     0.18155647707228348,
+     0.5189318563292272,
+     0.2584106984426697,
+     0.531973554867544
+    ]
+   },
+   {
+    "id": "b29l0",
+    "block": 29,
+    "text": "Consumers",
+    "rect": [
+     0.08802953467566943,
+     0.5251557580713168,
+     0.15263796153298037,
+     0.5381974566096336
+    ]
+   },
+   {
+    "id": "b37l0",
+    "block": 37,
+    "text": "■ Collaboration with consumers, patients and other stakeholders",
+    "rect": [
+     0.46337189662850997,
+     0.5251558734206087,
+     0.8374178499060962,
+     0.5391610845940178
+    ]
+   },
+   {
+    "id": "b32l0",
+    "block": 32,
+    "text": "■ Educational campaigns",
+    "rect": [
+     0.27508342572814304,
+     0.5276167352136242,
+     0.4243898161975053,
+     0.5415836504221284
+    ]
+   },
+   {
+    "id": "b30l3",
+    "block": 30,
+    "text": "consumers,",
+    "rect": [
+     0.18155647707228348,
+     0.5313798905119901,
+     0.24713762198142877,
+     0.544421589050307
+    ]
+   },
+   {
+    "id": "b37l1",
+    "block": 37,
+    "text": "through 360° reviews and consultations to shape the “Health",
+    "rect": [
+     0.48197752900809787,
+     0.5376036384550239,
+     0.8259326350952992,
+     0.5506456061416884
+    ]
+   },
+   {
+    "id": "b29l1",
+    "block": 29,
+    "text": "and Patients",
+    "rect": [
+     0.08802953467566943,
+     0.5376037922540797,
+     0.15841167738867082,
+     0.5506454907923966
+    ]
+   },
+   {
+    "id": "b30l4",
+    "block": 30,
+    "text": "healthcare",
+    "rect": [
+     0.18155647707228348,
+     0.543827924694753,
+     0.2415134895754519,
+     0.55686962323307
+    ]
+   },
+   {
+    "id": "b33l0",
+    "block": 33,
+    "text": "■ Co-development initiatives",
+    "rect": [
+     0.27508342572814304,
+     0.5438470342274416,
+     0.44336960123798863,
+     0.5578139494359458
+    ]
+   },
+   {
+    "id": "b37l2",
+    "block": 37,
+    "text": "through Food” ambition.",
+    "rect": [
+     0.48197752900809787,
+     0.5500516726377869,
+     0.6202604366910364,
+     0.5630933711761037
+    ]
+   },
+   {
+    "id": "b30l5",
+    "block": 30,
+    "text": "institutions",
+    "rect": [
+     0.18155647707228348,
+     0.556275958877516,
+     0.2443068155973188,
+     0.5693176574158328
+    ]
+   },
+   {
+    "id": "b34l0",
+    "block": 34,
+    "text": "■ Specialized medical sessions",
+    "rect": [
+     0.27508342572814304,
+     0.560077333241259,
+     0.45464270273621166,
+     0.5740442484497632
+    ]
+   },
+   {
+    "id": "b66l0",
+    "block": 66,
+    "text": "5",
+    "rect": [
+     0.968345843645649,
+     0.5627432091757132,
+     0.9837301678309031,
+     0.5901994166248012
+    ]
+   },
+   {
+    "id": "b38l0",
+    "block": 38,
+    "text": "■ Joint development of circular packaging initiatives such as reuse",
+    "rect": [
+     0.46337189662850997,
+     0.5662819716516042,
+     0.8423436257696243,
+     0.5802871828250133
+    ]
+   },
+   {
+    "id": "b30l6",
+    "block": 30,
+    "text": "and retailers",
+    "rect": [
+     0.18155647707228348,
+     0.568723993060279,
+     0.2525496911487959,
+     0.5817656915985958
+    ]
+   },
+   {
+    "id": "b35l0",
+    "block": 35,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.27508342572814304,
+     0.5763076322550763,
+     0.4340293547599159,
+     0.5902745474635805
+    ]
+   },
+   {
+    "id": "b38l1",
+    "block": 38,
+    "text": "and return systems with retail and hospitality clients.",
+    "rect": [
+     0.48197752900809787,
+     0.5787300058343672,
+     0.7785456397644961,
+     0.591771704372684
+    ]
+   },
+   {
+    "id": "b42l0",
+    "block": 42,
+    "text": "■ Annual Shareholders’",
+    "rect": [
+     0.2750829249885005,
+     0.5976564791966399,
+     0.41373975999949525,
+     0.6116329683963703
+    ]
+   },
+   {
+    "id": "b42l1",
+    "block": 42,
+    "text": "Meeting",
+    "rect": [
+     0.2936885573680884,
+     0.6101044749296388,
+     0.3403647277393438,
+     0.6231462119177197
+    ]
+   },
+   {
+    "id": "b47l0",
+    "block": 47,
+    "text": "■ Participation in non-financial ratings and ESG rankings",
+    "rect": [
+     0.46337139588886744,
+     0.6138867397606933,
+     0.7882468694508659,
+     0.6278536549691975
+    ]
+   },
+   {
+    "id": "b47l1",
+    "block": 47,
+    "text": "to support transparency and continuous improvement",
+    "rect": [
+     0.48197702826845534,
+     0.62632519995223,
+     0.7898555456264448,
+     0.6393764724817731
+    ]
+   },
+   {
+    "id": "b43l0",
+    "block": 43,
+    "text": "■ Investor communications",
+    "rect": [
+     0.2750829249885005,
+     0.6263347739434563,
+     0.43702172478968687,
+     0.6403112631431866
+    ]
+   },
+   {
+    "id": "b67l0",
+    "block": 67,
+    "text": "6",
+    "rect": [
+     0.968345843645649,
+     0.6270092981526195,
+     0.9837301678309031,
+     0.6544655056017077
+    ]
+   },
+   {
+    "id": "b41l0",
+    "block": 41,
+    "text": "Shareholders,",
+    "rect": [
+     0.18155615159151584,
+     0.6363315203244299,
+     0.2598694030953121,
+     0.6493732188627467
+    ]
+   },
+   {
+    "id": "b43l1",
+    "block": 43,
+    "text": "and events",
+    "rect": [
+     0.2936885573680884,
+     0.638773234134993,
+     0.3556283486337669,
+     0.6518245451143
+    ]
+   },
+   {
+    "id": "b47l2",
+    "block": 47,
+    "text": "in sustainability performance.",
+    "rect": [
+     0.48197702826845534,
+     0.638773234134993,
+     0.6485924358870487,
+     0.6518149326733098
+    ]
+   },
+   {
+    "id": "b40l0",
+    "block": 40,
+    "text": "Financial",
+    "rect": [
+     0.08802920293565626,
+     0.648779477607665,
+     0.13718697638281505,
+     0.6618211761459818
+    ]
+   },
+   {
+    "id": "b41l1",
+    "block": 41,
+    "text": "Investors,",
+    "rect": [
+     0.18155615159151584,
+     0.6487795545071928,
+     0.2366121998804434,
+     0.6618212530455096
+    ]
+   },
+   {
+    "id": "b48l0",
+    "block": 48,
+    "text": "■ Dialogue with investors through analyst presentations,",
+    "rect": [
+     0.46337139588886744,
+     0.6550035715985744,
+     0.7904915350464171,
+     0.6689800607983047
+    ]
+   },
+   {
+    "id": "b44l0",
+    "block": 44,
+    "text": "■ Regular exchanges",
+    "rect": [
+     0.2750829249885005,
+     0.6550131071400366,
+     0.40150644016276443,
+     0.6689895963397671
+    ]
+   },
+   {
+    "id": "b40l1",
+    "block": 40,
+    "text": "Community",
+    "rect": [
+     0.08802920293565626,
+     0.6612275117904278,
+     0.15328609388928385,
+     0.6742692103287448
+    ]
+   },
+   {
+    "id": "b41l2",
+    "block": 41,
+    "text": "Other financial",
+    "rect": [
+     0.181555988851132,
+     0.6612275886899558,
+     0.2645206234128431,
+     0.6742692872282726
+    ]
+   },
+   {
+    "id": "b48l1",
+    "block": 48,
+    "text": "roadshows and publication calls to respond to financial",
+    "rect": [
+     0.48197702826845534,
+     0.6674514519822814,
+     0.7925369563382072,
+     0.6804933043196542
+    ]
+   },
+   {
+    "id": "b44l1",
+    "block": 44,
+    "text": "with investors",
+    "rect": [
+     0.2936885573680884,
+     0.6674516057813372,
+     0.37193946678639017,
+     0.6804933043196542
+    ]
+   },
+   {
+    "id": "b40l2",
+    "block": 40,
+    "text": "and",
+    "rect": [
+     0.08802920293565626,
+     0.6736755459731908,
+     0.10960275673196879,
+     0.6867172445115076
+    ]
+   },
+   {
+    "id": "b41l3",
+    "block": 41,
+    "text": "stakeholders",
+    "rect": [
+     0.181555988851132,
+     0.6736756228727188,
+     0.2541703350018312,
+     0.6867173214110356
+    ]
+   },
+   {
+    "id": "b48l2",
+    "block": 48,
+    "text": "and sustainability-related topics.",
+    "rect": [
+     0.48197702826845534,
+     0.6798994861650444,
+     0.6641429054856929,
+     0.6929411847033612
+    ]
+   },
+   {
+    "id": "b44l2",
+    "block": 44,
+    "text": "and financial analysts",
+    "rect": [
+     0.2936885573680884,
+     0.6799091755055625,
+     0.41391431783887983,
+     0.6929508740438793
+    ]
+   },
+   {
+    "id": "b40l3",
+    "block": 40,
+    "text": "Stakeholders",
+    "rect": [
+     0.08802920293565626,
+     0.6861235801559538,
+     0.1615912614522912,
+     0.6991652786942706
+    ]
+   },
+   {
+    "id": "b41l4",
+    "block": 41,
+    "text": "(analysts,",
+    "rect": [
+     0.181555988851132,
+     0.6861236570554817,
+     0.23332008710065638,
+     0.6991653555937986
+    ]
+   },
+   {
+    "id": "b59l0",
+    "block": 59,
+    "text": "7",
+    "rect": [
+     0.968345843645649,
+     0.691275387129526,
+     0.9837301678309031,
+     0.718731594578614
+    ]
+   },
+   {
+    "id": "b49l0",
+    "block": 49,
+    "text": "■ Organization of the Annual Shareholders’ Meeting, including",
+    "rect": [
+     0.46337139588886744,
+     0.6961298236286257,
+     0.8226399715019055,
+     0.7101063128283561
+    ]
+   },
+   {
+    "id": "b45l0",
+    "block": 45,
+    "text": "■ Impact investment",
+    "rect": [
+     0.2750829249885005,
+     0.6961299005281536,
+     0.3991134304481149,
+     0.7101160021688743
+    ]
+   },
+   {
+    "id": "b41l5",
+    "block": 41,
+    "text": "regulators)",
+    "rect": [
+     0.181555988851132,
+     0.6985716912382447,
+     0.24365785702060513,
+     0.7116133897765615
+    ]
+   },
+   {
+    "id": "b49l1",
+    "block": 49,
+    "text": "open Q&A sessions with management and responses to written",
+    "rect": [
+     0.48197702826845534,
+     0.7085777809118607,
+     0.8422554955925398,
+     0.7216195563497055
+    ]
+   },
+   {
+    "id": "b45l1",
+    "block": 45,
+    "text": "partnerships",
+    "rect": [
+     0.2936885573680884,
+     0.7085779347109166,
+     0.3657043318686031,
+     0.7216196332492334
+    ]
+   },
+   {
+    "id": "b49l2",
+    "block": 49,
+    "text": "questions from shareholders.",
+    "rect": [
+     0.48197702826845534,
+     0.7210258150946237,
+     0.6487044513450818,
+     0.7340675136329405
+    ]
+   },
+   {
+    "id": "b46l0",
+    "block": 46,
+    "text": "■ Regulatory and voluntary",
+    "rect": [
+     0.2750829249885005,
+     0.724808272174498,
+     0.4355876064534924,
+     0.7387847613742284
+    ]
+   },
+   {
+    "id": "b46l1",
+    "block": 46,
+    "text": "publications",
+    "rect": [
+     0.2936885573680884,
+     0.7372466939162707,
+     0.362237561101503,
+     0.7502980048955777
+    ]
+   },
+   {
+    "id": "b60l0",
+    "block": 60,
+    "text": "A",
+    "rect": [
+     0.9665081291575787,
+     0.7555414761064323,
+     0.9855679824669019,
+     0.7829976835555205
+    ]
+   },
+   {
+    "id": "b61l1",
+    "block": 61,
+    "text": "183",
+    "rect": [
+     0.9341678593450385,
+     0.9625905328529779,
+     0.9683691781129907,
+     0.9803081840860887
+    ]
+   },
+   {
+    "id": "b61l0",
+    "block": 61,
+    "text": "DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025",
+    "rect": [
+     0.5983732571381187,
+     0.9664267427028692,
+     0.9169310989262239,
+     0.9775002747235635
+    ]
+   }
+  ]
+ },
+ "visual_values_blanked": [
+  [
+   1,
+   4,
+   "E1, E2, E3, E4, E5, S2"
+  ],
+  [
+   2,
+   4,
+   "E1, E2, E3, E4, E5, S2"
+  ],
+  [
+   3,
+   4,
+   "E1, S4"
+  ],
+  [
+   6,
+   4,
+   "All"
+  ]
+ ]
+}

@@ -46,6 +46,10 @@ from ..refinement import (
     should_run_repair_pass,
 )
 from ..runtime import PageState, StageRecord, StatusReporter
+from ..table_reconstruction import (
+    extract_table_page_geometry,
+    render_reconstruction_overlay,
+)
 from ..tables import (
     build_table_candidates,
     render_layout_overlay,
@@ -351,6 +355,7 @@ def _run_table_detect(
     runtime: dict[str, Any],
     reader: Any | None = None,
     mode: str = "off",
+    pdf_page: Any | None = None,
 ) -> list[TableCandidate]:
     records = runtime.get("records") or _records_from_state(state)
     page_dir = Path(state.page_dir)
@@ -359,12 +364,31 @@ def _run_table_detect(
         # A missing reader is recorded by the collector as a failure diagnostic:
         # audit must never fail a page that `off` would complete.
         picture_map = {record.index: record for record in records}
+        # Collected once per page and shared by every table on it. A missing
+        # page yields no geometry, which reconciliation reads as "no evidence"
+        # and leaves each grid exactly as Docling built it.
+        page_geometry = (
+            extract_table_page_geometry(pdf_page, tuple(state.page_size))
+            if pdf_page is not None
+            else None
+        )
         candidates = build_table_candidates(
             cells=state.detection_cells,
             page_size=tuple(state.page_size),
             picture_records=picture_map,
             layout_map=state.layout_map,
+            page_geometry=page_geometry,
         )
+        _write_reconstruction_sidecar(page_dir, candidates, page_geometry)
+        overlay_path = page_dir / "table_reconstruction_overlay.png"
+        if not render_reconstruction_overlay(
+            page_image_path=page_dir / "page.png",
+            candidates=candidates,
+            geometry=page_geometry,
+            page_size=tuple(state.page_size),
+            output_path=overlay_path,
+        ):
+            overlay_path.unlink(missing_ok=True)
         visual_candidates = []
         if mode != "off":
             visual_candidates = collect_tagged_candidates(
@@ -404,15 +428,55 @@ def _run_table_detect(
             candidates=candidates,
             output_path=page_dir / "table_candidates_overlay.png",
         )
+        statuses = [
+            (candidate.stats or {}).get("reconstruction", {}).get("status")
+            for candidate in candidates
+        ]
         return {
             "candidates": len(candidates),
             "kinds": sorted({candidate.kind for candidate in candidates}),
             "visual_candidates": len(visual_candidates),
             "visual": (state.visual_audit or {}).get("table_status_counts"),
+            "tables_unchanged": statuses.count("unchanged"),
+            "tables_repaired": statuses.count("repaired"),
+            "tables_abstained": statuses.count("abstained"),
         }
 
     _execute_stage(state, reporter, "table_detect", action)
     return runtime["candidates"]
+
+
+def _write_reconstruction_sidecar(
+    page_dir: Path,
+    candidates: list[TableCandidate],
+    page_geometry: dict[str, Any] | None,
+) -> None:
+    """Per-table reconstruction provenance, kept on repair and abstention alike.
+
+    The full audit lives here rather than on the candidate so checkpoints and
+    prompts stay compact. Deterministic ordering keeps two runs byte-identical.
+    """
+    rows = [
+        {
+            "candidate_id": candidate.candidate_id,
+            "reconstruction_version": (candidate.stats or {}).get("reconstruction_version"),
+            **(candidate.stats or {}).get("reconstruction", {}),
+        }
+        for candidate in candidates
+        if (candidate.stats or {}).get("reconstruction")
+    ]
+    path = page_dir / "table_reconstruction.json"
+    if not rows:
+        path.unlink(missing_ok=True)
+        return
+    payload = {
+        "source_rules": len((page_geometry or {}).get("rules") or []),
+        "source_lines": len((page_geometry or {}).get("lines") or []),
+        "tables": rows,
+    }
+    path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8"
+    )
 
 
 def _run_table_extract(

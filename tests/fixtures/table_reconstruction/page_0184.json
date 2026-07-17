@@ -1,0 +1,1382 @@
+{
+ "note": "Frozen from a real Docling run; source PDF is external and not committed.",
+ "source_pdf": "danoneurdaccessible.pdf",
+ "physical_page": 184,
+ "printed_footer": 182,
+ "page_size": [
+  609.4500122070312,
+  793.7000122070312
+ ],
+ "table_bbox": [
+  0.082,
+  0.092,
+  0.917,
+  0.677
+ ],
+ "raw_grid": {
+  "rows": [
+   [
+    "Stakeholder Group",
+    "Engagement channels",
+    "Example initiatives",
+    "ESRS coverage"
+   ],
+   [
+    "Affected Communities",
+    "■ Community partnerships ■ Country Business Unit (CBU) consultations ■ Community funds ■ Dialogue with NGO representatives ■ Danone Ethics Line (DEL)",
+    "■ Implementation of stakeholder-inclusive engagement processes by sites and factories to understand and address communities' environmental and social concerns: Citizen Factories project. ■ Membership of Fair Circularity Initiative (FCI) to support different stakeholders in the plastics value chain. ■ Inclusion of factors relating to indigenous peoples and traditional practices in biodiversity and regenerative agriculture programs.",
+    ""
+   ],
+   [
+    "Public Authorities and Political Decision-Makers",
+    "■ Policy dialogues ■ Participation in industry working groups ■ Specific compliance reporting ■ Responsible lobbying ■ Danone Ethics Line (DEL)",
+    "■ Engagement with EU institutions through initiatives such as the EU Pledge on Responsible Marketing and the European Union Deforestation Regulation ■ Collaboration in the UN Treaty on Plastics and with Ellen MacArthur Foundation to advocate for improved packaging and plastics policy including harmonized rules for countries. ■ Coordination with scientific and regulatory bodies in the EU, US and China to support standard-setting on food safety, human rights, and sustainability reporting. ■ Engagement for stronger climate public policy including attending discussions at COP30 in Brazil to promote solutions for agricultural mitigation and adaption with partners such as WBCSD and Dairy Methane Action Alliance. ■ Engagement with EU and U.S. governments to support farming",
+    ""
+   ],
+   [
+    "Own Workforce Employees",
+    "■ Structured training programs ■ Team workshops ■ Digital platforms ■ Employee surveys ■ Regular dialogue with HR representatives, labor unions and employee representative bodies ■ Danone Ethics Line (DEL)",
+    "■ Ongoing central and local social dialogue, strengthened by development programs to upskill Danone employees. ■ Deployment of a platform to provide global access to e-learning resources (Campus X). ■ Collection of employee feedback and engagement through the Danone People Survey (DPS). ■ Rollout of human rights awareness training through interviews and workshops as part of the salient human rights impact assessment and due diligence process.",
+    ""
+   ],
+   [
+    "External workforce",
+    "■ Team workshops ■ Interviews as part of Danone site audits ■ Danone Ethics Line (DEL)",
+    "■ Rollout of human rights awareness training through interviews and workshops as part of the salient human rights impact assessment and due diligence process. ■ External workers included in the own operations due diligence process as a result of salient human rights impact assessment.",
+    ""
+   ]
+  ],
+  "num_cols": 4,
+  "header_rows": 1,
+  "cells": [
+   {
+    "r": 0,
+    "c": 0,
+    "text": "Stakeholder Group",
+    "bbox": {
+     "l": 51.49610685557126,
+     "t": 83.84481978416443,
+     "r": 123.93000116944313,
+     "b": 93.11351323127747,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 1,
+    "text": "Engagement channels",
+    "bbox": {
+     "l": 165.24341890215874,
+     "t": 83.29097133874893,
+     "r": 250.55380907654762,
+     "b": 93.40222865343094,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 2,
+    "text": "Example initiatives",
+    "bbox": {
+     "l": 282.6676336824894,
+     "t": 83.86149236559868,
+     "r": 354.0898326039314,
+     "b": 92.87113809585571,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 0,
+    "c": 3,
+    "text": "ESRS coverage",
+    "bbox": {
+     "l": 518.8589024543762,
+     "t": 73.85522970557213,
+     "r": 552.6479729413986,
+     "b": 90.86490392684937,
+     "origin": "TOPLEFT"
+    },
+    "column_header": true,
+    "start_row_offset_idx": 0,
+    "end_row_offset_idx": 1,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 0,
+    "text": "Affected Communities",
+    "bbox": {
+     "l": 52.08325295895337,
+     "t": 140.4624207019806,
+     "r": 129.04080870747566,
+     "b": 150.45360016822815,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 1,
+    "text": "■ Community partnerships ■ Country Business Unit (CBU) consultations ■ Community funds ■ Dialogue with NGO representatives ■ Danone Ethics Line (DEL)",
+    "bbox": {
+     "l": 164.06935423612595,
+     "t": 96.5579332113266,
+     "r": 272.06464517116547,
+     "b": 190.96721076965332,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 2,
+    "text": "■ Implementation of stakeholder-inclusive engagement processes by sites and factories to understand and address communities' environmental and social concerns: Citizen Factories project. ■ Membership of Fair Circularity Initiative (FCI) to support different stakeholders in the plastics value chain. ■ Inclusion of factors relating to indigenous peoples and traditional practices in biodiversity and regenerative agriculture programs.",
+    "bbox": {
+     "l": 281.3614740371704,
+     "t": 92.20669627189636,
+     "r": 499.350288271904,
+     "b": 197.62643909454346,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 1,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 1,
+    "end_row_offset_idx": 2,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 0,
+    "text": "Public Authorities and Political Decision-Makers",
+    "bbox": {
+     "l": 51.14410134404897,
+     "t": 262.9691023826599,
+     "r": 155.91740414500237,
+     "b": 282.2912163734436,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 1,
+    "text": "■ Policy dialogues ■ Participation in industry working groups ■ Specific compliance reporting ■ Responsible lobbying ■ Danone Ethics Line (DEL)",
+    "bbox": {
+     "l": 167.648,
+     "t": 238.3285083770752,
+     "r": 268.44301587343216,
+     "b": 318.36400000000003,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 2,
+    "text": "■ Engagement with EU institutions through initiatives such as the EU Pledge on Responsible Marketing and the European Union Deforestation Regulation ■ Collaboration in the UN Treaty on Plastics and with Ellen MacArthur Foundation to advocate for improved packaging and plastics policy including harmonized rules for countries. ■ Coordination with scientific and regulatory bodies in the EU, US and China to support standard-setting on food safety, human rights, and sustainability reporting. ■ Engagement for stronger climate public policy including attending discussions at COP30 in Brazil to promote solutions for agricultural mitigation and adaption with partners such as WBCSD and Dairy Methane Action Alliance. ■ Engagement with EU and U.S. governments to support farming",
+    "bbox": {
+     "l": 279.4170929789543,
+     "t": 192.70336484909058,
+     "r": 510.46231573820114,
+     "b": 347.4787540435791,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 2,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 2,
+    "end_row_offset_idx": 3,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 0,
+    "text": "Own Workforce Employees",
+    "bbox": {
+     "l": 59.22255957126617,
+     "t": 417.33400000000006,
+     "r": 147.973,
+     "b": 455.89983463287354,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 2,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 1,
+    "text": "■ Structured training programs ■ Team workshops ■ Digital platforms ■ Employee surveys ■ Regular dialogue with HR representatives, labor unions and employee representative bodies ■ Danone Ethics Line (DEL)",
+    "bbox": {
+     "l": 168.10518351197243,
+     "t": 365.77555656433105,
+     "r": 269.8544206917286,
+     "b": 474.2706184387207,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 2,
+    "text": "■ Ongoing central and local social dialogue, strengthened by development programs to upskill Danone employees. ■ Deployment of a platform to provide global access to e-learning resources (Campus X). ■ Collection of employee feedback and engagement through the Danone People Survey (DPS). ■ Rollout of human rights awareness training through interviews and workshops as part of the salient human rights impact assessment and due diligence process.",
+    "bbox": {
+     "l": 277.39158606529236,
+     "t": 367.7908344268799,
+     "r": 508.89856481552124,
+     "b": 468.0993347167969,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 3,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 3,
+    "end_row_offset_idx": 4,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 0,
+    "text": "External workforce",
+    "bbox": {
+     "l": 110.649,
+     "t": 500.51400000000007,
+     "r": 145.1,
+     "b": 517.308,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 0,
+    "end_col_offset_idx": 1,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 1,
+    "text": "■ Team workshops ■ Interviews as part of Danone site audits ■ Danone Ethics Line (DEL)",
+    "bbox": {
+     "l": 162.78336986899376,
+     "t": 488.3115472793579,
+     "r": 260.73680290579796,
+     "b": 531.6912412643433,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 1,
+    "end_col_offset_idx": 2,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 2,
+    "text": "■ Rollout of human rights awareness training through interviews and workshops as part of the salient human rights impact assessment and due diligence process. ■ External workers included in the own operations due diligence process as a result of salient human rights impact assessment.",
+    "bbox": {
+     "l": 279.2157497704029,
+     "t": 483.46188735961914,
+     "r": 506.6479746103287,
+     "b": 533.0982685089111,
+     "origin": "TOPLEFT"
+    },
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 2,
+    "end_col_offset_idx": 3,
+    "row_span": 1,
+    "col_span": 1
+   },
+   {
+    "r": 4,
+    "c": 3,
+    "text": "",
+    "bbox": null,
+    "column_header": false,
+    "start_row_offset_idx": 4,
+    "end_row_offset_idx": 5,
+    "start_col_offset_idx": 3,
+    "end_col_offset_idx": 4,
+    "row_span": 1,
+    "col_span": 1
+   }
+  ]
+ },
+ "geometry": {
+  "rules": [
+   [
+    0.11953005006697565,
+    0.08371360336352827,
+    0.91561084878474
+   ],
+   [
+    0.24520721769741127,
+    0.08371360336352827,
+    0.91561084878474
+   ],
+   [
+    0.45309424859971725,
+    0.08371360336352827,
+    0.91561084878474
+   ],
+   [
+    0.6033398541569693,
+    0.17724052698240572,
+    0.9156109489326685
+   ],
+   [
+    0.675155400488512,
+    0.0837136096227738,
+    0.9156109489326685
+   ]
+  ],
+  "lines": [
+   {
+    "id": "b46l0",
+    "block": 46,
+    "text": "4",
+    "rect": [
+     0.030747780045905806,
+     0.010812068819540725,
+     0.06828980837595212,
+     0.07945258744226096
+    ]
+   },
+   {
+    "id": "b47l0",
+    "block": 47,
+    "text": "SUSTAINABILITY REPORT",
+    "rect": [
+     0.08307362680415241,
+     0.028331266402188682,
+     0.2972076053538682,
+     0.046666906272779085
+    ]
+   },
+   {
+    "id": "b48l0",
+    "block": 48,
+    "text": "4.2 Sustainability statement – General Disclosures (ESRS 2)",
+    "rect": [
+     0.08307362680415241,
+     0.048508770122011095,
+     0.44868835757297104,
+     0.061843782684702475
+    ]
+   },
+   {
+    "id": "b1l0",
+    "block": 1,
+    "text": "ESRS",
+    "rect": [
+     0.8669327463596478,
+     0.09283116839374035,
+     0.895418122108166,
+     0.10552966433894359
+    ]
+   },
+   {
+    "id": "b0l0",
+    "block": 0,
+    "text": "Stakeholder Group",
+    "rect": [
+     0.08802953467566943,
+     0.10495161058755777,
+     0.20381655743699018,
+     0.117650106532761
+    ]
+   },
+   {
+    "id": "b0l1",
+    "block": 0,
+    "text": "Engagement channels",
+    "rect": [
+     0.27507851847964626,
+     0.10495161058755777,
+     0.411082159457735,
+     0.117650106532761
+    ]
+   },
+   {
+    "id": "b0l2",
+    "block": 0,
+    "text": "Example initiatives",
+    "rect": [
+     0.46336598790072814,
+     0.10495161058755777,
+     0.5808407598864282,
+     0.117650106532761
+    ]
+   },
+   {
+    "id": "b1l1",
+    "block": 1,
+    "text": "coverage",
+    "rect": [
+     0.8528721774933755,
+     0.10495161058755777,
+     0.9094785908265098,
+     0.117650106532761
+    ]
+   },
+   {
+    "id": "b8l0",
+    "block": 8,
+    "text": "■ Implementation of stakeholder-inclusive engagement",
+    "rect": [
+     0.46337254759004526,
+     0.12299055766076558,
+     0.7848311240533392,
+     0.13696705647293703
+    ]
+   },
+   {
+    "id": "b3l0",
+    "block": 3,
+    "text": "■ Community partnerships",
+    "rect": [
+     0.2750814728435372,
+     0.13165382777781665,
+     0.4342020097886588,
+     0.1456303265899881
+    ]
+   },
+   {
+    "id": "b8l1",
+    "block": 8,
+    "text": "processes by sites and factories to understand and address",
+    "rect": [
+     0.48197817996963316,
+     0.13543859184352852,
+     0.818164110207187,
+     0.14848029038184538
+    ]
+   },
+   {
+    "id": "b4l0",
+    "block": 4,
+    "text": "■ Country Business Unit (CBU)",
+    "rect": [
+     0.2750814728435372,
+     0.14788408834187008,
+     0.45359330266736997,
+     0.16186058715404153
+    ]
+   },
+   {
+    "id": "b8l2",
+    "block": 8,
+    "text": "communities’ environmental and social concerns: Citizen",
+    "rect": [
+     0.48197817996963316,
+     0.1478866260262915,
+     0.8011175307046038,
+     0.16092832456460834
+    ]
+   },
+   {
+    "id": "b4l1",
+    "block": 4,
+    "text": "consultations",
+    "rect": [
+     0.293687080186143,
+     0.16033212252463303,
+     0.3692568542994858,
+     0.17337383067539086
+    ]
+   },
+   {
+    "id": "b8l3",
+    "block": 8,
+    "text": "Factories project.",
+    "rect": [
+     0.48197817996963316,
+     0.16033466020905443,
+     0.5790219232828812,
+     0.17337636835981227
+    ]
+   },
+   {
+    "id": "b2l0",
+    "block": 2,
+    "text": "Affected Communities",
+    "rect": [
+     0.08802756301332698,
+     0.1765624503757734,
+     0.212979592155573,
+     0.1896041681389722
+    ]
+   },
+   {
+    "id": "b5l0",
+    "block": 5,
+    "text": "■ Community funds",
+    "rect": [
+     0.2750814728435372,
+     0.1765624503757734,
+     0.3941849505905173,
+     0.19053895880038582
+    ]
+   },
+   {
+    "id": "b9l0",
+    "block": 9,
+    "text": "■ Membership of Fair Circularity Initiative (FCI) to support",
+    "rect": [
+     0.46337254759004526,
+     0.17657452360165707,
+     0.7940468365823158,
+     0.1905510320262695
+    ]
+   },
+   {
+    "id": "b9l1",
+    "block": 9,
+    "text": "different stakeholders in the plastics value chain.",
+    "rect": [
+     0.48197817996963316,
+     0.18901294534342983,
+     0.7562743428317968,
+     0.20206427554761885
+    ]
+   },
+   {
+    "id": "b6l0",
+    "block": 6,
+    "text": "■ Dialogue with NGO",
+    "rect": [
+     0.2750814728435372,
+     0.1927927109398268,
+     0.4021034970755303,
+     0.20676921936443923
+    ]
+   },
+   {
+    "id": "b6l1",
+    "block": 6,
+    "text": "representatives",
+    "rect": [
+     0.293687080186143,
+     0.20524074512258977,
+     0.3815551701418165,
+     0.21828500057021
+    ]
+   },
+   {
+    "id": "b10l0",
+    "block": 10,
+    "text": "■ Inclusion of factors relating to indigenous peoples",
+    "rect": [
+     0.46337254759004526,
+     0.20524328280701118,
+     0.7654524998875839,
+     0.2192294036726138
+    ]
+   },
+   {
+    "id": "b10l1",
+    "block": 10,
+    "text": "and traditional practices in biodiversity and regenerative",
+    "rect": [
+     0.48197817996963316,
+     0.21769131698977412,
+     0.7999452491274862,
+     0.23073303475297297
+    ]
+   },
+   {
+    "id": "b7l0",
+    "block": 7,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.2750840766896783,
+     0.22147362027059253,
+     0.4340300057214512,
+     0.23545012869520496
+    ]
+   },
+   {
+    "id": "b10l2",
+    "block": 10,
+    "text": "agriculture programs.",
+    "rect": [
+     0.48197817996963316,
+     0.2301393511725371,
+     0.6057456468950286,
+     0.2431810689357359
+    ]
+   },
+   {
+    "id": "b19l0",
+    "block": 19,
+    "text": "■ Engagement with EU institutions through initiatives such",
+    "rect": [
+     0.46336969337408285,
+     0.24864022409752828,
+     0.8019876659814211,
+     0.26261673252214074
+    ]
+   },
+   {
+    "id": "b19l1",
+    "block": 19,
+    "text": "as the EU Pledge on Responsible Marketing and the European",
+    "rect": [
+     0.48197532575367075,
+     0.26108825828029125,
+     0.8330633178267619,
+     0.27412997604349004
+    ]
+   },
+   {
+    "id": "b19l2",
+    "block": 19,
+    "text": "Union Deforestation Regulation",
+    "rect": [
+     0.48197532575367075,
+     0.2735362924630542,
+     0.6607865978837341,
+     0.286578010226253
+    ]
+   },
+   {
+    "id": "b20l0",
+    "block": 20,
+    "text": "■ Collaboration in the UN Treaty on Plastics and with Ellen",
+    "rect": [
+     0.46336969337408285,
+     0.28975701748564536,
+     0.7980970691808871,
+     0.30373352591025776
+    ]
+   },
+   {
+    "id": "b14l0",
+    "block": 14,
+    "text": "■ Policy dialogues",
+    "rect": [
+     0.27508012084650235,
+     0.2984323608285801,
+     0.3841574389530776,
+     0.31240886925319256
+    ]
+   },
+   {
+    "id": "b20l1",
+    "block": 20,
+    "text": "MacArthur Foundation to advocate for improved packaging",
+    "rect": [
+     0.48197532575367075,
+     0.30220505166840833,
+     0.816963186322517,
+     0.3152467694316071
+    ]
+   },
+   {
+    "id": "b20l2",
+    "block": 20,
+    "text": "and plastics policy including harmonized rules for countries.",
+    "rect": [
+     0.48197417405249293,
+     0.31465308585117124,
+     0.8203176912617628,
+     0.3276948036143701
+    ]
+   },
+   {
+    "id": "b15l0",
+    "block": 15,
+    "text": "■ Participation in industry",
+    "rect": [
+     0.27508012084650235,
+     0.3146626982921615,
+     0.42755519177376905,
+     0.3286392067167739
+    ]
+   },
+   {
+    "id": "b15l1",
+    "block": 15,
+    "text": "working groups",
+    "rect": [
+     0.29368575322609025,
+     0.3271202872412687,
+     0.38281064961053973,
+     0.3401619857795855
+    ]
+   },
+   {
+    "id": "b13l0",
+    "block": 13,
+    "text": "Public Authorities and Political",
+    "rect": [
+     0.08802624231251982,
+     0.3308834425396346,
+     0.25818286190532036,
+     0.3439251410779514
+    ]
+   },
+   {
+    "id": "b21l0",
+    "block": 21,
+    "text": "■ Coordination with scientific and regulatory bodies in the EU,",
+    "rect": [
+     0.46336854167290503,
+     0.3308834425396346,
+     0.8199810940740568,
+     0.344859931739365
+    ]
+   },
+   {
+    "id": "b13l1",
+    "block": 13,
+    "text": "Decision-Makers",
+    "rect": [
+     0.08802624231251982,
+     0.34333147672239755,
+     0.1815157669393461,
+     0.3563731752607144
+    ]
+   },
+   {
+    "id": "b21l1",
+    "block": 21,
+    "text": "US and China to support standard-setting on food safety,",
+    "rect": [
+     0.48197417405249293,
+     0.34333147672239755,
+     0.8045178032471764,
+     0.3563731752607144
+    ]
+   },
+   {
+    "id": "b16l0",
+    "block": 16,
+    "text": "■ Specific compliance",
+    "rect": [
+     0.27508012084650235,
+     0.34335062470485,
+     0.40419718966885987,
+     0.35732711390458044
+    ]
+   },
+   {
+    "id": "b21l2",
+    "block": 21,
+    "text": "human rights, and sustainability reporting.",
+    "rect": [
+     0.48197417405249293,
+     0.35577947245539654,
+     0.7221641586787845,
+     0.36882117099371337
+    ]
+   },
+   {
+    "id": "b16l1",
+    "block": 16,
+    "text": "reporting",
+    "rect": [
+     0.29368575322609025,
+     0.355798620437849,
+     0.3472592366184091,
+     0.3688403189761658
+    ]
+   },
+   {
+    "id": "b22l0",
+    "block": 22,
+    "text": "■ Engagement for stronger climate public policy including",
+    "rect": [
+     0.46336854167290503,
+     0.37200977146921393,
+     0.798133122435149,
+     0.38598626066894437
+    ]
+   },
+   {
+    "id": "b17l0",
+    "block": 17,
+    "text": "■ Responsible lobbying",
+    "rect": [
+     0.27508127254768017,
+     0.3720289194516664,
+     0.41424938777067605,
+     0.3860054086513968
+    ]
+   },
+   {
+    "id": "b22l1",
+    "block": 22,
+    "text": "attending discussions at COP30 in Brazil to promote solutions",
+    "rect": [
+     0.48197417405249293,
+     0.3844578056519769,
+     0.8309175483106096,
+     0.39749950419029373
+    ]
+   },
+   {
+    "id": "b18l0",
+    "block": 18,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.27508127254768017,
+     0.3882592184654838,
+     0.43402715150548876,
+     0.4022357076652142
+    ]
+   },
+   {
+    "id": "b22l2",
+    "block": 22,
+    "text": "for agricultural mitigation and adaption with partners such",
+    "rect": [
+     0.48197417405249293,
+     0.3969058398347398,
+     0.8129854107502191,
+     0.4099475383730567
+    ]
+   },
+   {
+    "id": "b22l3",
+    "block": 22,
+    "text": "as WBCSD and Dairy Methane Action Alliance.",
+    "rect": [
+     0.48197417405249293,
+     0.4093538740175028,
+     0.7393731280474388,
+     0.4223955725558196
+    ]
+   },
+   {
+    "id": "b23l0",
+    "block": 23,
+    "text": "■ Engagement with EU and U.S. governments to support farming",
+    "rect": [
+     0.46336854167290503,
+     0.4255841730313202,
+     0.8396589602501856,
+     0.4395606622310506
+    ]
+   },
+   {
+    "id": "b23l1",
+    "block": 23,
+    "text": "suppliers to transition to regenerative agriculture practices.",
+    "rect": [
+     0.48197417405249293,
+     0.43803220721408315,
+     0.8176615178279837,
+     0.4510739057524
+    ]
+   },
+   {
+    "id": "b29l0",
+    "block": 29,
+    "text": "■ Structured training",
+    "rect": [
+     0.2750835509130537,
+     0.4569421087280887,
+     0.40110797659222436,
+     0.4709185979278192
+    ]
+   },
+   {
+    "id": "b35l0",
+    "block": 35,
+    "text": "■ Ongoing central and local social dialogue, strengthened",
+    "rect": [
+     0.4633719467024742,
+     0.4669579646417509,
+     0.7979992747287018,
+     0.48092487985025506
+    ]
+   },
+   {
+    "id": "b29l1",
+    "block": 29,
+    "text": "programs",
+    "rect": [
+     0.29368918329264154,
+     0.4693901429108517,
+     0.3494935619403421,
+     0.4824318414491685
+    ]
+   },
+   {
+    "id": "b35l1",
+    "block": 35,
+    "text": "by development programs to upskill Danone employees.",
+    "rect": [
+     0.4819775790820621,
+     0.4793964248332876,
+     0.8011789714587417,
+     0.49244769736283067
+    ]
+   },
+   {
+    "id": "b30l0",
+    "block": 30,
+    "text": "■ Team workshops",
+    "rect": [
+     0.2750835509130537,
+     0.4856204419246691,
+     0.3898223566029382,
+     0.4995969311243995
+    ]
+   },
+   {
+    "id": "b36l0",
+    "block": 36,
+    "text": "■ Deployment of a platform to provide global access to e-learning",
+    "rect": [
+     0.4633719467024742,
+     0.495626723847105,
+     0.8420692204455201,
+     0.5096032130468354
+    ]
+   },
+   {
+    "id": "b31l0",
+    "block": 31,
+    "text": "■ Digital platforms",
+    "rect": [
+     0.2750835509130537,
+     0.5018507409384865,
+     0.3873158041743459,
+     0.5158272301382169
+    ]
+   },
+   {
+    "id": "b36l1",
+    "block": 36,
+    "text": "resources (Campus X).",
+    "rect": [
+     0.4819775790820621,
+     0.5080747580298679,
+     0.6076030404510503,
+     0.5211164565681847
+    ]
+   },
+   {
+    "id": "b32l0",
+    "block": 32,
+    "text": "■ Employee surveys",
+    "rect": [
+     0.2750835509130537,
+     0.5180810784020679,
+     0.39493525887087816,
+     0.5320575676017982
+    ]
+   },
+   {
+    "id": "b28l0",
+    "block": 28,
+    "text": "Employees",
+    "rect": [
+     0.1815566022571941,
+     0.522409137632545,
+     0.2427980369804238,
+     0.5354508361708619
+    ]
+   },
+   {
+    "id": "b37l0",
+    "block": 37,
+    "text": "■ Collection of employee feedback and engagement through",
+    "rect": [
+     0.4633719467024742,
+     0.5243050570436854,
+     0.8153203597033177,
+     0.5382815462434157
+    ]
+   },
+   {
+    "id": "b33l0",
+    "block": 33,
+    "text": "■ Regular dialogue with HR",
+    "rect": [
+     0.2750835509130537,
+     0.5343018034246589,
+     0.43652343877140926,
+     0.5482878666156157
+    ]
+   },
+   {
+    "id": "b37l1",
+    "block": 37,
+    "text": "the Danone People Survey (DPS).",
+    "rect": [
+     0.4819775790820621,
+     0.5367530912264483,
+     0.6676598002910098,
+     0.5497947897647651
+    ]
+   },
+   {
+    "id": "b33l1",
+    "block": 33,
+    "text": "representatives, labor",
+    "rect": [
+     0.29368918329264154,
+     0.5467498376074219,
+     0.41694524482112527,
+     0.5597915361457387
+    ]
+   },
+   {
+    "id": "b27l0",
+    "block": 27,
+    "text": "Own",
+    "rect": [
+     0.08802967863831666,
+     0.5520928937069348,
+     0.1142172227597384,
+     0.5651345922452516
+    ]
+   },
+   {
+    "id": "b38l0",
+    "block": 38,
+    "text": "■ Rollout of human rights awareness training through interviews",
+    "rect": [
+     0.4633719467024742,
+     0.5529834286900296,
+     0.8359961499130365,
+     0.5669694918809863
+    ]
+   },
+   {
+    "id": "b33l2",
+    "block": 33,
+    "text": "unions and employee",
+    "rect": [
+     0.29368918329264154,
+     0.5592074457814111,
+     0.41549868310481414,
+     0.572249144319728
+    ]
+   },
+   {
+    "id": "b27l1",
+    "block": 27,
+    "text": "Workforce",
+    "rect": [
+     0.08802967863831666,
+     0.5645409278896978,
+     0.14660249654765053,
+     0.5775826264280146
+    ]
+   },
+   {
+    "id": "b38l1",
+    "block": 38,
+    "text": "and workshops as part of the salient human rights impact",
+    "rect": [
+     0.4819775790820621,
+     0.5654314628727926,
+     0.8080128658040792,
+     0.5784731614111094
+    ]
+   },
+   {
+    "id": "b33l3",
+    "block": 33,
+    "text": "representative bodies",
+    "rect": [
+     0.29368918329264154,
+     0.5716459059729478,
+     0.4168828276246844,
+     0.5846971785024909
+    ]
+   },
+   {
+    "id": "b38l2",
+    "block": 38,
+    "text": "assessment and due diligence process.",
+    "rect": [
+     0.4819775790820621,
+     0.5778794970555555,
+     0.7030006021894941,
+     0.5909211955938724
+    ]
+   },
+   {
+    "id": "b34l0",
+    "block": 34,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.2750835509130537,
+     0.5878762049867652,
+     0.43402940483388014,
+     0.6018526941864957
+    ]
+   },
+   {
+    "id": "b44l0",
+    "block": 44,
+    "text": "■ Rollout of human rights awareness training through interviews",
+    "rect": [
+     0.46337149603679595,
+     0.6066513016283245,
+     0.8359956992473583,
+     0.6206277908280549
+    ]
+   },
+   {
+    "id": "b41l0",
+    "block": 41,
+    "text": "■ Team workshops",
+    "rect": [
+     0.2750831002473754,
+     0.6109793993085656,
+     0.3898218809002778,
+     0.6249558885082961
+    ]
+   },
+   {
+    "id": "b44l1",
+    "block": 44,
+    "text": "and workshops as part of the salient human rights impact",
+    "rect": [
+     0.48197712841638385,
+     0.6190993358110873,
+     0.8080124151384009,
+     0.6321410343494043
+    ]
+   },
+   {
+    "id": "b40l0",
+    "block": 40,
+    "text": "External",
+    "rect": [
+     0.18155617662849796,
+     0.6272096983223829,
+     0.22778340887324666,
+     0.6402513968606998
+    ]
+   },
+   {
+    "id": "b42l0",
+    "block": 42,
+    "text": "■ Interviews as part",
+    "rect": [
+     0.2750831002473754,
+     0.6272096983223829,
+     0.39401194504402454,
+     0.6411861875221134
+    ]
+   },
+   {
+    "id": "b44l2",
+    "block": 44,
+    "text": "assessment and due diligence process.",
+    "rect": [
+     0.48197712841638385,
+     0.6315473699938503,
+     0.7030000513758873,
+     0.6445890685321672
+    ]
+   },
+   {
+    "id": "b40l1",
+    "block": 40,
+    "text": "workforce",
+    "rect": [
+     0.18155617662849796,
+     0.6396577325051459,
+     0.23808384865284513,
+     0.6526994310434627
+    ]
+   },
+   {
+    "id": "b42l1",
+    "block": 42,
+    "text": "of Danone site audits",
+    "rect": [
+     0.29368870758998117,
+     0.6396577325051459,
+     0.41368996144204606,
+     0.6526994310434627
+    ]
+   },
+   {
+    "id": "b45l0",
+    "block": 45,
+    "text": "■ External workers included in the own operations due diligence",
+    "rect": [
+     0.46337149603679595,
+     0.6477776305579037,
+     0.8342373519926283,
+     0.6617541197576342
+    ]
+   },
+   {
+    "id": "b43l0",
+    "block": 43,
+    "text": "■ Danone Ethics Line (DEL)",
+    "rect": [
+     0.2750831002473754,
+     0.6558880699687273,
+     0.43402895416820186,
+     0.6698645591684578
+    ]
+   },
+   {
+    "id": "b45l1",
+    "block": 45,
+    "text": "process as a result of salient human rights impact assessment.",
+    "rect": [
+     0.48197712841638385,
+     0.6602256647406667,
+     0.8358710150763693,
+     0.6732673632789836
+    ]
+   },
+   {
+    "id": "b49l0",
+    "block": 49,
+    "text": "182",
+    "rect": [
+     0.03166664041956374,
+     0.9625903021543941,
+     0.06586795605789311,
+     0.980307953387505
+    ]
+   },
+   {
+    "id": "b49l1",
+    "block": 49,
+    "text": "DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025",
+    "rect": [
+     0.08307362680415241,
+     0.9664265120042854,
+     0.4016311744077176,
+     0.9775000440249797
+    ]
+   }
+  ]
+ },
+ "visual_values_blanked": [
+  [
+   2,
+   3,
+   "E1, E2, E3, E5, S3, S4, G1"
+  ],
+  [
+   3,
+   3,
+   "S1, G1"
+  ],
+  [
+   4,
+   3,
+   "S1"
+  ]
+ ]
+}

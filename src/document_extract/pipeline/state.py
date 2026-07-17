@@ -105,6 +105,8 @@ def _sync_page_state(
             "repair_layout_map": "layout_prompt_map_repair.json",
             "table_candidates": "table_candidates.json",
             "table_overlay": "table_candidates_overlay.png",
+            "table_reconstruction": "table_reconstruction.json",
+            "table_reconstruction_overlay": "table_reconstruction_overlay.png",
             "visual_candidates": "visual_candidates.json",
             "final_markdown": "docling_final.md",
             "image_summaries": "image_summaries.jsonl",

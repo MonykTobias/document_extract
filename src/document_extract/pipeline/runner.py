@@ -47,6 +47,7 @@ from .stages import (
 )
 from .state import _candidates_from_state, _records_from_state, _visual_candidates_from_state
 from ..tables import table_candidate_rows
+from ..table_reconstruction import RECONSTRUCTION_VERSION
 from ..visual_values import COLLECTOR_VERSION
 
 # Pages per Docling convert() call, which is also the prefetch unit: the next
@@ -279,6 +280,21 @@ def _has_current_visual_audit(
     )
 
 
+def _stale_reconstruction(state: PageState) -> bool:
+    """Whether a resumed page's tables predate the current reconciler.
+
+    Source geometry is collected at ``table_detect`` and never checkpointed, so
+    a candidate built by an older version (or before reconstruction existed) can
+    only be brought current by replaying that stage.
+    """
+    return any(
+        (candidate.get("stats") or {}).get("grid")
+        and (candidate.get("stats") or {}).get("reconstruction_version")
+        != RECONSTRUCTION_VERSION
+        for candidate in state.table_candidates
+    )
+
+
 def run_pipeline(args: argparse.Namespace) -> int:
     import fitz  # noqa: PLC0415
 
@@ -417,7 +433,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                                     state, page_dir, visual_values_mode
                                 )
                             )
-                            if stale_visual_state:
+                            if stale_visual_state or _stale_reconstruction(state):
                                 effective_resume_from = "table_detect"
                         clear_downstream_artifacts(page_dir, effective_resume_from)
                         invalidate_from(state, effective_resume_from)
@@ -470,6 +486,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                             runtime=runtime,
                             reader=visual_reader,
                             mode=visual_values_mode,
+                            pdf_page=pdf_doc.load_page(page_number - 1),
                         ),
                         "table_extract": lambda: _run_table_extract(
                             state=state, reporter=reporter, args=args, runtime=runtime
