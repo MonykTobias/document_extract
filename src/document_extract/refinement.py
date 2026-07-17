@@ -504,7 +504,16 @@ def should_run_repair_pass(
         else any(is_table_item(item) for item in items)
     )
     if table_present:
-        return True
+        docling = [
+            candidate
+            for candidate in (table_candidates or [])
+            if candidate.kind == "docling_table"
+        ]
+        # A verified docling table is spliced deterministically in postprocess;
+        # repair only earns its call when some table lacks a verified rendering
+        # (or detection produced no candidate for the table item at all).
+        if not docling or any(not candidate.verified for candidate in docling):
+            return True
     if len(records) >= 2 and standalone_value_line_count(current_markdown) >= 3:
         return True
     return False

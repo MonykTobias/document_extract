@@ -250,6 +250,68 @@ def test_should_run_repair_pass_for_table_item() -> None:
     check(run, "repair pass triggers on Docling table items")
 
 
+def test_should_run_repair_pass_verified_table_gating() -> None:
+    verified = TableCandidate(
+        candidate_id="tc001",
+        kind="docling_table",
+        bbox=[0.1, 0.1, 0.9, 0.4],
+        markdown="| A | B |\n|---|---|\n| 1 | 2 |",
+        verified=True,
+    )
+    unverified = TableCandidate(
+        candidate_id="tc002",
+        kind="docling_table",
+        bbox=[0.1, 0.5, 0.9, 0.8],
+    )
+    run = should_run_repair_pass(
+        items=[],
+        warnings={"content_loss_guard_triggered": False},
+        current_markdown="# Page\n",
+        records=[],
+        table_candidates=[verified],
+        has_docling_table=True,
+    )
+    check(not run, "a page whose only docling table is verified skips repair")
+
+    run = should_run_repair_pass(
+        items=[],
+        warnings={"content_loss_guard_triggered": False},
+        current_markdown="# Page\n",
+        records=[],
+        table_candidates=[verified, unverified],
+        has_docling_table=True,
+    )
+    check(run, "an unverified docling table still triggers repair")
+
+    region_only = TableCandidate(
+        candidate_id="tc003",
+        kind="layout_region",
+        bbox=[0.1, 0.1, 0.9, 0.4],
+    )
+    run = should_run_repair_pass(
+        items=[],
+        warnings={"content_loss_guard_triggered": False},
+        current_markdown="# Page\n",
+        records=[],
+        table_candidates=[region_only],
+        has_docling_table=True,
+    )
+    check(run, "a table item without a docling candidate still triggers repair")
+
+    run = should_run_repair_pass(
+        items=[],
+        warnings={"content_loss_guard_triggered": False},
+        current_markdown="# Page\n",
+        records=[],
+        table_candidates=[verified, region_only],
+        has_docling_table=True,
+    )
+    check(
+        not run,
+        "an unverified layout region never drives the table-presence trigger",
+    )
+
+
 def test_should_run_repair_pass_candidate_routing() -> None:
     unverified = TableCandidate(
         candidate_id="tc001",
