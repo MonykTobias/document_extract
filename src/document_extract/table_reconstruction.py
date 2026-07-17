@@ -20,10 +20,10 @@ to which row* -- using only evidence the page itself carries:
   and may stop at a vertically merged cell, so a label whose column no rule
   divides spans its bands instead of being cut.
 
-Text is never synthesized from the PDF extractor: source lines are matched
-against Docling's own cell text and only used to decide *where* that text goes.
-Anything that does not align keeps Docling's row, and a table whose evidence is
-absent or contradictory is returned untouched and marked ``abstained`` so no
+Literal PDF text may restore a source-proven column only when every existing
+Docling token occurs in that source stream in order. Otherwise source geometry
+can position existing text but cannot add wording. Missing or contradictory
+evidence keeps Docling's row, and an unsafe table is marked ``abstained`` so no
 later stage treats it as authoritative.
 """
 
@@ -36,7 +36,7 @@ from typing import Any
 from .layout.geometry import bbox_to_normalized_rect
 from .layout.reading_order import extract_divider_segments
 
-RECONSTRUCTION_VERSION = 1
+RECONSTRUCTION_VERSION = 2
 
 # A y position is a row boundary only when the rule segments sitting on it cover
 # at least this fraction of the table's width. Partial rules stopping at a
@@ -70,6 +70,10 @@ _PUNCTUATION_FOLD = str.maketrans(
 def _norm(text: str) -> str:
     """Compare-only normalization: NFKC, punctuation folded, case-folded."""
     folded = unicodedata.normalize("NFKC", text).translate(_PUNCTUATION_FOLD)
+    # PDF text layers commonly disagree on whether a quoted phrase uses curly
+    # double quotes, straight single quotes, or no visible quote at all. Quotes
+    # are not content boundaries for the source-subsequence proof.
+    folded = folded.replace("'", "").replace('"', "")
     return " ".join(folded.casefold().split())
 
 
@@ -358,6 +362,164 @@ def _regions(dividing: list[bool], count: int) -> list[int]:
     return regions
 
 
+def _source_components(
+    by_column: dict[int, list[dict[str, Any]]],
+    bands: list[tuple[float, float]],
+) -> dict[int, list[dict[str, Any]]]:
+    """PDF text components, split at column boundaries.
+
+    PyMuPDF's block number is not a table-cell identifier: a single block can
+    contain text from several columns (the header is a common example).  A
+    component is therefore one source block *within one assigned column*.
+    """
+    components: dict[int, list[dict[str, Any]]] = {}
+    for column, lines in by_column.items():
+        grouped: dict[int, list[dict[str, Any]]] = {}
+        for line in lines:
+            centre = (line["rect"][1] + line["rect"][3]) / 2
+            if not bands[0][0] <= centre <= bands[-1][1]:
+                continue
+            grouped.setdefault(int(line["block"]), []).append(line)
+        for block, block_lines in grouped.items():
+            block_lines.sort(key=lambda line: (line["rect"][1], line["rect"][0]))
+            rect = _union([line["rect"] for line in block_lines])
+            if not rect:
+                continue
+            components.setdefault(column, []).append(
+                {
+                    "id": f"b{block}:c{column}",
+                    "block": block,
+                    "column": column,
+                    "text": " ".join(line["text"] for line in block_lines),
+                    "rect": rect,
+                    "lines": block_lines,
+                    "band": _band_of((rect[1] + rect[3]) / 2, bands),
+                }
+            )
+    for column_components in components.values():
+        column_components.sort(key=lambda component: (component["rect"][1], component["rect"][0]))
+    return components
+
+
+def _tokens(text: str) -> list[str]:
+    tokens = _norm(text).split()
+    # A duplicated bullet glyph is a known extractor artefact, not two content
+    # tokens. Folding it here lets a source-complete recovery remove the visual
+    # duplicate without treating that removal as lost wording.
+    return [
+        token
+        for index, token in enumerate(tokens)
+        if token != "■" or not index or tokens[index - 1] != "■"
+    ]
+
+
+def _is_subsequence(needle: list[str], haystack: list[str]) -> bool:
+    """Whether every normalized Docling token occurs in source order."""
+    if not needle:
+        return True
+    index = 0
+    for token in haystack:
+        if token == needle[index]:
+            index += 1
+            if index == len(needle):
+                return True
+    return False
+
+
+def _raw_column_tokens(
+    owners: list[dict[str, Any]], column: int, header_rows: int
+) -> list[str]:
+    """Owner-deduplicated raw body tokens in Docling's logical order."""
+    tokens: list[str] = []
+    for owner in owners:
+        if owner["row_start"] < header_rows or owner["col_start"] != column:
+            continue
+        if owner["col_end"] - owner["col_start"] != 1:
+            continue
+        tokens.extend(_tokens(owner["text"]))
+    return tokens
+
+
+def _owner_spans_boundary(
+    owner: dict[str, Any],
+    owners: list[dict[str, Any]],
+    row_band: dict[int, int],
+    boundary: int,
+    header_rows: int,
+) -> bool:
+    """Whether a raw rowspan already crosses the two adjacent source bands."""
+    if owner["row_end"] - owner["row_start"] <= 1:
+        return False
+    # Docling can emit a nominal rowspan plus another non-empty owner inside
+    # it (page 184). That is contradictory evidence, not a real merged cell.
+    if any(
+        other["key"] != owner["key"]
+        and other["col_start"] == owner["col_start"]
+        and other["col_end"] - other["col_start"] == 1
+        and owner["row_start"] < other["row_start"] < owner["row_end"]
+        and other["text"].strip()
+        for other in owners
+    ):
+        return False
+    owner_bands = [
+        row_band[row]
+        for row in range(max(header_rows, owner["row_start"]), owner["row_end"])
+        if row in row_band
+    ]
+    return bool(owner_bands) and min(owner_bands) <= boundary < max(owner_bands)
+
+
+def _raw_split_at_boundary(
+    owners: list[dict[str, Any]],
+    column: int,
+    row_band: dict[int, int],
+    boundary: int,
+    header_rows: int,
+) -> bool:
+    """Whether independent, non-spanning raw owners propose this split."""
+    above = below = False
+    for owner in owners:
+        conflicting_span = (
+            owner["row_end"] - owner["row_start"] > 1
+            and any(
+                other["key"] != owner["key"]
+                and other["col_start"] == column
+                and other["col_end"] - other["col_start"] == 1
+                and owner["row_start"] < other["row_start"] < owner["row_end"]
+                and other["text"].strip()
+                for other in owners
+            )
+        )
+        if (
+            owner["row_start"] < header_rows
+            or owner["col_start"] != column
+            or owner["col_end"] - owner["col_start"] != 1
+            or (
+                owner["row_end"] - owner["row_start"] != 1
+                and not conflicting_span
+            )
+        ):
+            continue
+        band = row_band.get(owner["row_start"])
+        if band == boundary:
+            above = True
+        elif band == boundary + 1:
+            below = True
+    return above and below
+
+
+def _corridor_is_clear(lines: list[dict[str, Any]], y: float) -> bool:
+    """Whether source text leaves a local, scale-independent row corridor."""
+    heights = [line["rect"][3] - line["rect"][1] for line in lines]
+    if not heights:
+        return False
+    half_height = _median(heights) / 2
+    return not any(
+        line["rect"][1] - half_height <= y <= line["rect"][3] + half_height
+        for line in lines
+    )
+
+
 def reconcile_table_grid(
     grid: dict[str, Any] | None,
     table_bbox: list[float] | None,
@@ -393,13 +555,14 @@ def reconcile_table_grid(
     intervals = _column_intervals(owners, page_size, num_cols)
     by_column = _assign_lines_to_columns(geometry.get("lines") or [], intervals, table_bbox)
 
-    block_extent: dict[int, list[float]] = {}
-    for column_lines in by_column.values():
+    block_extent: dict[tuple[int, int], list[float]] = {}
+    for column, column_lines in by_column.items():
         for line in column_lines:
             rect = line["rect"]
-            current = block_extent.get(line["block"])
+            key = (column, int(line["block"]))
+            current = block_extent.get(key)
             if current is None:
-                block_extent[line["block"]] = [rect[1], rect[3]]
+                block_extent[key] = [rect[1], rect[3]]
             else:
                 current[0] = min(current[0], rect[1])
                 current[1] = max(current[1], rect[3])
@@ -431,9 +594,9 @@ def reconcile_table_grid(
             continue
         located = aligned.get(owner["key"]) or []
         band_values = [
-            block_band[line["block"]]
+            block_band[(owner["col_start"], int(line["block"]))]
             for line in located
-            if line is not None and line["block"] in block_band
+            if line is not None and (owner["col_start"], int(line["block"])) in block_band
         ]
         if band_values:
             owner_primary[owner["key"]] = int(_median([float(v) for v in band_values]))
@@ -467,32 +630,162 @@ def reconcile_table_grid(
     for row in range(header_rows, len(rows)):
         previous = row_band.setdefault(row, previous)
 
-    # Every body owner becomes one or more (band range, text) segments. Bands
-    # come first for every owner, then extension, so a merged label can only
-    # grow into space no other owner in its column already holds.
+    # A boundary can be real for one column and a span for the next. A drawn
+    # rule wins where it crosses a column. Elsewhere, only extend it through a
+    # text-free corridor when Docling independently proposed two adjacent
+    # owners. This retains genuine raw rowspans while repairing split cells.
+    source_components = _source_components(by_column, bands)
+    effective_dividing: dict[int, list[bool]] = {}
+    boundary_audit: dict[str, list[dict[str, Any]]] = {}
+    for column in range(num_cols):
+        interval = intervals.get(column) or [table_bbox[0], table_bbox[2]]
+        column_lines = [
+            line
+            for line in by_column.get(column, [])
+            if bands[0][0] <= (line["rect"][1] + line["rect"][3]) / 2 <= bands[-1][1]
+        ]
+        states: list[dict[str, Any]] = []
+        dividing: list[bool] = []
+        for index, boundary in enumerate(boundaries[1:-1]):
+            if _divides(boundary, interval):
+                dividing.append(True)
+                states.append({"y": round(boundary["y"], 6), "status": "rule_crosses"})
+                continue
+            if not _corridor_is_clear(column_lines, boundary["y"]):
+                dividing.append(False)
+                states.append({"y": round(boundary["y"], 6), "status": "blocked_by_text"})
+                continue
+            if any(
+                _owner_spans_boundary(owner, owners, row_band, index, header_rows)
+                for owner in owners
+                if owner["col_start"] == column and owner["col_end"] - owner["col_start"] == 1
+            ):
+                dividing.append(False)
+                states.append({"y": round(boundary["y"], 6), "status": "preserved_raw_span"})
+                continue
+            if _raw_split_at_boundary(owners, column, row_band, index, header_rows) and _corridor_is_clear(
+                column_lines, boundary["y"]
+            ):
+                dividing.append(True)
+                states.append({"y": round(boundary["y"], 6), "status": "corridor_extended"})
+                continue
+            dividing.append(False)
+            states.append({"y": round(boundary["y"], 6), "status": "blocked_by_text"})
+        effective_dividing[column] = dividing
+        boundary_audit[str(column)] = states
+    audit["column_boundaries"] = boundary_audit
+    audit["column_intervals"] = {
+        str(column): [round(value, 6) for value in interval]
+        for column, interval in intervals.items()
+    }
+
+    # A source-proven column is rebuilt from literal PDF components. The strict
+    # subsequence gate is intentionally separate from alignment's permissive
+    # 80% positioning threshold: a single unmatched Docling token is enough to
+    # keep source text out of the output.
+    source_audit: dict[str, dict[str, Any]] = {}
+    source_verified: dict[int, list[dict[str, Any]]] = {}
+    for column in range(num_cols):
+        raw_tokens = _raw_column_tokens(owners, column, header_rows)
+        components = source_components.get(column, [])
+        source_tokens = [token for component in components for token in _tokens(component["text"])]
+        entry: dict[str, Any] = {
+            "raw_tokens": len(raw_tokens),
+            "source_tokens": len(source_tokens),
+            "component_ids": [component["id"] for component in components],
+        }
+        if not raw_tokens:
+            entry["status"] = "empty"
+        elif not components:
+            entry.update({"status": "untrusted", "reason": "no_source_components"})
+        elif not _is_subsequence(raw_tokens, source_tokens):
+            entry.update({"status": "untrusted", "reason": "raw_not_source_subsequence"})
+        else:
+            regions = _regions(effective_dividing[column], len(bands))
+            crossing = [
+                component["id"]
+                for component in components
+                if any(
+                    regions[index] != regions[index + 1]
+                    and component["rect"][1] < boundary["y"] < component["rect"][3]
+                    for index, boundary in enumerate(boundaries[1:-1])
+                )
+            ]
+            if crossing:
+                entry.update(
+                    {
+                        "status": "untrusted",
+                        "reason": "source_component_crosses_effective_cut",
+                        "crossing_components": crossing,
+                    }
+                )
+            else:
+                entry["status"] = "verified"
+                entry["restored_components"] = [
+                    component["id"]
+                    for component in components
+                    if not _is_subsequence(_tokens(component["text"]), raw_tokens)
+                ]
+                source_verified[column] = components
+        source_audit[str(column)] = entry
+    audit["source_content"] = source_audit
+
+    # Source-verified regions become one deterministic owner each. Components
+    # are not deduplicated: each PDF component is admitted exactly once, while
+    # _build_grid repeats the same owner in each covered logical row.
     segments: list[dict[str, Any]] = []
+    for column, components in source_verified.items():
+        regions = _regions(effective_dividing[column], len(bands))
+        for region in sorted(set(regions)):
+            component_group = [
+                component for component in components if regions[component["band"]] == region
+            ]
+            if not component_group:
+                continue
+            region_bands = [band for band, value in enumerate(regions) if value == region]
+            rects = [component["rect"] for component in component_group]
+            segments.append(
+                {
+                    "owner": ("source", column, region),
+                    "col_start": column,
+                    "col_end": column + 1,
+                    "band_low": min(region_bands),
+                    "band_high": max(region_bands),
+                    "text": " ".join(component["text"] for component in component_group),
+                    "order": (min(region_bands), 0),
+                    "top": min(rect[1] for rect in rects),
+                    "rect": _union(rects),
+                    "column_header": False,
+                }
+            )
+
+    # Untrusted columns retain the former Docling-only construction. They may
+    # use source geometry to place existing text, but never receive PDF text.
     prepared: list[dict[str, Any]] = []
     for owner in owners:
         if owner["row_start"] < header_rows:
             continue
         column = owner["col_start"]
-        interval = intervals.get(column) or [table_bbox[0], table_bbox[2]]
-        dividing = [_divides(boundary, interval) for boundary in boundaries[1:-1]]
-        regions = _regions(dividing, len(bands))
+        if column in source_verified:
+            continue
+        regions = _regions(effective_dividing.get(column, []), len(bands))
         located = aligned.get(owner["key"]) or []
         home = row_band.get(owner["row_start"], 0)
         fallback = owner_primary.get(owner["key"])
         if fallback is None:
             fallback = home
 
-        # A cell breaks only where its column is genuinely divided.
         groups: list[dict[str, Any]] = []
         tokens = owner["text"].split()
         if not located or len(located) != len(tokens):
             groups = [{"region": regions[fallback], "bands": [fallback], "lines": [], "tokens": tokens}]
         else:
             for token, line in zip(tokens, located):
-                band = block_band.get(line["block"]) if line is not None else None
+                band = (
+                    block_band.get((column, int(line["block"])))
+                    if line is not None
+                    else None
+                )
                 if band is None:
                     band = groups[-1]["bands"][-1] if groups else fallback
                 region = regions[band]
@@ -513,16 +806,12 @@ def reconcile_table_grid(
         if not groups:
             groups = [{"region": regions[fallback], "bands": [fallback], "lines": [], "tokens": tokens}]
 
-        # Inside its own region a cell keeps Docling's row; only a group that
-        # geometry moved into another region is placed by its own content.
         for group in groups:
             if group["region"] == regions[home]:
                 group["band"] = home
             else:
                 group["band"] = int(_median([float(band) for band in group["bands"]]))
-        prepared.append(
-            {"owner": owner, "groups": groups, "dividing": dividing, "regions": regions}
-        )
+        prepared.append({"owner": owner, "groups": groups, "regions": regions})
 
     # Which band each column's owners hold on their own evidence.
     claimed: dict[int, dict[int, set[tuple[int, int]]]] = {}
@@ -610,9 +899,26 @@ def reconcile_table_grid(
 
     kept = _column_text(grid, header_rows, num_cols)
     rebuilt = _column_text(new_grid, header_rows, num_cols)
-    if kept != rebuilt:
-        audit["reason"] = "text_not_preserved"
-        return {"status": "abstained", "grid": grid, "audit": audit}
+    for column in range(num_cols):
+        if not _is_subsequence(kept[column], rebuilt[column]):
+            audit["reason"] = "raw_text_not_preserved"
+            audit["failed_column"] = column
+            return {"status": "abstained", "grid": grid, "audit": audit}
+        if column in source_verified:
+            expected = [
+                token
+                for component in source_verified[column]
+                for token in _tokens(component["text"])
+            ]
+            if rebuilt[column] != expected:
+                audit["reason"] = "source_text_not_preserved"
+                audit["failed_column"] = column
+                return {"status": "abstained", "grid": grid, "audit": audit}
+            source_audit[str(column)]["output_tokens"] = len(rebuilt[column])
+        elif kept[column] != rebuilt[column]:
+            audit["reason"] = "untrusted_text_changed"
+            audit["failed_column"] = column
+            return {"status": "abstained", "grid": grid, "audit": audit}
 
     if _same_shape(grid, new_grid):
         return {"status": "unchanged", "grid": grid, "audit": {**audit, "reason": "raw_matches_rules"}}
@@ -647,7 +953,7 @@ def _column_text(grid: dict[str, Any], header_rows: int, num_cols: int) -> list[
             if key in seen:
                 continue
             seen.add(key)
-            tokens.extend(_norm(str(cell.get("text") or "")).split())
+            tokens.extend(_tokens(str(cell.get("text") or "")))
         streams.append(tokens)
     return streams
 
@@ -780,10 +1086,9 @@ def render_reconstruction_overlay(
 ) -> bool:
     """Draw the evidence a reconciliation acted on, over the page image.
 
-    Shows the rules that became row boundaries (green, spanning only the columns
-    they actually cross), the ones the width gate rejected (grey), each accepted
-    row band, and the raw Docling cells a repair moved (red). This is what makes
-    an abstention reviewable, so it is written on abstention too.
+    Shows direct rule cuts (green), corridor extensions (blue), and blocked
+    partial cuts (yellow), plus raw cells changed by a repair (red). This is
+    written on abstention too, so geometry decisions stay reviewable.
     """
     try:
         from PIL import Image, ImageDraw, ImageFont
@@ -817,16 +1122,34 @@ def render_reconstruction_overlay(
             outline="#36a3ff",
             width=3,
         )
-        accepted = {round(float(y), 6) for y in audit.get("boundaries") or []}
         for y, x0, x1 in geometry.get("rules") or []:
             if not (top <= y <= bottom):
                 continue
-            chosen = round(float(y), 6) in accepted
             draw.line(
                 (max(x0, left) * width, y * height, min(x1, right) * width, y * height),
-                fill="#00d084" if chosen else "#9aa0a6",
-                width=3 if chosen else 1,
+                fill="#9aa0a6",
+                width=1,
             )
+        colors = {
+            "rule_crosses": "#00d084",
+            "corridor_extended": "#36a3ff",
+            "blocked_by_text": "#f4c542",
+            "preserved_raw_span": "#f4c542",
+        }
+        intervals = audit.get("column_intervals") or {}
+        for column, states in (audit.get("column_boundaries") or {}).items():
+            interval = intervals.get(str(column))
+            if not interval or len(interval) != 2:
+                continue
+            for state in states:
+                y = float(state.get("y", -1.0))
+                if not top <= y <= bottom:
+                    continue
+                draw.line(
+                    (interval[0] * width, y * height, interval[1] * width, y * height),
+                    fill=colors.get(state.get("status"), "#9aa0a6"),
+                    width=3,
+                )
 
         # Raw cells whose row the repair changed.
         for cell in (stats.get("grid_raw") or {}).get("cells", []):
@@ -841,9 +1164,14 @@ def render_reconstruction_overlay(
                     width=1,
                 )
 
+        restored = sum(
+            len(value.get("restored_components") or [])
+            for value in (audit.get("source_content") or {}).values()
+        )
         label = (
             f"{candidate.candidate_id} {audit.get('status', '?')} "
-            f"raw={audit.get('raw_body_rows', '?')} -> {audit.get('body_rows', '?')}"
+            f"raw={audit.get('raw_body_rows', '?')} -> {audit.get('body_rows', '?')} "
+            f"source+={restored}"
         )
         draw.text((left * width + 3, top * height + 3), label, fill="#ff5a36", font=font)
 

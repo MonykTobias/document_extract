@@ -17,6 +17,7 @@ from document_extract.markdown.formatting import replace_deterministic_tables  #
 from document_extract.models import TableCandidate, VisualCandidate  # noqa: E402
 from document_extract.table_reconstruction import (  # noqa: E402
     RECONSTRUCTION_VERSION,
+    _tokens,
     reconcile_table_grid,
 )
 from document_extract.tables import (  # noqa: E402
@@ -63,6 +64,109 @@ def cell(result: dict, row: int, column: int) -> str:
     return body(result)[row][column]
 
 
+def synthetic_reconcile(
+    *,
+    left_rows: tuple[str, str],
+    left_lines: list[tuple[int, str, list[float]]],
+    left_span: bool = False,
+    shared_block: bool = False,
+) -> dict:
+    """A two-band table with a divider that stops before column zero."""
+    rows = [["Group", "Value"], [left_rows[0], "Upper"], [left_rows[1], "Lower"]]
+    cells: list[dict] = []
+    for row, values in enumerate(rows):
+        for column, text in enumerate(values):
+            is_left_span = left_span and column == 0 and row > 0
+            cells.append(
+                {
+                    "r": row,
+                    "c": column,
+                    "text": text,
+                    "bbox": {
+                        "l": 0 if column == 0 else 55,
+                        "t": 10 if is_left_span else (0 if row == 0 else 10 + (row - 1) * 20),
+                        "r": 40 if column == 0 else 95,
+                        "b": 50 if is_left_span else (10 if row == 0 else 10 + row * 20),
+                        "origin": "TOPLEFT",
+                    },
+                    "column_header": row == 0,
+                    "start_row_offset_idx": 1 if is_left_span else row,
+                    "end_row_offset_idx": 3 if is_left_span else row + 1,
+                    "start_col_offset_idx": column,
+                    "end_col_offset_idx": column + 1,
+                    "row_span": 2 if is_left_span else 1,
+                    "col_span": 1,
+                }
+            )
+    lines = [
+        {"id": f"b{block}l0", "block": block, "text": text, "rect": rect}
+        for block, text, rect in left_lines
+    ]
+    lines.extend(
+        [
+            {
+                "id": "b20l0",
+                "block": 10 if shared_block else 20,
+                "text": "Upper",
+                "rect": [0.6, 0.17, 0.9, 0.22],
+            },
+            {"id": "b21l0", "block": 21, "text": "Lower", "rect": [0.6, 0.38, 0.9, 0.43]},
+        ]
+    )
+    return reconcile_table_grid(
+        {"rows": rows, "num_cols": 2, "header_rows": 1, "cells": cells},
+        [0.0, 0.1, 1.0, 0.5],
+        {"rules": [[0.1, 0.0, 1.0], [0.3, 0.5, 1.0], [0.5, 0.0, 1.0]], "lines": lines},
+        (100.0, 100.0),
+    )
+
+
+def test_partial_rule_blocked_by_crossing_text_creates_rowspan() -> None:
+    result = synthetic_reconcile(
+        left_rows=("One", "Two"),
+        left_lines=[(10, "One Two", [0.1, 0.27, 0.4, 0.33])],
+    )
+    assert body(result) == [["One Two", "Upper"], ["One Two", "Lower"]]
+    assert result["audit"]["column_boundaries"]["0"][0]["status"] == "blocked_by_text"
+
+
+def test_partial_rule_extends_only_through_a_clear_raw_split_corridor() -> None:
+    result = synthetic_reconcile(
+        left_rows=("One", "Two"),
+        left_lines=[
+            (10, "One", [0.1, 0.17, 0.4, 0.22]),
+            (11, "Two", [0.1, 0.38, 0.4, 0.43]),
+        ],
+        shared_block=True,
+    )
+    assert body(result) == [["One", "Upper"], ["Two", "Lower"]]
+    assert result["audit"]["column_boundaries"]["0"][0]["status"] == "corridor_extended"
+    assert result["audit"]["source_content"]["0"]["component_ids"] == ["b10:c0", "b11:c0"]
+    assert result["audit"]["source_content"]["1"]["component_ids"] == ["b10:c1", "b21:c1"]
+
+
+def test_existing_raw_rowspan_wins_over_a_clear_corridor() -> None:
+    result = synthetic_reconcile(
+        left_rows=("One Two", "One Two"),
+        left_lines=[(10, "One Two", [0.1, 0.17, 0.4, 0.22])],
+        left_span=True,
+    )
+    assert body(result) == [["One Two", "Upper"], ["One Two", "Lower"]]
+    assert result["audit"]["column_boundaries"]["0"][0]["status"] == "preserved_raw_span"
+
+
+def test_non_subsequence_source_text_is_never_inserted() -> None:
+    result = synthetic_reconcile(
+        left_rows=("One", "Two"),
+        left_lines=[
+            (10, "Source", [0.1, 0.17, 0.4, 0.22]),
+            (11, "Other", [0.1, 0.38, 0.4, 0.43]),
+        ],
+    )
+    assert result["audit"]["source_content"]["0"]["status"] == "untrusted"
+    assert "Source" not in " ".join(row[0] for row in body(result))
+
+
 def test_danone_183_merges_the_unsupported_row() -> None:
     """No PDF rule sits near y=495, so the final bullet and the initiative tail
     belong to the Academia record rather than a fourth one."""
@@ -74,19 +178,41 @@ def test_danone_183_merges_the_unsupported_row() -> None:
     assert academia[1] == "Academia and Scientific Bodies"
     assert "Danone Ethics Line (DEL)" in academia[2]
     assert academia[3].endswith("the value chain.")
+    # The partial rule does not divide Engagement channels: one source-proven
+    # rowspan is repeated in the two logical stakeholder records.
+    industry, ngo, _ = body(result)
+    assert industry[2] == ngo[2]
+    assert all(
+        phrase in industry[2]
+        for phrase in (
+            "Strategic partnerships",
+            "Regular consultations",
+            "multi- stakeholder coalitions",
+            "Danone Ethics Line (DEL)",
+        )
+    )
+    assert "Dairy Methane Action Alliance" in ngo[3]
+    assert "L3F Livelihoods Fund" in ngo[3]
     # The merged group label spans every record; no rule divides its column.
     assert [row[0] for row in body(result)] == ["Civil Society and Other Organizations"] * 3
+    assert result["audit"]["column_boundaries"]["2"][0]["status"] == "blocked_by_text"
 
 
-def test_danone_184_control_is_untouched() -> None:
-    """The control page's rules already agree with Docling's rows, so the grid
-    must come back byte-identical -- not merely equivalent."""
+def test_danone_184_keeps_its_structure_and_restores_source_text() -> None:
+    """The control topology is retained, but Docling's missing sentence tail is
+    restored from a source-proven initiative column."""
     fixture = load(184)
-    raw = json.loads(json.dumps(fixture["raw_grid"]))
     result = reconcile(fixture)
-    assert result["status"] == "unchanged", result["audit"]
-    assert result["grid"] == raw
+    assert result["status"] == "repaired", result["audit"]
     assert len(body(result)) == 4
+    assert [row[0] for row in body(result)] == [
+        "Affected Communities",
+        "Public Authorities and Political Decision-Makers",
+        "Own Workforce Employees",
+        "External workforce",
+    ]
+    assert "suppliers to transition to regenerative agriculture practices." in body(result)[1][2]
+    assert result["audit"]["column_boundaries"]["0"][-1]["status"] == "corridor_extended"
 
 
 def test_danone_185_splits_at_rules_and_keeps_components_whole() -> None:
@@ -102,10 +228,10 @@ def test_danone_185_splits_at_rules_and_keeps_components_whole() -> None:
     assert "sustainability is one of" not in supplier[3]
 
     # Supplier content Docling pushed down into the Consumer row stays Supplier.
-    # ("Capacity-building" is absent from both rows: Docling drops that source
-    # text outright, and reconstruction never invents text the grid lacks.)
+    # Source-complete reconstruction also restores the omitted bullet prefix.
+    assert "Capacity-building workshops" in supplier[2]
     assert "workshops" in supplier[2]
-    assert "(RTDD) to support supply chain transparency" in supplier[3]
+    assert "Road Transport Due Diligence Foundation (RTDD)" in supplier[3]
     assert "workshops" not in consumer[2]
     assert "(RTDD)" not in consumer[3]
 
@@ -166,8 +292,8 @@ def test_invariants_hold_on_every_fixture() -> None:
                     assert bottom <= other_top or other_bottom <= top, (page, column)
 
 
-def test_no_text_is_lost_or_duplicated() -> None:
-    """Reconstruction moves ownership, never wording."""
+def test_raw_text_is_retained_and_verified_source_text_is_complete() -> None:
+    """Raw wording is retained as a subsequence; proven columns equal source."""
     for page in (183, 184, 185):
         fixture = load(page)
         result = reconcile(fixture)
@@ -184,11 +310,21 @@ def test_no_text_is_lost_or_duplicated() -> None:
                     if key in seen:
                         continue
                     seen.add(key)
-                    tokens.extend(str(entry["text"]).split())
+                    tokens.extend(_tokens(str(entry["text"])))
                 out[column] = tokens
             return out
 
-        assert stream(fixture["raw_grid"]) == stream(result["grid"]), page
+        raw = stream(fixture["raw_grid"])
+        rebuilt = stream(result["grid"])
+        for column, tokens in raw.items():
+            index = 0
+            for token in rebuilt[column]:
+                if index < len(tokens) and token == tokens[index]:
+                    index += 1
+            assert index == len(tokens), (page, column)
+        for column, audit in result["audit"]["source_content"].items():
+            if audit["status"] == "verified":
+                assert audit["output_tokens"] == audit["source_tokens"], (page, column)
 
 
 def test_abstains_without_geometry() -> None:
@@ -212,7 +348,7 @@ def test_short_rules_do_not_invent_rows() -> None:
     result = reconcile_table_grid(
         fixture["raw_grid"], fixture["table_bbox"], geometry, tuple(fixture["page_size"])
     )
-    assert result["status"] == "unchanged"
+    assert len(body(result)) == 4
     assert 0.33 not in result["audit"]["boundaries"]
 
 
