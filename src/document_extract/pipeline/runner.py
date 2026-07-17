@@ -305,6 +305,8 @@ def run_pipeline(args: argparse.Namespace) -> int:
         args.triage_model = args.ollama_model
     if not 0.0 <= args.triage_confidence <= 1.0:
         raise ValueError("--triage-confidence must be between 0 and 1")
+    if getattr(args, "vlm_concurrency", 1) < 1:
+        raise ValueError("--vlm-concurrency must be at least 1")
     pdf_path = ensure_pdf(args.pdf)
     visual_reader = None
     if visual_values_mode != "off":

@@ -37,6 +37,7 @@ class ModelConfig:
     triage_num_predict: int = 64
     triage_confidence: float = 0.65
     photo_skip_confidence: float = 0.8
+    vlm_concurrency: int = 1
 
 
 @dataclass(frozen=True)
@@ -152,6 +153,7 @@ def apply_environment_overrides(mapping: dict[str, Any]) -> None:
         "DOCLING_RAG_TRIAGE_NUM_PREDICT": ("models", "triage_num_predict", int),
         "DOCLING_RAG_TRIAGE_CONFIDENCE": ("models", "triage_confidence", float),
         "DOCLING_RAG_PHOTO_SKIP_CONFIDENCE": ("models", "photo_skip_confidence", float),
+        "DOCLING_RAG_VLM_CONCURRENCY": ("models", "vlm_concurrency", int),
     }
     for env_name, (section, key, converter) in env_map.items():
         raw = os.getenv(env_name)
@@ -181,6 +183,7 @@ def argv_with_config_defaults(config: AppConfig, argv: list[str]) -> list[str]:
         ("--triage-num-predict", config.models.triage_num_predict),
         ("--triage-confidence", config.models.triage_confidence),
         ("--photo-skip-confidence", config.models.photo_skip_confidence),
+        ("--vlm-concurrency", config.models.vlm_concurrency),
     ]
     for option, value in values:
         if not any(arg == option or arg.startswith(option + "=") for arg in out):

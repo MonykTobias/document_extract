@@ -1703,6 +1703,10 @@ def transcribe_table_candidates(
     if table_dir.exists():
         shutil.rmtree(table_dir)
     DETERMINISTIC_FORMATS = {"sectioned_table", "regular_table", "title_detail_table"}
+    # Candidates whose transcription needs a VLM call. The prologue below is
+    # order-sensitive (deterministic renders mutate shared picture records and
+    # crops are written serially); only the calls themselves run concurrently.
+    pending: list[tuple[TableCandidate, list[str], str, Path, bool]] = []
     for candidate in candidates:
         # Sectioned candidates are verified at layout-map time. Once picture
         # summaries are available, inject their geometry-matched values before
@@ -1789,6 +1793,15 @@ def transcribe_table_candidates(
         prompt = prompt_template.format(
             region_blocks=region_blocks_prompt_json(region_cells)
         )
+        pending.append((candidate, cell_texts, prompt, crop_path, is_kpi))
+
+    # Each worker owns one candidate: it mutates only that candidate and
+    # writes only files named by its candidate_id, so concurrent transcription
+    # is safe. The per-candidate 2-attempt verify/feedback loop stays intact.
+    def transcribe_one(
+        task: tuple[TableCandidate, list[str], str, Path, bool],
+    ) -> None:
+        candidate, cell_texts, prompt, crop_path, is_kpi = task
         for attempt in range(2):
             answer, usage = ollama_client.call_ollama_vlm(
                 base_url=args.ollama_base_url,
@@ -1877,6 +1890,10 @@ def transcribe_table_candidates(
                 )
             else:
                 candidate.warnings.append("verification_failed")
+
+    ollama_client.map_vlm_tasks(
+        transcribe_one, pending, getattr(args, "vlm_concurrency", 1)
+    )
 
 __all__ = [
     "segment_panels", "is_banner_cell", "split_panel_at_banners",

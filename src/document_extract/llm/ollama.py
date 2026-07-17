@@ -10,6 +10,23 @@ from ..markdown import postprocess as sp
 IMAGE_TOKEN_ESTIMATE = 4000
 
 
+def map_vlm_tasks(worker: Any, items: Any, max_workers: int) -> list[Any]:
+    """Run one VLM task per item, preserving input order.
+
+    max_workers <= 1 reproduces the serial loop exactly. Workers must touch
+    only their own item; shared state (stats dicts, reporter prints, files not
+    namespaced per item) stays in the caller. The first worker exception
+    propagates and fails the stage, matching the serial loop's semantics.
+    """
+    items = list(items)
+    if max_workers <= 1 or len(items) <= 1:
+        return [worker(item) for item in items]
+    from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
+    with ThreadPoolExecutor(max_workers=min(max_workers, len(items))) as pool:
+        return list(pool.map(worker, items))
+
+
 def image_to_base64(image_path: Path) -> str:
     return base64.b64encode(image_path.read_bytes()).decode("ascii")
 

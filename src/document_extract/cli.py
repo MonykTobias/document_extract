@@ -103,6 +103,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Cap generated tokens per image summary. 0 disables the cap.",
     )
     parser.add_argument(
+        "--vlm-concurrency",
+        type=int,
+        default=1,
+        help="Concurrent Ollama calls for independent per-picture/per-table "
+        "requests. 1 keeps the serial behavior. Real parallelism needs "
+        "OLLAMA_NUM_PARALLEL on the server, and each slot allocates its own "
+        "num_ctx KV cache.",
+    )
+    parser.add_argument(
         "--auto-num-ctx",
         action="store_true",
         help="Size the context window per call from the prompt and image estimate.",

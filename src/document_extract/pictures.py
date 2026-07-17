@@ -258,6 +258,9 @@ def triage_pictures(
         "skipped": 0,
         "types": {},
     }
+    # (record, crop path) pairs whose classification needs a VLM call. Crops
+    # are built in this serial phase; workers only perform the HTTP call.
+    pending: list[tuple[PictureRecord, Path]] = []
     for record in records:
         # Tiny icons embedded in a table cell skip VLM triage — they are "symbols" and treated like such
         if record.embedded_in == "table" and record.area_ratio < PICTURE_MIN_AREA_RATIO:
@@ -329,17 +332,28 @@ def triage_pictures(
 
         # Single cheap VLM call that classifies the image and returns a
         # confidence score — this drives every downstream routing decision.
-        prompt = DEFAULT_PICTURE_TRIAGE_PROMPT
-        answer, usage = ollama_client.call_ollama_vlm(
+        pending.append((record, image_path))
+
+    def call_triage(task: tuple[PictureRecord, Path]) -> tuple[str, dict[str, Any]]:
+        _, image_path = task
+        return ollama_client.call_ollama_vlm(
             base_url=args.ollama_base_url,
             model=args.triage_model,
-            prompt=prompt,
+            prompt=DEFAULT_PICTURE_TRIAGE_PROMPT,
             image_path=image_path,
             temperature=0.0,
             num_ctx=args.num_ctx,
             num_predict=args.triage_num_predict,
             auto_num_ctx=args.auto_num_ctx,
         )
+
+    results = ollama_client.map_vlm_tasks(
+        call_triage, pending, getattr(args, "vlm_concurrency", 1)
+    )
+
+    # Parsing, stats, and routing stay serial and in input order so the
+    # serial and concurrent paths produce identical records and stats.
+    for (record, _image_path), (answer, usage) in zip(pending, results):
         stats["calls"] += 1
         if usage.get("retried"):
             stats["retries"] += 1
@@ -555,9 +569,12 @@ def summarize_pictures(
 ) -> None:
     if args.skip_vlm:
         return
-    for record in records:
-        if not record.summarize or not record.abs_path:
-            continue
+
+    # Each worker owns exactly one record: it mutates only that record and
+    # writes only that record's crop files, so concurrent extraction is safe.
+    # Callers derive call/retry counts from record.usage afterwards, so there
+    # is no shared accumulator here.
+    def extract_one(record: PictureRecord) -> None:
         image_path = picture_vlm_image_path(
             record,
             page_image_path=page_image_path,
@@ -566,7 +583,7 @@ def summarize_pictures(
         )
         if image_path is None:
             record.summary_warnings.append("missing_image")
-            continue
+            return
         context = {
             "page": record.page,
             "picture": record.index,
@@ -651,6 +668,12 @@ def summarize_pictures(
             if summary_type == "symbol"
             else body.strip()
         )
+
+    ollama_client.map_vlm_tasks(
+        extract_one,
+        [record for record in records if record.summarize and record.abs_path],
+        getattr(args, "vlm_concurrency", 1),
+    )
 
 
 def save_region_crop(
