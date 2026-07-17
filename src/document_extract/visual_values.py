@@ -47,6 +47,22 @@ def comparison_key(value: Any) -> str:
     return _WS_RE.sub(" ", normalized or "").strip().casefold()
 
 
+def _reader_structures(
+    reader: Any,
+) -> tuple[dict[int, dict[int, list[Any]]], dict[str, dict[str, Any]]]:
+    """Parent tree + structure info, computed once per reader.
+
+    Both walk the whole document, so per-page recomputation is O(pages x tree).
+    Only a successful walk is cached: a failing tree keeps raising per page,
+    preserving the per-page structure_tree_error diagnostic.
+    """
+    cached = getattr(reader, "_document_extract_structures", None)
+    if cached is None:
+        cached = (_parent_tree(reader), _structure_info(reader))
+        reader._document_extract_structures = cached
+    return cached
+
+
 def collect_tagged_candidates(
     reader: Any, page_number: int, page_size: tuple[float, float]
 ) -> list[VisualCandidate]:
@@ -65,8 +81,7 @@ def collect_tagged_candidates(
 
     collector_reasons: list[str] = []
     try:
-        parent_tree = _parent_tree(reader)
-        struct_info = _structure_info(reader)
+        parent_tree, struct_info = _reader_structures(reader)
     except Exception:
         # A malformed structure tree costs provenance, not the page: without it
         # nothing reaches `structure_cell`, so no value can be trusted anyway.

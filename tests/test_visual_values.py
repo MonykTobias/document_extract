@@ -482,6 +482,69 @@ def check_collector_robustness() -> None:
     )
 
 
+def check_structure_cache() -> None:
+    from pypdf import PdfReader
+
+    import document_extract.visual_values as vv
+
+    with tempfile.TemporaryDirectory() as temp:
+        painted = Path(temp) / "painted.pdf"
+        _write_tagged_pdf(painted, "Pending", paint=True)
+
+        reader = PdfReader(painted)
+        calls = {"parent": 0, "struct": 0}
+        original_parent, original_struct = vv._parent_tree, vv._structure_info
+
+        def counting_parent(target: object) -> dict:
+            calls["parent"] += 1
+            return original_parent(target)
+
+        def counting_struct(target: object) -> dict:
+            calls["struct"] += 1
+            return original_struct(target)
+
+        vv._parent_tree = counting_parent
+        vv._structure_info = counting_struct
+        try:
+            first = collect_tagged_candidates(reader, 1, (100.0, 100.0))
+            second = collect_tagged_candidates(reader, 1, (100.0, 100.0))
+        finally:
+            vv._parent_tree, vv._structure_info = original_parent, original_struct
+        check(
+            calls["parent"] == 1 and calls["struct"] == 1,
+            "repeat collection on one reader walks the structure tree once",
+        )
+        check(
+            [asdict(candidate) for candidate in first]
+            == [asdict(candidate) for candidate in second],
+            "cached structure walks change no collected candidate",
+        )
+        fresh = collect_tagged_candidates(PdfReader(painted), 1, (100.0, 100.0))
+        check(
+            [asdict(candidate) for candidate in second]
+            == [asdict(candidate) for candidate in fresh],
+            "a cached reader matches a fresh reader byte for byte",
+        )
+
+        failing_reader = PdfReader(painted)
+
+        def explode(target: object) -> dict:
+            raise RecursionError("cyclic structure tree")
+
+        vv._parent_tree = explode
+        try:
+            broken_first = collect_tagged_candidates(failing_reader, 1, (100.0, 100.0))
+            broken_second = collect_tagged_candidates(failing_reader, 1, (100.0, 100.0))
+        finally:
+            vv._parent_tree = original_parent
+        check(
+            "structure_tree_error" in broken_first[0].reasons
+            and "structure_tree_error" in broken_second[0].reasons
+            and getattr(failing_reader, "_document_extract_structures", None) is None,
+            "a failing structure walk keeps its per-page diagnostic and is never cached",
+        )
+
+
 def check_audit_never_mutates() -> None:
     table = _table()
     before = copy.deepcopy(table.stats["grid"])
@@ -841,6 +904,7 @@ def main(argv: list[str] | None = None) -> int:
     check_offset_contract()
     check_real_grid_fixture()
     check_collector_robustness()
+    check_structure_cache()
     check_audit_never_mutates()
     check_association()
     check_completeness_and_authority()
