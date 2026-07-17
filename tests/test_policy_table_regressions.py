@@ -32,8 +32,9 @@ from document_extract.markdown.postprocess import (
     filter_unplaced_lines,
     split_sectioned_grid,
 )
-from document_extract.models import PictureRecord, TableCandidate
+from document_extract.models import PictureRecord, TableCandidate, VisualCandidate
 from document_extract.refinement import postprocess_markdown
+from document_extract.visual_values import apply_trusted_visual_values
 from document_extract.tables import (
     _cell_with_bullets,
     build_table_candidates,
@@ -620,6 +621,59 @@ def test_multi_code_symbol_value_stays_comma_joined_in_a_coverage_cell() -> None
     check(
         bool(row) and row[0].rstrip().endswith("S1, S2, S3 |"),
         "a multi-code symbol remains comma-joined when placed in a cell",
+    )
+
+
+def test_tagged_inserted_cell_is_not_appended_to_by_legacy_symbols() -> None:
+    # Page 188 shape: a tagged value recovered into a coverage cell ("E4, E5")
+    # overlaps a legacy picture symbol carrying one of its codes ("E4"). The
+    # whole-string dedup in place_grid_symbols cannot see that membership, so
+    # the cell must be left alone rather than joined into "E4, E5, E4".
+    grid = _policy_grid_with_coverage()
+    table_bbox = [0.05, 0.08, 0.99, 0.58]
+    candidates = build_table_candidates(
+        cells=[],
+        page_size=(1.0, 1.0),
+        picture_records={},
+        layout_map={"blocks": [{"id": "b0001", "type": "table", "bbox": table_bbox, "_table_grid": grid}]},
+    )
+    candidate = candidates[0]
+    visual = VisualCandidate(
+        candidate_id="vv001",
+        page=1,
+        norm_rect=[0.88, 0.33, 0.92, 0.36],
+        proposals=[
+            {
+                "method": "actual_text",
+                "raw_value": "E4, E5",
+                "normalized_value": "E4, E5",
+                "comparison_key": "e4, e5",
+                "confidence": 1.0,
+            }
+        ],
+        target={
+            "kind": "table_cell",
+            "table_candidate_id": candidate.candidate_id,
+            "record_index": 0,
+            "column_index": 2,
+        },
+        resolution="trusted",
+        resolved_value="E4, E5",
+    )
+    check(
+        apply_trusted_visual_values([candidate], [visual], mode="enforce") == 1,
+        "the tagged scalar is inserted into the coverage cell",
+    )
+    _, symbol = _picture(1, [0.88, 0.33, 0.92, 0.36], "E4")  # same record band
+    render_deterministic_docling_table(candidate, {1: symbol}, (1.0, 1.0))
+    row = [line for line in candidate.markdown.splitlines() if line.startswith("| FOOD WASTE")]
+    check(
+        bool(row) and row[0].rstrip().endswith("E4, E5 |"),
+        "a legacy symbol never re-appends a code already inside the inserted scalar",
+    )
+    check(
+        (candidate.stats or {}).get("symbol_cell_assignments") == {1: {"record_index": 0, "column_index": 2}},
+        "the skipped symbol keeps its placement audit",
     )
 
 
@@ -1431,6 +1485,7 @@ def _run_all() -> None:
     test_repeated_symbol_value_is_de_duplicated()
     test_single_symbol_gains_no_delimiter()
     test_multi_code_symbol_value_stays_comma_joined_in_a_coverage_cell()
+    test_tagged_inserted_cell_is_not_appended_to_by_legacy_symbols()
     test_comma_joined_coverage_symbols_count_as_placed()
     # Phase 2: bullet lists inside body cells + lifted 400-char truncation
     test_black_square_bullets_are_preserved()

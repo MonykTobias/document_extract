@@ -294,7 +294,16 @@ def run_pipeline(args: argparse.Namespace) -> int:
     if visual_values_mode != "off":
         from pypdf import PdfReader  # noqa: PLC0415
 
-        visual_reader = PdfReader(str(pdf_path))
+        try:
+            visual_reader = PdfReader(str(pdf_path))
+        except Exception as error:  # noqa: BLE001
+            # Docling may well parse a PDF pypdf cannot. Losing the visual-value
+            # audit is not a reason to lose the extraction: the collector records
+            # the failure per page and every table keeps its legacy authority.
+            print(
+                f"WARNING: visual-value collector disabled: {type(error).__name__}: {error}",
+                flush=True,
+            )
     output_root = args.output_dir.expanduser().resolve() / pdf_path.stem
     output_root.mkdir(parents=True, exist_ok=True)
     page_refinement_prompt = load_page_refinement_prompt(args.prompt_file)

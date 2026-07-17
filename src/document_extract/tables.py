@@ -788,6 +788,7 @@ def place_grid_symbols(
     normalized: dict[str, Any],
     symbols: list[dict[str, Any]],
     cell_rects_by_row: dict[int, list[list[float]]],
+    protected_cells: set[tuple[int, int]] | None = None,
 ) -> tuple[list[int], dict[int, int]]:
     """Inject each symbol's value into the coverage cell of the row that vertically
     contains it. Returns the picture indices left unplaced and each successful
@@ -798,6 +799,11 @@ def place_grid_symbols(
     (never assigned by sequence), per the escalation rule. Several symbols sharing
     one cell are ordered by visual reading order and joined with ``GRID_SYMBOL_JOIN``
     (``E1, E2, S3``), de-duplicating repeated values.
+
+    ``protected_cells`` are ``(record_index, column_index)`` cells another pass
+    already filled authoritatively. Dedup here is whole-string, so it cannot see
+    that ``E4`` is already a member of ``E4, E5``; such a cell keeps its symbol
+    assignments for the audit but is never appended to.
     """
     records = normalized["records"]
     target = _grid_coverage_column(normalized["header"], records, normalized["num_cols"])
@@ -845,6 +851,8 @@ def place_grid_symbols(
         assignments[symbol["index"]] = matches[0]
         matched_by_record.setdefault(matches[0], []).append(symbol)
     for record_index, matched in matched_by_record.items():
+        if (record_index, target) in (protected_cells or set()):
+            continue
         cells = records[record_index]["cells"]
         while len(cells) <= target:
             cells.append("")
@@ -859,6 +867,17 @@ def place_grid_symbols(
                 values.append(value)
         cells[target] = GRID_SYMBOL_JOIN.join(values)
     return sorted(unplaced), dict(sorted(assignments.items()))
+
+
+def visually_inserted_cells(stats: dict[str, Any]) -> set[tuple[int, int]]:
+    """The cells a trusted visual value was inserted into (additive, may be absent)."""
+    cells: set[tuple[int, int]] = set()
+    for cell in stats.get("visual_values_inserted_cells") or []:
+        try:
+            cells.add((int(cell["record_index"]), int(cell["column_index"])))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return cells
 
 
 def _symbol_cell_assignments(
@@ -1158,7 +1177,9 @@ def render_deterministic_docling_table(
     symbol_column = _grid_coverage_column(
         normalized["header"], normalized["records"], normalized["num_cols"]
     )
-    unplaced, assignments = place_grid_symbols(normalized, symbols, cell_rects_by_row)
+    unplaced, assignments = place_grid_symbols(
+        normalized, symbols, cell_rects_by_row, visually_inserted_cells(stats)
+    )
     cell_assignments = _symbol_cell_assignments(assignments, symbol_column)
     candidate.markdown = render_grid_markdown(normalized)
     candidate.verified = True
@@ -1265,7 +1286,9 @@ def render_sectioned_docling_table(
     symbol_column = _grid_coverage_column(
         normalized["header"], normalized["records"], normalized["num_cols"]
     )
-    unplaced, assignments = place_grid_symbols(normalized, symbols, cell_rects_by_row)
+    unplaced, assignments = place_grid_symbols(
+        normalized, symbols, cell_rects_by_row, visually_inserted_cells(stats)
+    )
     cell_assignments = _symbol_cell_assignments(assignments, symbol_column)
     candidate.markdown = sp.render_sectioned_tables(split)
     candidate.stats = {
@@ -1729,7 +1752,12 @@ def transcribe_table_candidates(
                     markdown.rstrip() + "\n", encoding="utf-8"
                 )
                 break
-            candidate.markdown = markdown
+            # A rejected answer must never displace markdown another pass already
+            # verified: `verified` is not reset here, so the rejected text would
+            # otherwise be spliced as authoritative. It still reaches the debug
+            # file either way.
+            if not candidate.verified:
+                candidate.markdown = markdown
             (table_dir / f"{candidate.candidate_id}_rejected.md").write_text(
                 markdown.rstrip() + "\n", encoding="utf-8"
             )

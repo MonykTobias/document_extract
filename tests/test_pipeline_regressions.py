@@ -7,6 +7,7 @@ Run from the repository root with ``python tests/test_pipeline_regressions.py``.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -16,10 +17,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from document_extract import pictures, tables
 from document_extract.config import apply_detection_config, config_from_mapping
 from document_extract.layout.prompt_map import build_layout_prompt_map
-from document_extract.models import PictureRecord
+from document_extract.models import PictureRecord, TableCandidate, VisualCandidate
+from document_extract.pipeline import stages
 from document_extract.pipeline.runner import _has_current_visual_audit, selected_page_numbers
 from document_extract.visual_values import COLLECTOR_VERSION
-from document_extract.runtime import CHECKPOINT_SCHEMA_VERSION, PageState, invalidate_from
+from document_extract.runtime import (
+    CHECKPOINT_SCHEMA_VERSION,
+    PageState,
+    StatusReporter,
+    invalidate_from,
+)
 
 
 def check(condition: bool, message: str) -> None:
@@ -247,6 +254,206 @@ def check_summary_retry_usage_accounting() -> None:
     check(bool(record.usage["retried"]), "retry is visible in usage accounting")
 
 
+def _enforce_table() -> TableCandidate:
+    """A deterministic symbol table one trusted insertion away from complete."""
+    return TableCandidate(
+        candidate_id="tc001",
+        kind="docling_table",
+        bbox=[0.0, 0.0, 1.0, 1.0],
+        stats={
+            "grid": {
+                "rows": [
+                    ["Policy", "Key contents", "ESRS coverage"],
+                    ["Alpha", "version 1.0", ""],
+                    ["Beta", "10 Principles", "S1"],
+                ],
+                "num_cols": 3,
+                "header_rows": 1,
+                "cells": [],
+            },
+            "visual_values": {
+                "status": "incomplete",
+                "mode": "enforce",
+                "missing_ids": ["vv001"],
+                "reason_codes": ["trusted_value_missing_from_grid"],
+            },
+        },
+    )
+
+
+def _trusted_visual(table_id: str = "tc001") -> VisualCandidate:
+    return VisualCandidate(
+        candidate_id="vv001",
+        page=1,
+        norm_rect=[0.7, 0.3, 0.8, 0.4],
+        proposals=[
+            {
+                "method": "actual_text",
+                "raw_value": "E4, E5",
+                "normalized_value": "E4, E5",
+                "comparison_key": "e4, e5",
+                "confidence": 1.0,
+            }
+        ],
+        evidence=[
+            {
+                "source": "tagged_pdf",
+                "norm_rect": [0.7, 0.3, 0.8, 0.4],
+                "paint_state": "visible",
+                "reason_codes": ["parent_tree_unique", "structure_cell"],
+            }
+        ],
+        target={
+            "kind": "table_cell",
+            "table_candidate_id": table_id,
+            "record_index": 0,
+            "column_index": 2,
+        },
+        resolution="trusted",
+        resolved_value="E4, E5",
+    )
+
+
+def check_visual_completeness_precedes_transcription() -> None:
+    """Insertion must be reflected in authority before the transcription gate.
+
+    Reading detect-time completeness there re-transcribes a table the insertion
+    already completed, and lets a rejected VLM answer overwrite it.
+    """
+    seen: dict[str, object] = {}
+
+    def fake_transcribe(*, candidates, **kwargs) -> None:
+        stats = candidates[0].stats or {}
+        seen["status"] = (stats.get("visual_values") or {}).get("status")
+        seen["authoritative"] = candidates[0].has_complete_symbol_geometry()
+
+    table = _enforce_table()
+    state = make_page_state()
+    with tempfile.TemporaryDirectory() as temp:
+        state.page_dir = temp
+        state.visual_values_mode = "enforce"
+        original = stages.transcribe_table_candidates
+        stages.transcribe_table_candidates = fake_transcribe
+        try:
+            stages._run_table_extract(
+                state=state,
+                reporter=StatusReporter(page_index=1, total_pages=1, page=1),
+                args=argparse.Namespace(skip_vlm=True),
+                runtime={
+                    "candidates": [table],
+                    "records": [],
+                    "visual_candidates": [_trusted_visual()],
+                },
+            )
+        finally:
+            stages.transcribe_table_candidates = original
+    check(
+        table.stats["grid"]["rows"][1][2] == "E4, E5",
+        "the trusted value is inserted during table_extract",
+    )
+    check(
+        seen["status"] == "complete" and seen["authoritative"] is True,
+        "transcription sees post-insertion completeness, not the detect-time status",
+    )
+
+
+def check_failed_verify_keeps_deterministic_markdown() -> None:
+    """A rejected VLM answer must never survive behind ``verified=True``."""
+    deterministic = (
+        "| Policy | Key contents | ESRS coverage |\n|---|---|---|\n"
+        "| Alpha | version 1.0 | E4, E5 |\n| Beta | 10 Principles | S1 |\n"
+    )
+    table = _enforce_table()
+    table.markdown = deterministic
+    table.verified = True
+    table.stats["grid"]["rows"][1][2] = "E4, E5"
+    table.stats["format"] = "regular_table"
+    table.stats["deterministic"] = True
+    table.stats["symbol_picture_indices"] = [1]
+    # Withheld authority (uncertain) is what routes an already-verified
+    # deterministic table into the VLM path at all.
+    table.stats["visual_values"]["status"] = "uncertain"
+    calls: list[str] = []
+
+    def fake_call_ollama_vlm(**kwargs):
+        calls.append(kwargs["prompt"])
+        return (
+            "| Policy | Key contents | ESRS coverage |\n|---|---|---|\n"
+            "| Alpha | version 4321 | E4, E5 |\n| Beta | 10 Principles | S1 |\n"
+        ), {"total_tokens": 1}
+
+    def fake_save_region_crop(*, page_image_path, bbox, crop_path) -> bool:
+        crop_path.parent.mkdir(parents=True, exist_ok=True)
+        crop_path.write_bytes(b"")
+        return True
+
+    original_vlm = tables.ollama_client.call_ollama_vlm
+    original_crop = tables.save_region_crop
+    tables.ollama_client.call_ollama_vlm = fake_call_ollama_vlm
+    tables.save_region_crop = fake_save_region_crop
+    try:
+        with tempfile.TemporaryDirectory() as temp:
+            tables.transcribe_table_candidates(
+                candidates=[table],
+                cells=[],
+                page_image_path=Path(temp) / "page.png",
+                page_dir=Path(temp),
+                args=argparse.Namespace(
+                    skip_vlm=False,
+                    ollama_base_url="http://unused.test",
+                    ollama_model="test-model",
+                    temperature=0.0,
+                    num_ctx=0,
+                    num_predict=0,
+                    auto_num_ctx=False,
+                ),
+                picture_records=[make_picture_record(index=1, summary_type="symbol", summary="E4")],
+                page_size=(1.0, 1.0),
+            )
+            rejected = (Path(temp) / "table_candidates" / "tc001_rejected.md").exists()
+    finally:
+        tables.ollama_client.call_ollama_vlm = original_vlm
+        tables.save_region_crop = original_crop
+    check(len(calls) == 2, "a withheld deterministic table is retried by the VLM twice")
+    check(
+        table.markdown == deterministic and table.verified,
+        "a twice-rejected VLM answer leaves the verified deterministic markdown in place",
+    )
+    check(rejected, "the rejected answer is still written for debugging")
+
+
+def check_collector_unavailable_does_not_fail_detect() -> None:
+    """``audit``/``enforce`` must never fail a page that ``off`` completes."""
+    from PIL import Image
+
+    state = make_page_state()
+    with tempfile.TemporaryDirectory() as temp:
+        state.page_dir = temp
+        Image.new("RGB", (10, 10)).save(Path(temp) / "page.png")
+        candidates = stages._run_table_detect(
+            state=state,
+            reporter=StatusReporter(page_index=1, total_pages=1, page=1),
+            runtime={},
+            reader=None,
+            mode="audit",
+        )
+        rows = json.loads((Path(temp) / "visual_candidates.json").read_text(encoding="utf-8"))
+    check(state.status != "failed", "an unusable reader does not fail the detect stage")
+    check(
+        len(rows) == 1
+        and rows[0]["reasons"][:2] == ["collector_error", "collector_unavailable"]
+        and not rows[0]["proposals"],
+        "the audit records the collector failure as a distinct diagnostic",
+    )
+    check(
+        all(
+            (candidate.stats or {}).get("visual_values", {}).get("status") != "complete"
+            for candidate in candidates
+        ),
+        "a failed collector is never reported as complete",
+    )
+
+
 def check_page_selection_bounds() -> None:
     check(selected_page_numbers(10, 2, 4) == [2, 3, 4], "page range selection works")
     try:
@@ -264,6 +471,9 @@ def main() -> int:
     check_visual_resume_audit_freshness()
     check_layout_map_picture_keying()
     check_summary_retry_usage_accounting()
+    check_visual_completeness_precedes_transcription()
+    check_failed_verify_keeps_deterministic_markdown()
+    check_collector_unavailable_does_not_fail_detect()
     check_page_selection_bounds()
     print("\nall checks passed")
     return 0

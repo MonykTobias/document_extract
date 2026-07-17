@@ -16,7 +16,9 @@ from typing import Any, Iterable
 from .models import PictureRecord, TableCandidate, VisualCandidate
 
 
-COLLECTOR_VERSION = 1
+# 2: Docling end offsets are consumed as exclusive; serialized candidates and
+# audits written by version 1 mean something different and must be rebuilt.
+COLLECTOR_VERSION = 2
 _WS_RE = re.compile(r"\s+", re.UNICODE)
 _PAINT_OPERATORS = {
     b"S", b"s", b"f", b"F", b"f*", b"B", b"B*", b"b", b"b*", b"sh",
@@ -54,13 +56,22 @@ def collect_tagged_candidates(
     unresolved parent-tree links, and non-painting content are retained rather
     than guessed into a table cell.
     """
+    if reader is None:
+        return [_collector_failure(page_number, "collector_unavailable")]
     try:
         page = reader.pages[page_number - 1]
     except Exception:
-        return []
+        return [_collector_failure(page_number, "page_unreadable")]
 
-    parent_tree = _parent_tree(reader)
-    struct_info = _structure_info(reader)
+    collector_reasons: list[str] = []
+    try:
+        parent_tree = _parent_tree(reader)
+        struct_info = _structure_info(reader)
+    except Exception:
+        # A malformed structure tree costs provenance, not the page: without it
+        # nothing reaches `structure_cell`, so no value can be trusted anyway.
+        parent_tree, struct_info = {}, {}
+        collector_reasons.append("structure_tree_error")
     crop = _page_crop(page, page_size)
     rotation = _page_rotation(page)
     groups: list[dict[str, Any]] = []
@@ -94,7 +105,7 @@ def collect_tagged_candidates(
         if not actual_seen:
             continue
 
-        reason_codes = ["marked_content"]
+        reason_codes = ["marked_content", *collector_reasons]
         if mcid is None:
             reason_codes.append("missing_mcid")
         elif len(parent_entries) == 1:
@@ -165,6 +176,29 @@ def collect_tagged_candidates(
             )
         )
     return candidates
+
+
+def _collector_failure(page_number: int, reason: str) -> VisualCandidate:
+    """A page the collector could not read at all.
+
+    Retained as a diagnostic so the audit distinguishes "nothing observed" from
+    "nothing observable".  It proposes no value and targets no cell, so the
+    tables on the page keep exactly the authority they have without the
+    collector.
+    """
+    return VisualCandidate(
+        candidate_id=f"vv{page_number:04d}_error",
+        page=page_number,
+        norm_rect=None,
+        evidence=[
+            {
+                "source": "tagged_pdf",
+                "paint_state": "unknown",
+                "reason_codes": ["collector_error", reason],
+            }
+        ],
+        reasons=["collector_error", reason],
+    )
 
 
 def merge_picture_evidence(
@@ -495,7 +529,14 @@ def update_visual_completeness(
         ]
         if not observed:
             status = "not_observed"
-            reason_codes = ["no_relevant_visual_candidates"]
+            # A collector that could not read the page is not evidence of
+            # absence.  Authority falls back to legacy either way, but the audit
+            # must not read as "nothing there".
+            reason_codes = (
+                ["collector_error"]
+                if any("collector_error" in candidate.reasons for candidate in candidates)
+                else ["no_relevant_visual_candidates"]
+            )
         elif missing:
             status = "incomplete"
             reason_codes = ["trusted_value_missing_from_grid"]
@@ -689,6 +730,7 @@ def apply_trusted_visual_values(
         }:
             continue
         inserted_ids: list[str] = []
+        inserted_cells: set[tuple[int, int]] = set()
         for candidate in chosen:
             value = candidate.resolved_value or next(
                 (
@@ -726,21 +768,35 @@ def apply_trusted_visual_values(
             )
             inserted += 1
             inserted_ids.append(candidate.candidate_id)
+            inserted_cells.add((record_index, column_index))
         if inserted_ids:
             # A replayed deterministic table may already have Markdown from a
             # prior stage.  Force its supported renderer to rebuild it from the
             # source grid after a successful insert.
             table.verified = False
+            stats = table.stats or {}
+            # The exact cells are what the deterministic renderer needs: legacy
+            # symbol placement must not append to a cell this pass already owns.
             table.stats = {
-                **(table.stats or {}),
+                **stats,
                 "visual_values_inserted": sorted(
-                    {
-                        *list((table.stats or {}).get("visual_values_inserted", [])),
-                        *inserted_ids,
-                    }
+                    {*list(stats.get("visual_values_inserted", [])), *inserted_ids}
                 ),
+                "visual_values_inserted_cells": [
+                    {"record_index": record, "column_index": column}
+                    # Replayed stats already carry an earlier pass's cells.
+                    for record, column in sorted(
+                        inserted_cells | _inserted_cells(stats)
+                    )
+                ],
             }
     return inserted
+
+
+def _inserted_cells(stats: dict[str, Any]) -> set[tuple[int, int]]:
+    from .tables import visually_inserted_cells
+
+    return visually_inserted_cells(stats)
 
 
 def _place_normalized_value(
@@ -896,7 +952,13 @@ def _cell_coordinate_range(
     end_key: str,
     span_key: str,
 ) -> range:
-    """Return inclusive logical coordinates from Docling offsets or spans."""
+    """Return the logical coordinates a Docling cell occupies.
+
+    Docling's explicit ``end_*_offset_idx`` is exclusive (``TableData.grid``
+    fills ``range(start, end)``), so the range is ``[start, end)``.  Only a cell
+    without an explicit end falls back to its span, and a legacy ``r``/``c``
+    cell occupies exactly one slot.
+    """
     start = _int_value(cell.get(start_key))
     if start is None:
         start = _int_value(cell.get(legacy_key))
@@ -905,10 +967,10 @@ def _cell_coordinate_range(
     end = _int_value(cell.get(end_key))
     if end is None:
         span = _int_value(cell.get(span_key)) or 1
-        end = start + max(span, 1) - 1
-    if end < start:
+        end = start + max(span, 1)
+    if end <= start:
         return range(0)
-    return range(start, end + 1)
+    return range(start, end)
 
 
 def _grid_edges(
@@ -1118,15 +1180,21 @@ def _structure_info(reader: Any) -> dict[str, dict[str, Any]]:
 
 def _find_struct_nodes(value: Any, tag: str) -> list[Any]:
     found: list[Any] = []
+    visiting: set[str] = set()
 
     def walk(node: Any) -> None:
         resolved = _resolved_dict(node)
         if not resolved or "/S" not in resolved:
             return
+        key = _object_key(node)
+        if key in visiting:
+            return
+        visiting.add(key)
         if _name_value(resolved.get("/S")) == tag:
             found.append(node)
         for child in _struct_children(resolved.get("/K")):
             walk(child)
+        visiting.remove(key)
 
     for child in _struct_children(value):
         walk(child)
@@ -1164,6 +1232,7 @@ def _table_cell_contexts(table: Any, table_key: str) -> dict[str, dict[str, Any]
 
 def _descendants_with_tag(node: Any, tag: str, *, stop_tag: str) -> list[Any]:
     out: list[Any] = []
+    visiting: set[str] = set()
 
     def walk(value: Any, *, root: bool = False) -> None:
         resolved = _resolved_dict(value)
@@ -1175,8 +1244,13 @@ def _descendants_with_tag(node: Any, tag: str, *, stop_tag: str) -> list[Any]:
         if current == tag:
             out.append(value)
             return
+        key = _object_key(value)
+        if key in visiting:
+            return
+        visiting.add(key)
         for child in _struct_children(resolved.get("/K")):
             walk(child)
+        visiting.remove(key)
 
     for child in _struct_children(_resolved_dict(node).get("/K")):
         walk(child)

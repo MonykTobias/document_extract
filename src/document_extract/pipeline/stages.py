@@ -356,8 +356,8 @@ def _run_table_detect(
     page_dir = Path(state.page_dir)
 
     def action() -> dict[str, Any]:
-        if mode != "off" and reader is None:
-            raise RuntimeError("visual-value audit requires a tagged-PDF reader")
+        # A missing reader is recorded by the collector as a failure diagnostic:
+        # audit must never fail a page that `off` would complete.
         picture_map = {record.index: record for record in records}
         candidates = build_table_candidates(
             cells=state.detection_cells,
@@ -425,6 +425,11 @@ def _run_table_extract(
 
     def action() -> dict[str, Any]:
         inserted = apply_trusted_visual_values(candidates, visual_candidates, mode=mode)
+        if mode != "off":
+            # Transcription's authority fast path must see the completeness the
+            # insertion just produced, not the detect-time status: a table the
+            # insertion completed is authoritative and needs no VLM pass.
+            update_visual_completeness(candidates, visual_candidates, mode=mode)
         symbol_records = [
             record
             for record in records

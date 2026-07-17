@@ -5,6 +5,8 @@ Run from the repository root with ``python tests/test_visual_values.py``.
 
 from __future__ import annotations
 
+import copy
+import json
 import sys
 import tempfile
 from dataclasses import asdict
@@ -92,7 +94,16 @@ def _candidate(
     )
 
 
-def _grid_cell(r: int, c: int, text: str, bbox: list[float] | None) -> dict[str, object]:
+def _grid_cell(
+    r: int,
+    c: int,
+    text: str,
+    bbox: list[float] | None,
+    *,
+    row_span: int = 1,
+    col_span: int = 1,
+) -> dict[str, object]:
+    """A Docling grid cell using the installed contract: end offsets are exclusive."""
     return {
         "r": r,
         "c": c,
@@ -104,11 +115,11 @@ def _grid_cell(r: int, c: int, text: str, bbox: list[float] | None) -> dict[str,
         ),
         "column_header": r == 0,
         "start_row_offset_idx": r,
-        "end_row_offset_idx": r,
+        "end_row_offset_idx": r + row_span,
         "start_col_offset_idx": c,
-        "end_col_offset_idx": c,
-        "row_span": 1,
-        "col_span": 1,
+        "end_col_offset_idx": c + col_span,
+        "row_span": row_span,
+        "col_span": col_span,
     }
 
 
@@ -166,7 +177,12 @@ def check_normalization() -> None:
 
 
 def _write_tagged_pdf(
-    path: Path, value: str, *, paint: bool, text_mode: int | None = None
+    path: Path,
+    value: str,
+    *,
+    paint: bool,
+    text_mode: int | None = None,
+    cyclic: bool = False,
 ) -> None:
     """Create a tiny tagged page without committing a binary fixture."""
     from pypdf import PdfWriter
@@ -220,6 +236,9 @@ def _write_tagged_pdf(
     table_ref = writer._add_object(table)
     cell[NameObject("/P")] = row_ref
     row[NameObject("/P")] = table_ref
+    if cyclic:
+        # A malformed producer can point a row's /K back at its own ancestor.
+        row[NameObject("/K")] = ArrayObject([cell_ref, table_ref])
     parent_tree = DictionaryObject(
         {NameObject("/Nums"): ArrayObject([NumberObject(0), ArrayObject([cell_ref])])}
     )
@@ -344,6 +363,142 @@ def check_assessment() -> None:
     check(
         picture_conflict.resolution == "conflict",
         "a coextensive picture summary that disagrees blocks tagged insertion",
+    )
+
+
+def check_offset_contract() -> None:
+    """Docling's ``end_*_offset_idx`` are exclusive: ``end == start + span``."""
+    from document_extract.visual_values import _cell_coordinate_range
+
+    def rows(cell: dict[str, object]) -> list[int]:
+        return list(
+            _cell_coordinate_range(
+                cell, "r", "start_row_offset_idx", "end_row_offset_idx", "row_span"
+            )
+        )
+
+    check(
+        rows(_grid_cell(2, 0, "", None)) == [2],
+        "a 1x1 cell with explicit ends claims exactly its own slot",
+    )
+    check(
+        rows(_grid_cell(1, 0, "", None, row_span=4)) == [1, 2, 3, 4],
+        "a spanned cell with explicit ends claims [start, end)",
+    )
+    check(
+        rows({"start_row_offset_idx": 2, "row_span": 3}) == [2, 3, 4],
+        "a missing end still falls back to the span",
+    )
+    check(rows({"r": 3}) == [3], "a legacy r/c cell without offsets stays one slot")
+    check(
+        rows({"start_row_offset_idx": 2, "end_row_offset_idx": 2}) == [],
+        "an empty explicit range claims no slot",
+    )
+
+
+def check_real_grid_fixture() -> None:
+    """Association against a grid serialized by a real Docling run.
+
+    The synthetic builders can only encode the contract this repository
+    *believes*; this fixture pins what Docling actually wrote, including a
+    ``rows[1,5)`` row span and coverage cells with no bbox of their own.
+    """
+    payload = json.loads(
+        (Path(__file__).resolve().parent / "fixtures" / "docling_grid_page183.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    def build(cls, rows):
+        fields = set(cls.__dataclass_fields__)
+        return [cls(**{key: value for key, value in row.items() if key in fields}) for row in rows]
+
+    tables = build(TableCandidate, payload["table_candidates"])
+    candidates = build(VisualCandidate, payload["visual_candidates"])
+    page_size = (float(payload["page_size"][0]), float(payload["page_size"][1]))
+    associate_table_cells(candidates, tables, page_size)
+    check(
+        all(candidate.resolution == "trusted" for candidate in candidates)
+        and [candidate.target.get("column_index") for candidate in candidates] == [4, 4, 4]
+        and len({candidate.target.get("record_index") for candidate in candidates}) == 3,
+        "a real serialized Docling grid maps every tagged value to its own coverage cell",
+    )
+    inserted = apply_trusted_visual_values(tables, candidates, mode="enforce")
+    update_visual_completeness(tables, candidates, mode="enforce")
+    check(
+        inserted == 3
+        and tables[0].stats["visual_values"]["status"] == "complete"
+        and all(candidate.resolution == "already_present" for candidate in candidates),
+        "a real serialized Docling grid reaches complete enforce insertion",
+    )
+
+
+def check_collector_robustness() -> None:
+    from pypdf import PdfReader
+
+    import document_extract.visual_values as vv
+
+    with tempfile.TemporaryDirectory() as temp:
+        cyclic = Path(temp) / "cyclic.pdf"
+        painted = Path(temp) / "painted.pdf"
+        _write_tagged_pdf(cyclic, "Pending", paint=True, cyclic=True)
+        _write_tagged_pdf(painted, "Pending", paint=True)
+        collected = collect_tagged_candidates(PdfReader(cyclic), 1, (100.0, 100.0))
+
+        def explode(reader: object) -> dict:
+            raise RecursionError("cyclic structure tree")
+
+        original = vv._structure_info
+        vv._structure_info = explode
+        try:
+            degraded = collect_tagged_candidates(PdfReader(painted), 1, (100.0, 100.0))
+        finally:
+            vv._structure_info = original
+    check(
+        len(collected) == 1 and collected[0].proposals[0]["normalized_value"] == "Pending",
+        "a cyclic structure tree collects its values instead of raising",
+    )
+    check(
+        len(degraded) == 1
+        and "structure_tree_error" in degraded[0].reasons
+        and degraded[0].proposals[0]["normalized_value"] == "Pending",
+        "an unusable structure tree degrades to a retained diagnostic",
+    )
+
+    unavailable = collect_tagged_candidates(None, 1, (100.0, 100.0))
+    check(
+        len(unavailable) == 1
+        and unavailable[0].reasons == ["collector_error", "collector_unavailable"]
+        and not unavailable[0].proposals,
+        "a missing reader records a collector failure instead of silent absence",
+    )
+    table = _table()
+    update_visual_completeness([table], unavailable, mode="enforce")
+    check(
+        table.stats["visual_values"]["status"] == "not_observed"
+        and table.stats["visual_values"]["reason_codes"] == ["collector_error"]
+        and table.has_complete_symbol_geometry(),
+        "a collector failure keeps legacy authority and is never reported as complete",
+    )
+
+
+def check_audit_never_mutates() -> None:
+    table = _table()
+    before = copy.deepcopy(table.stats["grid"])
+    candidate = _candidate("vv020", "Pending")
+    candidate.resolution = "trusted"
+    check(
+        apply_trusted_visual_values([table], [candidate], mode="audit") == 0
+        and table.stats["grid"] == before
+        and table.markdown == "",
+        "audit mode never inserts a trusted value into a grid",
+    )
+    update_visual_completeness([table], [candidate], mode="audit")
+    check(
+        table.stats["grid"] == before
+        and table.markdown == ""
+        and candidate.resolution == "trusted",
+        "recording completeness leaves the grid and markdown untouched",
     )
 
 
@@ -632,16 +787,26 @@ def _check_external_association_and_insertion(
     )
     candidates = merge_picture_evidence(candidates, records)
     associate_table_cells(candidates, tables, (float(page.mediabox.width), float(page.mediabox.height)))
+    # These artifacts are live run output, so a cell an earlier enforce run
+    # already filled resolves already_present rather than trusted. Both are
+    # accounted for; unresolved/conflict is the failure this gate catches.
     check(
         [candidate.resolved_value for candidate in candidates] == expected_values
-        and all(candidate.resolution == "trusted" for candidate in candidates),
+        and all(
+            candidate.resolution in {"trusted", "already_present"} for candidate in candidates
+        )
+        and len({
+            (candidate.target["record_index"], candidate.target["column_index"])
+            for candidate in candidates
+        }) == len(expected_values),
         f"external page {page_number} uniquely associates every expected tagged value",
     )
+    pending = sum(candidate.resolution == "trusted" for candidate in candidates)
     inserted = apply_trusted_visual_values(tables, candidates, mode="enforce")
     update_visual_completeness(tables, candidates, mode="enforce")
     table = next(table for table in tables if table.candidate_id == "tc001")
     check(
-        inserted == len(expected_values)
+        inserted == pending
         and table.stats["visual_values"]["status"] == "complete"
         and all(candidate.resolution == "already_present" for candidate in candidates),
         f"external page {page_number} enforce insertion is complete and replay-safe",
@@ -673,6 +838,10 @@ def main(argv: list[str] | None = None) -> int:
     check_normalization()
     check_tagged_collection()
     check_assessment()
+    check_offset_contract()
+    check_real_grid_fixture()
+    check_collector_robustness()
+    check_audit_never_mutates()
     check_association()
     check_completeness_and_authority()
     check_explicit_insertion()
