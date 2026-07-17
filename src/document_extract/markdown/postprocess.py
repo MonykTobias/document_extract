@@ -893,12 +893,35 @@ def _split_inline_bullets(line: str) -> list[str]:
     return out or [line]
 
 
+def normalize_pipe_table_cell_bullets(markdown: str) -> str:
+    """Apply :func:`cell_with_bullets` to every data cell in pipe table rows.
+
+    ``flatten_html_tables`` handles HTML tables; this covers pipe tables that
+    the VLM emits directly (e.g. page 184's ■-bulleted stakeholder table).
+    Separator rows (``|---|...|``) are left untouched.
+    """
+    _SEP_RE = re.compile(r"^\|[\s|:-]+\|?\s*$")
+    lines: list[str] = []
+    for line in markdown.splitlines():
+        if not line.lstrip().startswith("|") or _SEP_RE.match(line):
+            lines.append(line)
+            continue
+        cells = line.split("|")
+        # cells[0] and cells[-1] are the empty strings outside the outer pipes
+        cells = [cells[0]] + [cell_with_bullets(c) for c in cells[1:-1]] + [cells[-1]]
+        lines.append("|".join(cells))
+    suffix = "\n" if markdown.endswith("\n") else ""
+    return "\n".join(lines) + suffix
+
+
 def normalize_bullets_and_headings(markdown: str) -> str:
     """Normalize unicode bullets to ``- `` (splitting inline bullets), and ensure
     headings are separated by blank lines so lists/headings render correctly."""
     out_lines: list[str] = []
     for line in markdown.splitlines():
-        if any(ch in line for ch in BULLET_CHARS):
+        if line.lstrip().startswith("|"):
+            out_lines.append(line)  # pipe table rows handled by normalize_pipe_table_cell_bullets
+        elif any(ch in line for ch in BULLET_CHARS):
             out_lines.extend(_split_inline_bullets(line))
         else:
             out_lines.append(line)

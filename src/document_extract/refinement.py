@@ -287,6 +287,7 @@ def postprocess_markdown(
 ) -> tuple[str, dict[str, Any]]:
     is_toc = page_role == "toc"
     final = sp.flatten_html_tables(working_markdown)
+    final = sp.normalize_pipe_table_cell_bullets(final)
     final = sp.strip_redundant_list_glyphs(final)
     final = sp.normalize_bullets_and_headings(final)
     final = sp.demote_datapoint_headings(final)
