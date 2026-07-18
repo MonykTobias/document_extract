@@ -25,6 +25,7 @@ from .markdown.formatting import (
     normalize_headerless_pipe_tables,
     normalize_pipe_tables,
     pipe_row_count,
+    realign_collapsed_span_headers,
     replace_deterministic_tables,
     replace_sectioned_tables,
     standalone_value_line_count,
@@ -329,6 +330,9 @@ def postprocess_markdown(
     final = sp.unescape_html_entities(final)
     final = normalize_pipe_tables(final)
     table_warnings: dict[str, int] = {}
+    final, realigned_headers = realign_collapsed_span_headers(final, table_candidates)
+    if realigned_headers:
+        table_warnings["span_headers_realigned"] = realigned_headers
     final, kpi_count = sp.convert_kpi_pipe_tables_to_lists(final)
     if kpi_count:
         table_warnings["kpi_tables_converted"] = kpi_count

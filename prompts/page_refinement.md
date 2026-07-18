@@ -21,6 +21,7 @@ Rules:
 - Each pre-verified table or KPI list is authoritative: place it verbatim at the correct position in the page flow, and do not repeat its contents again as separate lists, paragraphs, or headings.
 - A pre-verified table may be supplied as a group of consecutive `###`-titled subtables that repeat the same column headers: place the whole group verbatim and in order, keep each subtable's `###` heading and repeated header row, and never merge them back into one table or convert them to lists.
 - A pre-verified table has exactly one header row. Never repeat its header labels as a body row, and never turn a data row into a `### heading`, a section banner, or a separate `- label: value` field block.
+- Every table row, including its header, must have the same number of cells as its body rows; repeat a visually spanning header label in each covered column.
 - A pre-verified table row whose first cell joins a bold title and its detail text with `<br>` is one single row: keep the title and detail together in that one cell. Never split them into two rows, promote the title to a heading, or drop the detail text.
 - A pre-verified table cell may contain a bulleted list written as `<br>`-joined `- item` fragments: keep those fragments together in that one cell exactly as given. Never spill them into separate rows or drop the `<br>` separators.
 - For charts and KPI panels, output explicit `Label: value` lines or a small markdown table when the mapping is visually clear.

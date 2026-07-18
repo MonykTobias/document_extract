@@ -694,6 +694,95 @@ def _pipe_table_spans(
     return spans
 
 
+def realign_collapsed_span_headers(
+    markdown: str, table_candidates: list[TableCandidate] | None
+) -> tuple[str, int]:
+    """Restore a collapsed VLM table header from its matching Docling grid."""
+    from ..tables import _grid_header_row_count, _merge_grid_header, numeric_tokens
+
+    candidates = [
+        candidate
+        for candidate in table_candidates or []
+        if candidate.kind == "docling_table"
+        and not candidate.verified
+        and not (candidate.stats or {}).get("headerless")
+        and not (candidate.stats or {}).get("kpi_panel")
+        and (candidate.stats or {}).get("format") != "kpi_list"
+    ]
+    if not candidates:
+        return markdown, 0
+
+    lines = markdown.splitlines()
+    replacements: list[tuple[int, str]] = []
+    used_candidates: set[str] = set()
+    for start, _, table_rows in _pipe_table_spans(lines):
+        if len(table_rows) < 2:
+            continue
+        current_header, *body_rows = table_rows
+        for candidate in candidates:
+            if candidate.candidate_id in used_candidates:
+                continue
+            grid = (candidate.stats or {}).get("grid")
+            if not isinstance(grid, dict):
+                continue
+            grid_rows = [
+                [str(cell).strip() for cell in row]
+                for row in grid.get("rows") or []
+                if isinstance(row, list)
+            ]
+            num_cols = int(
+                grid.get("num_cols")
+                or max((len(row) for row in grid_rows), default=0)
+            )
+            header_rows = _grid_header_row_count(grid)
+            if header_rows < 1 or num_cols < 1 or any(
+                len(row) != num_cols for row in body_rows
+            ):
+                continue
+            grid_header = _merge_grid_header(grid_rows, header_rows, num_cols)
+            current_labels = [label.casefold() for label in current_header if label]
+            grid_labels = {
+                collapse_ws(label).casefold() for label in grid_header if label
+            }
+            if (
+                len(current_labels) >= sum(bool(label) for label in grid_header)
+                or not current_labels
+                or not all(label in grid_labels for label in current_labels)
+            ):
+                continue
+            grid_body = grid_rows[header_rows:]
+            matched_rows = 0
+            for grid_row in grid_body:
+                grid_numbers = numeric_tokens(" ".join(grid_row))
+                grid_values = {
+                    collapse_ws(cell).casefold() for cell in grid_row if cell
+                }
+                if any(
+                    (
+                        grid_numbers & numeric_tokens(" ".join(table_row))
+                        if grid_numbers
+                        else grid_values & set(filter(None, table_row))
+                    )
+                    for table_row in body_rows
+                ):
+                    matched_rows += 1
+            if matched_rows < max(
+                1, (min(len(grid_body), len(body_rows)) + 1) // 2
+            ):
+                continue
+            replacements.append((start, "| " + " | ".join(grid_header) + " |"))
+            used_candidates.add(candidate.candidate_id)
+            break
+    if not replacements:
+        return markdown, 0
+    for index, row in replacements:
+        lines[index] = row
+    return (
+        "\n".join(lines) + ("\n" if markdown.endswith("\n") else ""),
+        len(replacements),
+    )
+
+
 def _rows_prefix_subset(
     subset_rows: list[tuple[str, ...]], superset_rows: list[tuple[str, ...]]
 ) -> bool:
