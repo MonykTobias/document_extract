@@ -1134,7 +1134,8 @@ def _significant_words(text: str) -> list[str]:
     return out
 
 
-_NUMERIC_TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)?")
+# Keep identical to layout.prompt_map.NUMERIC_TOKEN_RE.
+_NUMERIC_TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)*")
 _YEAR_ONLY_RE = re.compile(r"^(?:19|20)\d{2}$")
 _BARE_SHORT_NUMBER_RE = re.compile(r"^\d{1,3}$")
 _SHORT_VALUE_SIGNAL_RE = re.compile(

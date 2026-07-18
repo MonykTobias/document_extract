@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from document_extract.layout.prompt_map import NUMERIC_TOKEN_RE
 from document_extract.markdown import postprocess as sp
 from document_extract.refinement import postprocess_markdown
 
@@ -123,6 +124,15 @@ def test_completeness_diff_keeps_short_value_lines():
     check(sp.completeness_diff("29.8%\n", "") == ["29.8%"], "percentage flagged as missing")
     check(sp.completeness_diff("2.25 EUR\n", "") == ["2.25 EUR"], "currency value flagged as missing")
     check(sp.completeness_diff("27.3Bn\n", "") == ["27.3Bn"], "unit value flagged as missing")
+
+
+def test_numeric_tokens_match_table_verification():
+    for value in ("1.234,5", "-46,3", "18%"):
+        table_tokens = {token.replace(",", ".") for token in NUMERIC_TOKEN_RE.findall(value)}
+        check(
+            table_tokens == sp._numeric_tokens(value),
+            f"numeric token agreement for {value}",
+        )
 
 
 def test_completeness_diff_scattered_words_not_coverage():

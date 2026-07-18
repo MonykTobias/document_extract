@@ -36,6 +36,7 @@ TABLE_SECTIONED_MAX_ROWS = 200
 TABLE_SECTIONED_MAX_COLS = 32
 TABLE_SECTIONED_MAX_CELL_CHARS = 300
 NEARBY_BLOCK_DISTANCE = 0.12
+# Keep identical to markdown.postprocess._NUMERIC_TOKEN_RE.
 NUMERIC_TOKEN_RE = re.compile(r"\d+(?:[.,]\d+)*")
 WORD_TOKEN_RE = re.compile(r"[^\W\d_]{4,}", re.UNICODE)
 VALUE_SIGNAL_RE = re.compile(
