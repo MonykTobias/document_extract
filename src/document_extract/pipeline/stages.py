@@ -416,10 +416,14 @@ def _run_table_detect(
             if visual_path.exists():
                 visual_path.unlink()
         state.visual_values_mode = mode
+        runtime["records"] = records
         runtime["candidates"] = candidates
         runtime["visual_candidates"] = visual_candidates
         _sync_page_state(
-            state, candidates=candidates, visual_candidates=visual_candidates
+            state,
+            records=records,
+            candidates=candidates,
+            visual_candidates=visual_candidates,
         )
         (page_dir / "table_candidates.json").write_text(
             json.dumps(table_candidate_rows(candidates), indent=2, ensure_ascii=False),

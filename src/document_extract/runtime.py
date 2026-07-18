@@ -285,6 +285,10 @@ def invalidate_from(state: PageState, stage: str) -> None:
         state.visual_audit = {}
     if start <= stage_index("table_extract"):
         for candidate in state.table_candidates:
+            # Sectioned tables are rendered and verified at table_detect;
+            # replaying table_extract only re-places symbols, it never re-transcribes them.
+            if (candidate.get("stats") or {}).get("format") == "sectioned_table":
+                continue
             candidate.update(
                 {
                     "markdown": "",

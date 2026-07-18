@@ -20,6 +20,7 @@ from document_extract.layout.prompt_map import build_layout_prompt_map
 from document_extract.models import PictureRecord, TableCandidate, VisualCandidate
 from document_extract.pipeline import stages
 from document_extract.pipeline.runner import _has_current_visual_audit, selected_page_numbers
+from document_extract.pipeline.state import _records_from_state
 from document_extract.visual_values import COLLECTOR_VERSION
 from document_extract.runtime import (
     CHECKPOINT_SCHEMA_VERSION,
@@ -132,6 +133,33 @@ def check_page_repair_replay_state() -> None:
     check(
         state.final_markdown == "# repaired page",
         "snapshot-less checkpoint keeps final_markdown on page_repair resume",
+    )
+
+
+def check_sectioned_table_survives_table_extract_replay() -> None:
+    sectioned = {
+        "candidate_id": "tc001",
+        "stats": {"format": "sectioned_table"},
+        "markdown": "### Section\n\n| A | B |\n|---|---|\n| 1 | 2 |",
+        "verified": True,
+    }
+    plain = {
+        "candidate_id": "tc002",
+        "stats": {"format": "region"},
+        "markdown": "| A | B |\n|---|---|\n| 1 | 2 |",
+        "verified": True,
+    }
+    state = make_page_state()
+    state.completed_stage = "finalize"
+    state.table_candidates = [sectioned, plain]
+    invalidate_from(state, "table_extract")
+    check(
+        sectioned["verified"] and sectioned["markdown"].startswith("### Section"),
+        "replaying table_extract preserves verified sectioned tables",
+    )
+    check(
+        not plain["verified"] and plain["markdown"] == "",
+        "replaying table_extract still clears ordinary table candidates",
     )
 
 
@@ -454,6 +482,57 @@ def check_collector_unavailable_does_not_fail_detect() -> None:
     )
 
 
+def check_table_detect_checkpoints_record_mutations() -> None:
+    from PIL import Image
+
+    cells: list[dict[str, object]] = []
+    index = 0
+    for column, x in enumerate((0.05, 0.30, 0.55)):
+        for row in range(4):
+            index += 1
+            y = 0.15 + row * 0.16
+            cells.append(
+                {
+                    "id": f"b{index:04d}",
+                    "rect": [x, y, x + 0.16, y + 0.03],
+                    "text": f"Value {column}-{row}",
+                    "is_heading": False,
+                }
+            )
+    record = make_picture_record(
+        bbox={"l": 20.0, "t": 30.0, "r": 25.0, "b": 35.0},
+        area_ratio=0.0025,
+    )
+    state = make_page_state()
+    state.detection_cells = cells
+    state.layout_map = {"blocks": []}
+    with tempfile.TemporaryDirectory() as temp:
+        state.page_dir = temp
+        Image.new("RGB", (10, 10)).save(Path(temp) / "page.png")
+        candidates = stages._run_table_detect(
+            state=state,
+            reporter=StatusReporter(page_index=1, total_pages=1, page=1),
+            runtime={"records": [record]},
+            reader=None,
+            mode="off",
+        )
+        restored = _records_from_state(state)
+    check(
+        any(candidate.kind == "layout_region" for candidate in candidates),
+        "table detection builds the synthetic layout-region candidate",
+    )
+    check(
+        record.triage_type == "symbol" and record.summarize,
+        "table detection upgrades an embedded tiny picture to a symbol",
+    )
+    check(
+        len(restored) == 1
+        and restored[0].triage_type == "symbol"
+        and restored[0].summarize,
+        "table-detect record mutations survive checkpoint reload",
+    )
+
+
 def check_page_selection_bounds() -> None:
     check(selected_page_numbers(10, 2, 4) == [2, 3, 4], "page range selection works")
     try:
@@ -467,6 +546,7 @@ def check_page_selection_bounds() -> None:
 def main() -> int:
     check_detection_config_reaches_tables()
     check_page_repair_replay_state()
+    check_sectioned_table_survives_table_extract_replay()
     check_visual_value_invalidation()
     check_visual_resume_audit_freshness()
     check_layout_map_picture_keying()
@@ -474,6 +554,7 @@ def main() -> int:
     check_visual_completeness_precedes_transcription()
     check_failed_verify_keeps_deterministic_markdown()
     check_collector_unavailable_does_not_fail_detect()
+    check_table_detect_checkpoints_record_mutations()
     check_page_selection_bounds()
     print("\nall checks passed")
     return 0

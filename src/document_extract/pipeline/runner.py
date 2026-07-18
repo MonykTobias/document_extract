@@ -546,8 +546,8 @@ def run_pipeline(args: argparse.Namespace) -> int:
         finally:
             if pool is not None:
                 pool.shutdown(wait=True, cancel_futures=True)
+            _write_run_outputs(output_root, states)
 
-    _write_run_outputs(output_root, states)
     failed = [state for state in states if state.status == "failed"]
     print(
         f"Done. Outputs written to {output_root} "
