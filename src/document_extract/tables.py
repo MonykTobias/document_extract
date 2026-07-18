@@ -1161,6 +1161,29 @@ def build_table_candidates(
     return candidates
 
 
+def _grid_source_corroborated(stats: dict[str, Any]) -> bool:
+    """Whether the accepted grid is fully corroborated by source PDF text."""
+    audit = stats.get("reconstruction")
+    if not isinstance(audit, dict):
+        return False
+    if not (
+        audit.get("status") == "repaired"
+        or (
+            audit.get("status") == "unchanged"
+            and audit.get("reason") == "raw_matches_rules"
+        )
+    ):
+        return False
+    source_content = audit.get("source_content")
+    if not isinstance(source_content, dict) or not source_content:
+        return False
+    return all(
+        isinstance(column, dict)
+        and column.get("status") in {"verified", "empty"}
+        for column in source_content.values()
+    )
+
+
 def render_deterministic_docling_table(
     candidate: TableCandidate,
     records_by_index: dict[int, PictureRecord],
@@ -1217,6 +1240,7 @@ def render_deterministic_docling_table(
         and not symbols
         and not normalized.get("bulleted")
         and not stats.get("visual_values_inserted")
+        and not _grid_source_corroborated(stats)
     ):
         return False
     cell_rects_by_row: dict[int, list[list[float]]] = {}
