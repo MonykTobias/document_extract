@@ -313,6 +313,8 @@ def invalidate_from(state: PageState, stage: str) -> None:
         if state.pre_repair_markdown:
             state.final_markdown = state.pre_repair_markdown
             state.warnings = dict(state.pre_repair_warnings)
+        state.repair_layout_map = {}
+        state.page_repair_usage = None
     if start <= stage_index("finalize"):
         state.status = "ready"
         state.failure = None
@@ -327,8 +329,8 @@ def clear_downstream_artifacts(page_dir: Path, stage: str) -> None:
         "picture_extract": ("image_summaries.jsonl",),
         "table_detect": ("table_candidates.json", "table_candidates_overlay.png", "table_reconstruction.json", "table_reconstruction_overlay.png", "visual_candidates.json"),
         "table_extract": ("table_candidates.json", "table_candidates_overlay.png", "table_candidates", "table_reconstruction.json", "table_reconstruction_overlay.png", "visual_candidates.json"),
-        "page_refine": ("page_vlm.md", "page_repair.md", "docling_final.md"),
-        "page_repair": ("page_repair.md", "docling_final.md"),
+        "page_refine": ("page_vlm.md", "page_repair.md", "docling_final.md", "layout_prompt_map_repair.json"),
+        "page_repair": ("page_repair.md", "docling_final.md", "layout_prompt_map_repair.json"),
         "finalize": ("docling_final.md", "image_summaries.jsonl"),
     }
     start = stage_index(stage)

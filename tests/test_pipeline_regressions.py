@@ -26,6 +26,7 @@ from document_extract.runtime import (
     CHECKPOINT_SCHEMA_VERSION,
     PageState,
     StatusReporter,
+    clear_downstream_artifacts,
     invalidate_from,
 )
 
@@ -104,6 +105,8 @@ def check_page_repair_replay_state() -> None:
     state.pre_repair_warnings = {"content_loss_guard_triggered": False}
     state.final_markdown = "# repaired page"
     state.warnings = {"repair_rejected": ["shrunk_output"]}
+    state.repair_layout_map = {"blocks": ["stale"]}
+    state.page_repair_usage = {"total": 1}
     invalidate_from(state, "page_repair")
     check(
         state.final_markdown == "# refined page",
@@ -113,6 +116,15 @@ def check_page_repair_replay_state() -> None:
         state.warnings == {"content_loss_guard_triggered": False},
         "resume from page_repair restores the post-refine warnings",
     )
+    check(
+        state.repair_layout_map == {} and state.page_repair_usage is None,
+        "resume from page_repair clears stale repair state",
+    )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        repair_map = Path(temp_dir) / "layout_prompt_map_repair.json"
+        repair_map.write_text("{}", encoding="utf-8")
+        clear_downstream_artifacts(Path(temp_dir), "page_repair")
+        check(not repair_map.exists(), "page_repair replay removes its repair layout map")
 
     state = make_page_state()
     state.completed_stage = "finalize"
