@@ -80,6 +80,12 @@ def main() -> int:
             parse_args(argv_with_config_defaults(configured, ["x.pdf"])).triage_model == "TRIAGE_X",
             "configured triage model is still injected",
         )
+        try:
+            config_from_mapping({"reading_order": {"column_gutter": 35}})
+        except ValueError:
+            check(True, "out-of-range column gutter is rejected")
+        else:
+            raise AssertionError("out-of-range column gutter was accepted")
     return 0
 
 

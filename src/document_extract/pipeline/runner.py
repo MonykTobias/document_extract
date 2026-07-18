@@ -222,7 +222,11 @@ def _write_all_outputs(output_root: Path) -> None:
             continue
         try:
             state = PageState.load(checkpoint)
-        except Exception:  # noqa: BLE001
+        except Exception as error:  # noqa: BLE001
+            print(
+                f"WARNING: skipping unreadable checkpoint {checkpoint}: {type(error).__name__}",
+                flush=True,
+            )
             continue
         all_states.append(state)
 
@@ -330,13 +334,10 @@ def run_pipeline(args: argparse.Namespace) -> int:
 
     with fitz.open(pdf_path) as pdf_doc:
         pages = selected_page_numbers(len(pdf_doc), args.start_page, args.end_page)
-        page_sizes = {
-            page: (
-                float(pdf_doc.load_page(page - 1).rect.width),
-                float(pdf_doc.load_page(page - 1).rect.height),
-            )
-            for page in pages
-        }
+        page_sizes = {}
+        for page in pages:
+            rect = pdf_doc.load_page(page - 1).rect
+            page_sizes[page] = (float(rect.width), float(rect.height))
         # Docling's convert() re-parses the whole PDF on every call (~20-70s fixed
         # cost) before running the ML models on the requested range, and
         # docling-parse holds the GIL for that whole parse phase. Pages are
@@ -536,7 +537,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                     if state.status != "failed":
                         state.status = "failed"
                         state.failure = {
-                            "stage": args.resume_from or "prepare",
+                            "stage": "checkpoint" if args.resume_from else "prepare",
                             "error_type": type(error).__name__,
                             "error_message": str(error),
                         }

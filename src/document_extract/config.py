@@ -293,7 +293,7 @@ def _validate_section(value: Any, name: str) -> None:
             raise ValueError(f"{name}.{key} must be a number")
         if expected is str and not isinstance(item, str):
             raise ValueError(f"{name}.{key} must be a string")
-        if key.endswith("ratio") or key.endswith("threshold") or key.endswith("span") or key.endswith("gap") or key.endswith("tolerance"):
+        if key.endswith(("ratio", "threshold", "span", "gap", "tolerance", "distance", "gutter", "nudge")):
             if not 0 <= item <= 1:
                 raise ValueError(f"{name}.{key} must be between 0 and 1")
     if value.__class__.__name__ == "ModelConfig" and not 0 <= value.triage_confidence <= 1:
