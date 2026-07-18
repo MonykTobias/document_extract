@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import time
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,16 @@ from ..markdown import postprocess as sp
 
 
 IMAGE_TOKEN_ESTIMATE = 4000
+_SESSION = None
+
+
+def _session():
+    global _SESSION
+    if _SESSION is None:
+        import requests  # noqa: PLC0415
+
+        _SESSION = requests.Session()
+    return _SESSION
 
 
 def map_vlm_tasks(worker: Any, items: Any, max_workers: int) -> list[Any]:
@@ -60,28 +71,37 @@ def _ollama_post(
     import requests  # noqa: PLC0415
 
     url = f"{base_url.rstrip('/')}/api/chat"
-    try:
-        response = requests.post(
-            url,
-            headers={"Content-Type": "application/json"},
-            json={
-                "model": model,
-                "stream": False,
-                "options": options,
-                "messages": [
-                    {"role": "user", "content": prompt, "images": [image_b64]}
-                ],
-            },
-            timeout=600,
-        )
-    except requests.ConnectionError as exc:
-        raise RuntimeError(
-            f"Could not reach Ollama at {url}. If this is running in Docker on "
-            "Windows, pass --ollama-base-url http://host.docker.internal:11434 "
-            "and make sure Ollama is bound to 0.0.0.0:11434."
-        ) from exc
-    response.raise_for_status()
-    return response.json()
+    for attempt in range(3):
+        try:
+            response = _session().post(
+                url,
+                headers={"Content-Type": "application/json"},
+                json={
+                    "model": model,
+                    "stream": False,
+                    "options": options,
+                    "messages": [
+                        {"role": "user", "content": prompt, "images": [image_b64]}
+                    ],
+                },
+                timeout=(10, 600),
+            )
+        except (requests.ConnectionError, requests.Timeout) as error:
+            if attempt == 2:
+                if isinstance(error, requests.ConnectionError):
+                    raise RuntimeError(
+                        f"Could not reach Ollama at {url}. If this is running in Docker on "
+                        "Windows, pass --ollama-base-url http://host.docker.internal:11434 "
+                        "and make sure Ollama is bound to 0.0.0.0:11434."
+                    ) from error
+                raise
+        else:
+            if response.status_code < 500:
+                response.raise_for_status()
+                return response.json()
+            if attempt == 2:
+                response.raise_for_status()
+        time.sleep((1, 4)[attempt])
 
 
 def ollama_usage_from_payload(
