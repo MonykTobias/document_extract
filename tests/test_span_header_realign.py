@@ -53,9 +53,11 @@ def check(condition: bool, message: str) -> None:
     print(f"[ok] {message}")
 
 
-def candidate(*, verified: bool = False, grid: dict = GRID) -> TableCandidate:
+def candidate(
+    *, candidate_id: str = "docling-1", verified: bool = False, grid: dict = GRID
+) -> TableCandidate:
     return TableCandidate(
-        candidate_id="docling-1",
+        candidate_id=candidate_id,
         kind="docling_table",
         bbox=None,
         verified=verified,
@@ -105,6 +107,86 @@ def test_realign_guards() -> None:
         check(count == 0 and restored == markdown, message)
 
 
+def test_realigns_matching_twin_spans() -> None:
+    restored, count = realign_collapsed_span_headers(
+        COLLAPSED + "\n" + COLLAPSED, [candidate()]
+    )
+    expected = (
+        "| PRIORITIES | KPI | Baseline | Baseline | Target | Target | 2025 Landing |"
+    )
+    check(
+        count == 2 and restored.count(expected) == 2,
+        "matching twin spans are restored",
+    )
+    _, repeat_count = realign_collapsed_span_headers(restored, [candidate()])
+    check(repeat_count == 0, "twin restoration is idempotent")
+
+
+def test_unused_candidates_are_preferred_before_reuse() -> None:
+    grids = [
+        {
+            "num_cols": 3,
+            "header_rows": 1,
+            "rows": [["X", "X", "Y"], ["Row", "1", "2"]],
+        },
+        {
+            "num_cols": 3,
+            "header_rows": 1,
+            "rows": [["X", "Y", "Y"], ["Row", "1", "2"]],
+        },
+    ]
+    collapsed = """| X | Y |
+|---|---|
+| Row | 1 | 2 |
+
+| X | Y |
+|---|---|
+| Row | 1 | 2 |
+"""
+    restored, count = realign_collapsed_span_headers(
+        collapsed,
+        [
+            candidate(candidate_id="a", grid=grids[0]),
+            candidate(candidate_id="b", grid=grids[1]),
+        ],
+    )
+    check(
+        count == 2
+        and "| X | X | Y |\n|---|---|\n| Row | 1 | 2 |\n\n| X | Y | Y |"
+        in restored,
+        "unused candidate is preferred for the second matching span",
+    )
+
+
+def test_reuses_candidate_when_no_fresh_match_exists() -> None:
+    grid = {
+        "num_cols": 3,
+        "header_rows": 1,
+        "rows": [
+            ["X", "X", "Y"],
+            ["Alpha", "1", "2"],
+            ["Beta", "3", "4"],
+            ["Gamma", "5", "6"],
+            ["Delta", "7", "8"],
+        ],
+    }
+    collapsed = """| X | Y |
+|---|---|
+| Alpha | 1 | 2 |
+| Beta | 3 | 4 |
+
+| X | Y |
+|---|---|
+| Gamma | 5 | 6 |
+| Delta | 7 | 8 |
+"""
+    restored, count = realign_collapsed_span_headers(collapsed, [candidate(grid=grid)])
+    check(
+        count == 2 and restored.count("| X | X | Y |") == 2,
+        "used candidate is reused when no fresh candidate matches",
+    )
+
+
 def test_multirow_header_and_postprocess_order() -> None:
     multirow = {
         **GRID,
@@ -140,6 +222,9 @@ def test_multirow_header_and_postprocess_order() -> None:
 def main() -> int:
     test_realigns_collapsed_and_padded_headers()
     test_realign_guards()
+    test_realigns_matching_twin_spans()
+    test_unused_candidates_are_preferred_before_reuse()
+    test_reuses_candidate_when_no_fresh_match_exists()
     test_multirow_header_and_postprocess_order()
     return 0
 

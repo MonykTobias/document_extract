@@ -719,9 +719,9 @@ def realign_collapsed_span_headers(
         if len(table_rows) < 2:
             continue
         current_header, *body_rows = table_rows
-        for candidate in candidates:
-            if candidate.candidate_id in used_candidates:
-                continue
+        for candidate in sorted(
+            candidates, key=lambda candidate: candidate.candidate_id in used_candidates
+        ):
             grid = (candidate.stats or {}).get("grid")
             if not isinstance(grid, dict):
                 continue
