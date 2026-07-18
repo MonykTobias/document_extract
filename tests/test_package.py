@@ -8,11 +8,13 @@ from __future__ import annotations
 import os
 import sys
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from document_extract.config import load_config
+from document_extract.cli import parse_args
+from document_extract.config import argv_with_config_defaults, config_from_mapping, load_config
 from document_extract.prompts import DEFAULT_IMAGE_SUMMARY_PROMPT, load_prompt
 
 
@@ -22,17 +24,35 @@ def check(condition: bool, message: str) -> None:
     print(f"[ok] {message}")
 
 
-def main() -> int:
-    defaults = load_config()
-    check(defaults.runtime.dpi == 200, "bundled runtime defaults load")
-    check(defaults.models.num_ctx == 8192, "bundled model defaults load")
-    check(
-        load_prompt("picture_generic.md") == DEFAULT_IMAGE_SUMMARY_PROMPT,
-        "picture prompt resource is verbatim",
-    )
-
-    old_base_url = os.environ.pop("OLLAMA_BASE_URL", None)
+@contextmanager
+def clean_config_environment():
+    saved = {
+        name: value
+        for name, value in os.environ.items()
+        if name in {"OLLAMA_BASE_URL", "OLLAMA_MODEL", "OLLAMA_TRIAGE_MODEL"}
+        or name.startswith("DOCLING_RAG_")
+    }
+    for name in saved:
+        os.environ.pop(name)
     try:
+        yield
+    finally:
+        for name in tuple(os.environ):
+            if name in saved or name.startswith("DOCLING_RAG_"):
+                os.environ.pop(name)
+        os.environ.update(saved)
+
+
+def main() -> int:
+    with clean_config_environment():
+        defaults = load_config()
+        check(defaults.runtime.dpi == 200, "bundled runtime defaults load")
+        check(defaults.models.num_ctx == 8192, "bundled model defaults load")
+        check(
+            load_prompt("picture_generic.md") == DEFAULT_IMAGE_SUMMARY_PROMPT,
+            "picture prompt resource is verbatim",
+        )
+
         with tempfile.TemporaryDirectory() as temp_dir:
             overlay = Path(temp_dir) / "overlay.yaml"
             overlay.write_text(
@@ -42,19 +62,24 @@ def main() -> int:
             merged = load_config([overlay])
             check(merged.models.num_ctx == 321, "user YAML overrides bundled model config")
             check(merged.pictures.min_area_ratio == 0.02, "user YAML overrides detection config")
-    finally:
-        if old_base_url is not None:
-            os.environ["OLLAMA_BASE_URL"] = old_base_url
 
-    os.environ["OLLAMA_BASE_URL"] = "http://example.test:11434"
-    try:
+        os.environ["OLLAMA_BASE_URL"] = "http://example.test:11434"
         env_config = load_config()
         check(env_config.models.base_url == os.environ["OLLAMA_BASE_URL"], "environment overrides YAML")
-    finally:
-        if old_base_url is None:
-            os.environ.pop("OLLAMA_BASE_URL", None)
-        else:
-            os.environ["OLLAMA_BASE_URL"] = old_base_url
+        os.environ.pop("OLLAMA_BASE_URL")
+
+        args = parse_args(
+            argv_with_config_defaults(defaults, ["x.pdf", "--ollama-model", "USER_MODEL"])
+        )
+        check(
+            not args.triage_model and (args.triage_model or args.ollama_model) == "USER_MODEL",
+            "triage falls back to the CLI Ollama model",
+        )
+        configured = config_from_mapping({"models": {"triage_model": "TRIAGE_X"}})
+        check(
+            parse_args(argv_with_config_defaults(configured, ["x.pdf"])).triage_model == "TRIAGE_X",
+            "configured triage model is still injected",
+        )
     return 0
 
 

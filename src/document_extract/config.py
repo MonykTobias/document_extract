@@ -176,7 +176,6 @@ def argv_with_config_defaults(config: AppConfig, argv: list[str]) -> list[str]:
         ("--end-page", config.runtime.end_page),
         ("--ollama-base-url", config.models.base_url),
         ("--ollama-model", config.models.model),
-        ("--triage-model", config.models.triage_model or config.models.model),
         ("--temperature", config.models.temperature),
         ("--num-ctx", config.models.num_ctx),
         ("--num-predict", config.models.num_predict),
@@ -188,6 +187,10 @@ def argv_with_config_defaults(config: AppConfig, argv: list[str]) -> list[str]:
     for option, value in values:
         if not any(arg == option or arg.startswith(option + "=") for arg in out):
             out.extend((option, str(value)))
+    if config.models.triage_model and not any(
+        arg == "--triage-model" or arg.startswith("--triage-model=") for arg in out
+    ):
+        out.extend(("--triage-model", config.models.triage_model))
     if config.models.auto_num_ctx and "--auto-num-ctx" not in out:
         out.append("--auto-num-ctx")
     if config.runtime.skip_vlm and "--skip-vlm" not in out:
