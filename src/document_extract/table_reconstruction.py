@@ -691,8 +691,11 @@ def filter_visible_rule_segments(
     except Exception:
         return None, []
     try:
-        image = page_image if hasattr(page_image, "convert") else Image.open(page_image)
-        gray = image.convert("L")
+        if hasattr(page_image, "convert"):
+            gray = page_image.convert("L")
+        else:
+            with Image.open(page_image) as image:
+                gray = image.convert("L")
     except Exception:
         return None, []
 
@@ -1451,7 +1454,8 @@ def render_reconstruction_overlay(
     if not reconstructed or not geometry:
         return False
     try:
-        image = Image.open(page_image_path).convert("RGB")
+        with Image.open(page_image_path) as source:
+            image = source.convert("RGB")
     except Exception:
         return False
 

@@ -1631,7 +1631,8 @@ def render_layout_overlay(
         "paragraph": "#f0b100",
     }
 
-    image = Image.open(page_image_path).convert("RGB")
+    with Image.open(page_image_path) as source:
+        image = source.convert("RGB")
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
 
@@ -1663,7 +1664,8 @@ def render_table_candidates_overlay(
 ) -> None:
     from PIL import Image, ImageDraw, ImageFont  # noqa: PLC0415
 
-    image = Image.open(page_image_path).convert("RGB")
+    with Image.open(page_image_path) as source:
+        image = source.convert("RGB")
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
     color_map = {

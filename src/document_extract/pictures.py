@@ -687,18 +687,18 @@ def save_region_crop(
 
     if not bbox:
         return False
-    image = Image.open(page_image_path)
-    padded = [
-        max(0.0, bbox[0] - margin),
-        max(0.0, bbox[1] - margin),
-        min(1.0, bbox[2] + margin),
-        min(1.0, bbox[3] + margin),
-    ]
-    rect = normalized_rect_to_pixel_rect(padded, image.size)
-    if not rect:
-        return False
-    crop_path.parent.mkdir(parents=True, exist_ok=True)
-    image.crop(rect).save(crop_path)
+    with Image.open(page_image_path) as image:
+        padded = [
+            max(0.0, bbox[0] - margin),
+            max(0.0, bbox[1] - margin),
+            min(1.0, bbox[2] + margin),
+            min(1.0, bbox[3] + margin),
+        ]
+        rect = normalized_rect_to_pixel_rect(padded, image.size)
+        if not rect:
+            return False
+        crop_path.parent.mkdir(parents=True, exist_ok=True)
+        image.crop(rect).save(crop_path)
     return True
 
 __all__ = [
