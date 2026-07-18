@@ -25,17 +25,6 @@ def _records_from_state(state: PageState) -> list[PictureRecord]:
     for row in state.picture_records:
         payload = {key: value for key, value in row.items() if key in fields}
         payload["abs_path"] = resolve_page_path(payload.get("abs_path"), page_dir)
-        payload.setdefault("triage_eligible", False)
-        payload.setdefault("triage_type", "")
-        payload.setdefault("triage_confidence", None)
-        payload.setdefault("triage_action", "")
-        payload.setdefault("triage_warnings", [])
-        payload.setdefault("triage_usage", None)
-        payload.setdefault("embedded_in", "")
-        payload.setdefault("embed_overlap_ratio", 0.0)
-        payload.setdefault("summary_warnings", [])
-        payload.setdefault("summary_redundant", False)
-        payload.setdefault("usage", None)
         records.append(PictureRecord(**payload))
     return records
 

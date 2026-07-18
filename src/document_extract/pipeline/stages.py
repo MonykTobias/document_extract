@@ -744,22 +744,9 @@ def _run_finalize(
     state.save()
 
 
-# Public stage names keep the orchestration surface readable; the underscored
-# names remain for the runner's explicit dispatch table.
-prepare_page = _prepare_page
-run_picture_triage = _run_picture_triage
-run_picture_extract = _run_picture_extract
-run_table_detect = _run_table_detect
-run_table_extract = _run_table_extract
-run_page_refine = _run_page_refine
-run_page_repair = _run_page_repair
-run_finalize = _run_finalize
-
 __all__ = [
     "_execute_stage", "_skip_stage", "_prepare_page",
     "_run_picture_triage", "_run_picture_extract", "_run_table_detect",
     "_run_table_extract", "_run_page_refine", "_run_page_repair",
-    "_run_finalize", "prepare_page", "run_picture_triage",
-    "run_picture_extract", "run_table_detect", "run_table_extract",
-    "run_page_refine", "run_page_repair", "run_finalize",
+    "_run_finalize",
 ]

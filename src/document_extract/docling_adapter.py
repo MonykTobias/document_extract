@@ -7,7 +7,6 @@ knowing Docling API details.
 
 from __future__ import annotations
 
-import inspect
 import re
 from pathlib import Path
 from typing import Any, Iterable
@@ -467,11 +466,6 @@ def export_page_markdown_via_docling(document: Any, page_number: int) -> str:
 def assert_docling_export_surface(document: Any) -> None:
     if not hasattr(document, "iterate_items"):
         raise RuntimeError("Docling document does not expose iterate_items(); cannot export pages.")
-    if hasattr(document, "export_to_markdown"):
-        try:
-            inspect.signature(document.export_to_markdown)
-        except Exception:
-            pass
 
 __all__ = [
     "rasterize_page", "build_docling_converter", "set_if_present",
