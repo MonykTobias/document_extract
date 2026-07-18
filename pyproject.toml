@@ -7,7 +7,13 @@ name = "document_extract"
 version = "0.1.0"
 description = "Page-oriented Docling and multimodal RAG extraction pipeline"
 requires-python = ">=3.12"
-dependencies = ["PyYAML>=6,<7", "pypdf>=6.10,<7"]
+dependencies = [
+    "PyYAML>=6,<7",
+    "pypdf>=6.10,<7",
+    "pymupdf>=1.26,<2",
+    "Pillow>=11,<12",
+    "requests>=2.31,<3",
+]
 
 [project.scripts]
 document_extract = "document_extract.main:cli"
