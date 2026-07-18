@@ -91,12 +91,12 @@ def _convert_chunk_in_worker(pdf_path: Path, pages: list[int]) -> Any:
     return convert_pdf(_WORKER_CONVERTER, pdf_path, pages)
 
 
-def _chunk_furniture_signatures(
+def _chunk_page_entries(
     document: Any,
     chunk: list[int],
     page_sizes: dict[int, tuple[float, float]],
-) -> set[tuple[str, str]]:
-    """Cross-page repetition signatures for one converted chunk.
+) -> dict[int, list[tuple[str, list[float] | None]]]:
+    """Furniture entries for one converted chunk.
 
     Furniture detection needs to compare pages against each other; the chunk
     (one Docling convert() call) is the widest window in which all items are
@@ -115,7 +115,7 @@ def _chunk_furniture_signatures(
             continue
         rect = bbox_to_normalized_rect(bbox_dict(item), page_sizes[page])
         pages_entries[page].append((text, rect))
-    return repeated_furniture_signatures(pages_entries)
+    return pages_entries
 
 
 def ensure_pdf(path: Path) -> Path:
@@ -376,6 +376,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
         document = None
         chunk_last_page = 0
         chunk_furniture: set[tuple[str, str]] = set()
+        furniture_entries: dict[int, list[tuple[str, list[float] | None]]] = {}
         total_pages = len(pages)
         run_started_at = time.perf_counter()
         states: list[PageState] = []
@@ -394,9 +395,9 @@ def run_pipeline(args: argparse.Namespace) -> int:
                         flush=True,
                     )
                     chunk_last_page = chunk[-1]
-                    chunk_furniture = _chunk_furniture_signatures(
-                        document, chunk, page_sizes
-                    )
+                    furniture_entries.update(_chunk_page_entries(document, chunk, page_sizes))
+                    # ponytail: later signatures do not retro-strip earlier chunks; buffer pages for a full two-pass pass.
+                    chunk_furniture = repeated_furniture_signatures(furniture_entries)
                     if chunk_index + 1 < len(chunks):
                         pending = _submit_chunk(pool, chunks[chunk_index + 1])
                 page_started_at = time.perf_counter()

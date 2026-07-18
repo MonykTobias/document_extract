@@ -33,6 +33,7 @@ HEADER = "OVERVIEW OF ACTIVITIES, RISK FACTORS"
 TOP_RECT = [0.083, 0.034, 0.435, 0.045]
 BODY_RECT = [0.1, 0.4, 0.5, 0.45]
 RIGHT_RECT = [0.968, 0.506, 0.984, 0.524]
+BOTTOM_RECT = [0.1, 0.96, 0.5, 0.98]
 
 
 def check_signature_detection() -> None:
@@ -115,6 +116,19 @@ def check_footer_normalization() -> None:
     a = normalize_furniture_text("4 DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025")
     b = normalize_furniture_text("38 DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025")
     check(a == b and a, "footer signature is page-number invariant")
+
+
+def check_chunk_boundary_evidence() -> None:
+    footer = "Company annual report"
+    first_chunk = {page: [(footer, BOTTOM_RECT)] for page in range(1, 33)}
+    last_chunk = {33: [(footer, BOTTOM_RECT)]}
+    signature = (normalize_furniture_text(footer), "bottom")
+    check(signature in repeated_furniture_signatures(first_chunk), "first chunk confirms footer")
+    check(not repeated_furniture_signatures(last_chunk), "single-page final chunk has no evidence")
+    check(
+        signature in repeated_furniture_signatures({**first_chunk, **last_chunk}),
+        "accumulated chunks retain footer evidence",
+    )
 
 
 def check_chapter_tabs() -> None:
@@ -250,6 +264,7 @@ def main() -> int:
     check_signature_detection()
     check_section_start_protection()
     check_footer_normalization()
+    check_chunk_boundary_evidence()
     check_chapter_tabs()
     check_strip_tab_runs()
     check_strip_protections()
