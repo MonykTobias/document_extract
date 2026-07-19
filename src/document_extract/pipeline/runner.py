@@ -264,7 +264,8 @@ def _write_run_outputs(
     combine_markdown(raw_dirs, output_root / f"combined_docling_raw{suffix}.md", "docling_raw.md")
     combine_markdown(final_dirs, output_root / f"combined_docling_final{suffix}.md", "docling_final.md")
     _write_all_outputs(output_root)
-    _warn_stale_page_dirs(output_root, ordered)
+    if not shard:
+        _warn_stale_page_dirs(output_root, ordered)
 
 
 def _has_current_visual_audit(

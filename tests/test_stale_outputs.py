@@ -5,6 +5,8 @@ Run from the repository root with ``python tests/test_stale_outputs.py``.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -62,8 +64,11 @@ def main() -> int:
             (page_dir / "docling_final.md").write_text(f"final {state.page}", encoding="utf-8")
             state.status = "completed"
             state.save()
-        _write_run_outputs(root, [first], shard=True)
-        _write_run_outputs(root, [second], shard=True)
+        shard_stdout = io.StringIO()
+        with contextlib.redirect_stdout(shard_stdout):
+            _write_run_outputs(root, [first], shard=True)
+            _write_run_outputs(root, [second], shard=True)
+        check("WARNING" not in shard_stdout.getvalue(), "shard runs skip the stale-page warning")
         check(
             (root / "manifest_p0001-p0001.json").exists()
             and (root / "manifest_p0002-p0002.json").exists(),

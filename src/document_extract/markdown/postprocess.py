@@ -804,7 +804,7 @@ def render_sectioned_tables(split: SectionedTableSplit, base_level: int = 3) -> 
     """
     header = list(split["header"])
     n_cols = split["n_cols"]
-    kinds = split["section_kinds"]
+    kinds = list(split.get("section_kinds", []))
     group_level = base_level
     data_level = base_level + 1 if "group" in kinds else base_level
     blocks: list[str] = []
