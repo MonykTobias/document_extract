@@ -88,6 +88,7 @@ def _sync_page_state(
     state.artifact_paths.update(
         {
             "page_image": "page.png",
+            "vlm_page_image": "page_vlm_input.png",
             "layout_overlay": "page_layout_overlay.png",
             "raw_markdown": "docling_raw.md",
             "layout_map": "layout_prompt_map.json",

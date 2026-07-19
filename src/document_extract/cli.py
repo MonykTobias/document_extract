@@ -112,6 +112,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         "num_ctx KV cache.",
     )
     parser.add_argument(
+        "--vlm-page-image-max-px",
+        type=int,
+        default=0,
+        help="Maximum long side for page images sent to refine/repair VLM calls; 0 keeps full size.",
+    )
+    parser.add_argument(
         "--auto-num-ctx",
         action="store_true",
         help="Size the context window per call from the prompt and image estimate.",

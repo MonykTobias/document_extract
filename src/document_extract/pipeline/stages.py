@@ -569,6 +569,30 @@ def _run_table_extract(
     return candidates
 
 
+def _page_vlm_input_path(page_image_path: Path, max_px: int) -> Path:
+    if max_px <= 0:
+        return page_image_path
+    input_path = page_image_path.with_name("page_vlm_input.png")
+    if input_path.exists():
+        return input_path
+    from PIL import Image  # noqa: PLC0415
+
+    with Image.open(page_image_path) as image:
+        width, height = image.size
+        if max(width, height) <= max_px:
+            return page_image_path
+        if width >= height:
+            size = (max_px, max(1, round(height * max_px / width)))
+        else:
+            size = (max(1, round(width * max_px / height)), max_px)
+        resized = image.resize(size, Image.Resampling.LANCZOS)
+        try:
+            resized.save(input_path)
+        finally:
+            resized.close()
+    return input_path
+
+
 def _run_page_refine(
     *,
     state: PageState,
@@ -594,11 +618,14 @@ def _run_page_refine(
         (page_dir / "layout_prompt_map.json").write_text(
             json.dumps(layout_map, indent=2, ensure_ascii=False), encoding="utf-8"
         )
+        page_image_path = _page_vlm_input_path(
+            page_dir / "page.png", getattr(args, "vlm_page_image_max_px", 0)
+        )
         refined, usage = refine_page_markdown(
             source_markdown=state.raw_markdown,
             layout_blocks=layout_map,
             table_candidates=candidates,
-            page_image_path=page_dir / "page.png",
+            page_image_path=page_image_path,
             prompt_template=prompt,
             args=args,
         )
@@ -679,11 +706,14 @@ def _run_page_repair(
         (page_dir / "layout_prompt_map_repair.json").write_text(
             json.dumps(repair_layout_map, indent=2, ensure_ascii=False), encoding="utf-8"
         )
+        page_image_path = _page_vlm_input_path(
+            page_dir / "page.png", getattr(args, "vlm_page_image_max_px", 0)
+        )
         repaired, usage = repair_page_markdown(
             current_markdown=state.final_markdown,
             layout_blocks=repair_layout_map,
             table_candidates=candidates,
-            page_image_path=page_dir / "page.png",
+            page_image_path=page_image_path,
             unplaced_lines=repair_unplaced_lines,
             prompt_template=prompt,
             args=args,

@@ -555,6 +555,21 @@ def check_page_selection_bounds() -> None:
         raise AssertionError("start page beyond document length was not rejected")
 
 
+def check_page_vlm_input_image_downscaling() -> None:
+    from PIL import Image
+
+    with tempfile.TemporaryDirectory() as temp:
+        source = Path(temp) / "page.png"
+        Image.new("RGB", (3000, 1500)).save(source)
+        downscaled = stages._page_vlm_input_path(source, 1536)
+        with Image.open(downscaled) as image:
+            check(max(image.size) == 1536, "VLM page image is capped at its configured long side")
+        check(
+            stages._page_vlm_input_path(source, 0) == source,
+            "zero VLM page image cap keeps the original image",
+        )
+
+
 def main() -> int:
     check_detection_config_reaches_tables()
     check_page_repair_replay_state()
@@ -568,6 +583,7 @@ def main() -> int:
     check_collector_unavailable_does_not_fail_detect()
     check_table_detect_checkpoints_record_mutations()
     check_page_selection_bounds()
+    check_page_vlm_input_image_downscaling()
     print("\nall checks passed")
     return 0
 
