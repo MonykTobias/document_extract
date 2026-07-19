@@ -21,6 +21,7 @@ from document_extract.models import PictureRecord, TableCandidate, VisualCandida
 from document_extract.pipeline import stages
 from document_extract.pipeline.runner import _has_current_visual_audit, selected_page_numbers
 from document_extract.pipeline.state import _records_from_state
+from document_extract.refinement import page_is_plain_prose
 from document_extract.visual_values import COLLECTOR_VERSION
 from document_extract.runtime import (
     CHECKPOINT_SCHEMA_VERSION,
@@ -570,6 +571,23 @@ def check_page_vlm_input_image_downscaling() -> None:
         )
 
 
+def check_plain_prose_refine_predicate() -> None:
+    check(
+        page_is_plain_prose([], [], False, {"applied": False}),
+        "an empty page is plain prose",
+    )
+    check(
+        not page_is_plain_prose(
+            [make_picture_record(summary="Sales chart")], [], False, {"applied": False}
+        ),
+        "a picture with a summary is not plain prose",
+    )
+    check(
+        not page_is_plain_prose([], [], False, {"applied": True}),
+        "a reordered page is not plain prose",
+    )
+
+
 def main() -> int:
     check_detection_config_reaches_tables()
     check_page_repair_replay_state()
@@ -584,6 +602,7 @@ def main() -> int:
     check_table_detect_checkpoints_record_mutations()
     check_page_selection_bounds()
     check_page_vlm_input_image_downscaling()
+    check_plain_prose_refine_predicate()
     print("\nall checks passed")
     return 0
 

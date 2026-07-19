@@ -42,6 +42,20 @@ _SYMBOL_CODE_TOKEN_RE = re.compile(r"\b[A-Z]{1,3}\d{0,2}\b")
 _MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
 
 
+def page_is_plain_prose(
+    records: list[PictureRecord],
+    table_candidates: list[TableCandidate],
+    has_docling_table: bool,
+    reading_order: dict[str, Any],
+) -> bool:
+    return (
+        not any(record.summarize or record.summary for record in records)
+        and not table_candidates
+        and not has_docling_table
+        and not reading_order.get("applied")
+    )
+
+
 def _symbol_value_tokens(value: str) -> list[str]:
     """Normalized symbol tokens, keeping non-code summaries as one exact value."""
     normalized = collapse_ws(value).upper()
@@ -646,4 +660,5 @@ __all__ = [
     "refine_page_markdown", "postprocess_markdown",
     "should_run_repair_pass", "repair_page_markdown", "audit_table_symbol_instances",
     "strip_unplaced_section", "repair_regression_reasons", "apply_completeness_guard",
+    "page_is_plain_prose",
 ]

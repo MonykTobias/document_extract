@@ -123,6 +123,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Size the context window per call from the prompt and image estimate.",
     )
     parser.add_argument(
+        "--refine-mode",
+        choices=("always", "auto"),
+        default="always",
+        help="Use auto to skip VLM refinement for pages with no pictures, tables, or reordering.",
+    )
+    parser.add_argument(
         "--prompt-file",
         type=Path,
         default=None,

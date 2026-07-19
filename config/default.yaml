@@ -7,3 +7,4 @@ runtime:
   skip_picture_triage: false
   photo_summaries: false
   divider_reorder: true
+  refine_mode: always

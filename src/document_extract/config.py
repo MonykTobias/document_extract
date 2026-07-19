@@ -23,6 +23,7 @@ class RuntimeConfig:
     skip_picture_triage: bool = False
     photo_summaries: bool = False
     divider_reorder: bool = True
+    refine_mode: str = "always"
 
 
 @dataclass(frozen=True)
@@ -144,6 +145,7 @@ def apply_environment_overrides(mapping: dict[str, Any]) -> None:
         "DOCLING_RAG_SKIP_PICTURE_TRIAGE": ("runtime", "skip_picture_triage", _env_bool),
         "DOCLING_RAG_PHOTO_SUMMARIES": ("runtime", "photo_summaries", _env_bool),
         "DOCLING_RAG_DIVIDER_REORDER": ("runtime", "divider_reorder", _env_bool),
+        "DOCLING_RAG_REFINE_MODE": ("runtime", "refine_mode", str),
         "DOCLING_RAG_BASE_URL": ("models", "base_url", str),
         "DOCLING_RAG_MODEL": ("models", "model", str),
         "DOCLING_RAG_TRIAGE_MODEL": ("models", "triage_model", str),
@@ -176,6 +178,7 @@ def argv_with_config_defaults(config: AppConfig, argv: list[str]) -> list[str]:
         ("--dpi", config.runtime.dpi),
         ("--start-page", config.runtime.start_page),
         ("--end-page", config.runtime.end_page),
+        ("--refine-mode", config.runtime.refine_mode),
         ("--ollama-base-url", config.models.base_url),
         ("--ollama-model", config.models.model),
         ("--temperature", config.models.temperature),
@@ -303,6 +306,8 @@ def _validate_section(value: Any, name: str) -> None:
         raise ValueError("models.triage_confidence must be between 0 and 1")
     if value.__class__.__name__ == "ModelConfig" and not 0 <= value.photo_skip_confidence <= 1:
         raise ValueError("models.photo_skip_confidence must be between 0 and 1")
+    if value.__class__.__name__ == "RuntimeConfig" and value.refine_mode not in {"always", "auto"}:
+        raise ValueError("runtime.refine_mode must be 'always' or 'auto'")
 
 
 def _env_bool(raw: str) -> bool:

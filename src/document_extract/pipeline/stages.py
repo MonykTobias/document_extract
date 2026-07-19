@@ -39,6 +39,7 @@ from ..models import PictureRecord, TableCandidate
 from ..pictures import save_picture_records, summarize_pictures, triage_pictures
 from ..refinement import (
     missing_verified_table_ids,
+    page_is_plain_prose,
     postprocess_markdown,
     refine_page_markdown,
     repair_page_markdown,
@@ -618,17 +619,26 @@ def _run_page_refine(
         (page_dir / "layout_prompt_map.json").write_text(
             json.dumps(layout_map, indent=2, ensure_ascii=False), encoding="utf-8"
         )
-        page_image_path = _page_vlm_input_path(
-            page_dir / "page.png", getattr(args, "vlm_page_image_max_px", 0)
+        plain_page = (
+            getattr(args, "refine_mode", "always") == "auto"
+            and page_is_plain_prose(
+                records, candidates, state.has_docling_table, state.reading_order
+            )
         )
-        refined, usage = refine_page_markdown(
-            source_markdown=state.raw_markdown,
-            layout_blocks=layout_map,
-            table_candidates=candidates,
-            page_image_path=page_image_path,
-            prompt_template=prompt,
-            args=args,
-        )
+        if plain_page:
+            refined, usage = state.raw_markdown, None
+        else:
+            page_image_path = _page_vlm_input_path(
+                page_dir / "page.png", getattr(args, "vlm_page_image_max_px", 0)
+            )
+            refined, usage = refine_page_markdown(
+                source_markdown=state.raw_markdown,
+                layout_blocks=layout_map,
+                table_candidates=candidates,
+                page_image_path=page_image_path,
+                prompt_template=prompt,
+                args=args,
+            )
         state.refined_markdown = refined
         state.page_vlm_usage = usage
         if usage:
@@ -655,11 +665,14 @@ def _run_page_refine(
             candidates=candidates,
             layout_map=layout_map,
         )
-        return {
+        details = {
             "calls": 1 if usage else 0,
             "tokens": (usage or {}).get("total_tokens"),
             "warnings": len(warnings),
         }
+        if plain_page:
+            details["refine_skipped"] = "plain_page"
+        return details
 
     _execute_stage(state, reporter, "page_refine", action)
 
