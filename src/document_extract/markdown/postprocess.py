@@ -24,6 +24,8 @@ import difflib
 import re
 from html.parser import HTMLParser
 
+from .pipe import split_row
+
 # --------------------------------------------------------------------------- #
 # Shared regexes / constants
 # --------------------------------------------------------------------------- #
@@ -173,8 +175,10 @@ def looks_like_kpi_panel(rows: list[list[str]]) -> tuple[bool, dict[str, object]
 
 
 def _pipe_table_rows(block: list[str]) -> list[list[str]]:
+    # Unlike is_separator_line(), KPI parsing also treats a blank pipe row or
+    # a rule without a leading pipe as a separator.
     return [
-        [cell.strip() for cell in line.strip().strip("|").split("|")]
+        split_row(line)
         for line in block
         if not _KPI_PIPE_SEPARATOR_RE.fullmatch(line.strip())
     ]
@@ -1587,9 +1591,10 @@ TOC_NUMBERED_ROW_SHARE = 0.8
 
 def _toc_row_cells(line: str) -> list[str] | None:
     stripped = line.strip()
+    # Unlike is_separator_line(), TOC parsing ignores blank pipe rows too.
     if not stripped.startswith("|") or set(stripped) <= set("|-: "):
         return None
-    return [cell.strip() for cell in stripped.strip("|").split("|")]
+    return split_row(line)
 
 
 def looks_like_toc(raw_markdown: str) -> bool:
@@ -1718,9 +1723,10 @@ _TABLE_SEPARATOR_LINE_RE = re.compile(r"^\|[\s:|-]*-[\s:|-]*\|?$")
 
 def _table_row_cells(line: str) -> list[str] | None:
     stripped = line.strip()
+    # Unlike is_separator_line(), this header pass only accepts dash-bearing rules.
     if not stripped.startswith("|") or _TABLE_SEPARATOR_LINE_RE.match(stripped):
         return None
-    return [cell.strip() for cell in stripped.strip("|").split("|")]
+    return split_row(line)
 
 
 def _render_row(cells: list[str]) -> str:
