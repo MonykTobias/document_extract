@@ -594,6 +594,18 @@ def _page_vlm_input_path(page_image_path: Path, max_px: int) -> Path:
     return input_path
 
 
+def _needs_full_page_image(
+    candidates: list[TableCandidate], page_role: str
+) -> bool:
+    """Whether refine/repair must read dense table or TOC content from pixels."""
+    if page_role == "toc":
+        return True
+    return any(
+        not (candidate.verified and candidate.has_complete_symbol_geometry())
+        for candidate in candidates
+    )
+
+
 def _run_page_refine(
     *,
     state: PageState,
@@ -628,8 +640,14 @@ def _run_page_refine(
         if plain_page:
             refined, usage = state.raw_markdown, None
         else:
+            max_px = getattr(args, "vlm_page_image_max_px", 0)
+            full_res_page_image = max_px > 0 and _needs_full_page_image(
+                candidates, state.page_role or ""
+            )
+            if full_res_page_image:
+                max_px = 0
             page_image_path = _page_vlm_input_path(
-                page_dir / "page.png", getattr(args, "vlm_page_image_max_px", 0)
+                page_dir / "page.png", max_px
             )
             refined, usage = refine_page_markdown(
                 source_markdown=state.raw_markdown,
@@ -672,6 +690,8 @@ def _run_page_refine(
         }
         if plain_page:
             details["refine_skipped"] = "plain_page"
+        elif full_res_page_image:
+            details["page_image"] = "full_res_table"
         return details
 
     _execute_stage(state, reporter, "page_refine", action)
@@ -719,9 +739,13 @@ def _run_page_repair(
         (page_dir / "layout_prompt_map_repair.json").write_text(
             json.dumps(repair_layout_map, indent=2, ensure_ascii=False), encoding="utf-8"
         )
-        page_image_path = _page_vlm_input_path(
-            page_dir / "page.png", getattr(args, "vlm_page_image_max_px", 0)
+        max_px = getattr(args, "vlm_page_image_max_px", 0)
+        full_res_page_image = max_px > 0 and _needs_full_page_image(
+            candidates, state.page_role or ""
         )
+        if full_res_page_image:
+            max_px = 0
+        page_image_path = _page_vlm_input_path(page_dir / "page.png", max_px)
         repaired, usage = repair_page_markdown(
             current_markdown=state.final_markdown,
             layout_blocks=repair_layout_map,
@@ -733,7 +757,10 @@ def _run_page_repair(
         )
         state.page_repair_usage = usage
         if not usage:
-            return {"calls": 0, "reason": "skip_vlm"}
+            details = {"calls": 0, "reason": "skip_vlm"}
+            if full_res_page_image:
+                details["page_image"] = "full_res_table"
+            return details
         (page_dir / "page_repair.md").write_text(repaired, encoding="utf-8")
         repaired_final, repaired_warnings = postprocess_markdown(
             state.raw_markdown,
@@ -760,12 +787,15 @@ def _run_page_repair(
             if missing_tables:
                 state.warnings["verified_tables_missing"] = missing_tables
         _sync_page_state(state, records=records, candidates=candidates, repair_layout_map=repair_layout_map)
-        return {
+        details = {
             "calls": 1,
             "accepted": not reject_reasons,
             "tokens": usage.get("total_tokens"),
             "warnings": len(state.warnings),
         }
+        if full_res_page_image:
+            details["page_image"] = "full_res_table"
+        return details
 
     _execute_stage(state, reporter, "page_repair", action)
 

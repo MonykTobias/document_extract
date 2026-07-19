@@ -571,6 +571,41 @@ def check_page_vlm_input_image_downscaling() -> None:
         )
 
 
+def check_full_page_image_exemption() -> None:
+    check(stages._needs_full_page_image([], "toc"), "TOC pages keep full VLM images")
+    check(
+        not stages._needs_full_page_image([], ""),
+        "pages without table candidates keep VLM image downscaling",
+    )
+    check(
+        stages._needs_full_page_image(
+            [TableCandidate("unverified", "layout_region", None)], ""
+        ),
+        "unverified table candidates keep full VLM images",
+    )
+    check(
+        not stages._needs_full_page_image(
+            [TableCandidate("verified", "layout_region", None, verified=True)], ""
+        ),
+        "verified tables with complete symbol geometry allow image downscaling",
+    )
+    check(
+        stages._needs_full_page_image(
+            [
+                TableCandidate(
+                    "geometry_missing",
+                    "layout_region",
+                    None,
+                    verified=True,
+                    stats={"symbols_unplaced_geometry": [1]},
+                )
+            ],
+            "",
+        ),
+        "verified tables missing symbol geometry keep full VLM images",
+    )
+
+
 def check_plain_prose_refine_predicate() -> None:
     check(
         page_is_plain_prose([], [], False, {"applied": False}),
@@ -602,6 +637,7 @@ def main() -> int:
     check_table_detect_checkpoints_record_mutations()
     check_page_selection_bounds()
     check_page_vlm_input_image_downscaling()
+    check_full_page_image_exemption()
     check_plain_prose_refine_predicate()
     print("\nall checks passed")
     return 0
