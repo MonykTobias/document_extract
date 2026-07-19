@@ -114,9 +114,23 @@ def summarize_token_usage(manifest: list[dict[str, Any]]) -> dict[str, Any]:
         "output_tokens": sum(int(call.get("output_tokens", 0)) for call in calls),
         "total_tokens": sum(int(call.get("total_tokens", 0)) for call in calls),
     }
+    by_stage: dict[str, dict[str, int | float]] = {}
+    for call in calls:
+        stage = by_stage.setdefault(
+            call["stage"],
+            {"calls": 0, "prompt_tokens": 0, "output_tokens": 0,
+             "total_tokens": 0, "ollama_seconds": 0.0},
+        )
+        stage["calls"] += 1
+        for key in ("prompt_tokens", "output_tokens", "total_tokens"):
+            stage[key] += int(call.get(key, 0))
+        stage["ollama_seconds"] += int(call.get("total_duration", 0) or 0) / 1_000_000_000
+    for stage in by_stage.values():
+        stage["ollama_seconds"] = round(stage["ollama_seconds"], 1)
     return {
         "note": "Ollama token counts come from prompt_eval_count/eval_count when available.",
         "totals": totals,
+        "by_stage": by_stage,
         "pages": len({call["page"] for call in calls}),
         "verify_calls": 0,
         "calls": calls,

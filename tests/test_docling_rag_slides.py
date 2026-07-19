@@ -1586,6 +1586,59 @@ def test_token_usage_includes_table_extraction() -> None:
     check("table_extraction" in stages, "token usage includes graphical table extraction")
 
 
+def test_token_usage_by_stage() -> None:
+    usage = summarize_token_usage(
+        [
+            {
+                "page": 1,
+                "page_vlm_usage": {
+                    "prompt_tokens": 3,
+                    "output_tokens": 4,
+                    "total_tokens": 7,
+                    "total_duration": 1_250_000_000,
+                },
+                "page_repair_usage": {
+                    "prompt_tokens": 5,
+                    "output_tokens": 6,
+                    "total_tokens": 11,
+                },
+            },
+            {
+                "page": 2,
+                "page_vlm_usage": {
+                    "prompt_tokens": 2,
+                    "output_tokens": 1,
+                    "total_tokens": 3,
+                    "total_duration": 250_000_000,
+                },
+            },
+        ]
+    )
+    check(
+        usage["totals"] == {"prompt_tokens": 10, "output_tokens": 11, "total_tokens": 21},
+        "token totals remain unchanged",
+    )
+    check(
+        usage["by_stage"] == {
+            "page_vlm": {
+                "calls": 2,
+                "prompt_tokens": 5,
+                "output_tokens": 5,
+                "total_tokens": 10,
+                "ollama_seconds": 1.5,
+            },
+            "page_repair": {
+                "calls": 1,
+                "prompt_tokens": 5,
+                "output_tokens": 6,
+                "total_tokens": 11,
+                "ollama_seconds": 0.0,
+            },
+        },
+        "per-stage usage rolls up calls, tokens, and optional durations",
+    )
+
+
 def ro_cell(
     index: int,
     rect: list[float],
