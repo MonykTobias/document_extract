@@ -18,6 +18,7 @@ from ..docling_adapter import (
 )
 from ..layout.prompt_map import collapse_ws, VALUE_ONLY_RE
 from ..models import PictureRecord, TableCandidate
+from .pipe import is_separator_line, iter_pipe_blocks, iter_table_spans, split_row
 
 IMAGE_PLACEHOLDER_RE = re.compile(
     r"\{\{DOC_IMAGE_[^}]+\}\}|<!--\s*image\s*-->|!\[[^\]]*\]\([^)]*\)",
@@ -154,7 +155,7 @@ def normalize_headerless_pipe_tables(
         return markdown
 
     lines = markdown.splitlines()
-    for start, end, rows in reversed(_pipe_table_spans(lines)):
+    for start, end, rows in reversed(iter_table_spans(lines)):
         if not rows or tuple(rows[0]) not in wanted:
             continue
         raw_lines = lines[start:end]
@@ -164,7 +165,7 @@ def normalize_headerless_pipe_tables(
             if not set(line.strip()) <= set("|-: ")
         ]
         width = max(
-            len(line.strip().strip("|").split("|")) for line in data_lines
+            len(split_row(line)) for line in data_lines
         )
         blank = "| " + " | ".join([""] * width) + " |"
         separator = "|" + "---|" * width
@@ -417,7 +418,7 @@ def normalize_pipe_tables(markdown: str) -> str:
         if not block:
             return
         rows = [
-            [cell.strip() for cell in line.strip().strip("|").split("|")]
+            split_row(line)
             for line in block
             if not set(line.strip()) <= set("|-: ")
         ]
@@ -461,34 +462,6 @@ _NUMERIC_CELL_GUARD = 3
 _LAYOUT_MAX_BODY_ROWS = 3
 
 
-def _split_row(line: str) -> list[str]:
-    return [cell.strip() for cell in line.strip().strip("|").split("|")]
-
-
-def _is_separator_line(line: str) -> bool:
-    stripped = line.strip()
-    # Requires a dash/colon: an all-blank row ("|  |  |") is a row, not a rule.
-    return (
-        stripped.startswith("|")
-        and set(stripped) <= set("|-: ")
-        and any(ch in "-:" for ch in stripped)
-    )
-
-
-def _raw_pipe_blocks(lines: list[str]) -> list[tuple[int, int]]:
-    """(start, end_exclusive) spans of consecutive ``|``-prefixed lines."""
-    blocks: list[tuple[int, int]] = []
-    start: int | None = None
-    for index, line in enumerate(lines + [""]):
-        if line.strip().startswith("|"):
-            if start is None:
-                start = index
-        elif start is not None:
-            blocks.append((start, index))
-            start = None
-    return blocks
-
-
 def _is_layout_header(cells: list[str]) -> bool:
     non_empty = [collapse_ws(cell).lower() for cell in cells if cell.strip()]
     return tuple(non_empty) == _LAYOUT_HEADER_PAIR
@@ -516,11 +489,11 @@ def drop_orphan_header_tables(markdown: str) -> tuple[str, list[str]]:
     lines = markdown.splitlines()
     drop: set[int] = set()
     dropped_texts: list[str] = []
-    for start, end in _raw_pipe_blocks(lines):
+    for start, end in iter_pipe_blocks(lines):
         rows = [
-            _split_row(line)
+            split_row(line)
             for line in lines[start:end]
-            if not _is_separator_line(line)
+            if not is_separator_line(line)
         ]
         if len(rows) != 1:
             continue
@@ -564,11 +537,11 @@ def unwrap_layout_tables(markdown: str) -> tuple[str, int]:
     """
     lines = markdown.splitlines()
     unwrapped = 0
-    for start, end in reversed(_raw_pipe_blocks(lines)):
+    for start, end in reversed(iter_pipe_blocks(lines)):
         block_lines = lines[start:end]
-        has_separator = any(_is_separator_line(line) for line in block_lines)
+        has_separator = any(is_separator_line(line) for line in block_lines)
         rows = [
-            _split_row(line) for line in block_lines if not _is_separator_line(line)
+            split_row(line) for line in block_lines if not is_separator_line(line)
         ]
         if not rows:
             continue
@@ -656,11 +629,11 @@ def drop_empty_header_row(markdown: str) -> tuple[str, int]:
     lines = markdown.splitlines()
     drop: set[int] = set()
     dropped = 0
-    for start, end in _raw_pipe_blocks(lines):
+    for start, end in iter_pipe_blocks(lines):
         rows = [
-            _split_row(line)
+            split_row(line)
             for line in lines[start:end]
-            if not _is_separator_line(line)
+            if not is_separator_line(line)
         ]
         if rows and all(not cell for row in rows for cell in row):
             drop.update(range(start, end))
@@ -669,29 +642,6 @@ def drop_empty_header_row(markdown: str) -> tuple[str, int]:
         return markdown, 0
     kept = "\n".join(line for index, line in enumerate(lines) if index not in drop)
     return re.sub(r"\n{3,}", "\n\n", kept).strip() + "\n", dropped
-
-
-def _pipe_table_spans(
-    lines: list[str],
-) -> list[tuple[int, int, list[tuple[str, ...]]]]:
-    """(start, end_exclusive, data_rows) for each pipe table; rows normalized."""
-    spans: list[tuple[int, int, list[tuple[str, ...]]]] = []
-    start: int | None = None
-    rows: list[tuple[str, ...]] = []
-    for index, line in enumerate(lines + [""]):
-        stripped = line.strip()
-        if stripped.startswith("|"):
-            if start is None:
-                start = index
-            if not set(stripped) <= set("|-: "):
-                cells = tuple(
-                    collapse_ws(cell).lower() for cell in stripped.strip("|").split("|")
-                )
-                rows.append(cells)
-        elif start is not None:
-            spans.append((start, index, rows))
-            start, rows = None, []
-    return spans
 
 
 def realign_collapsed_span_headers(
@@ -715,7 +665,7 @@ def realign_collapsed_span_headers(
     lines = markdown.splitlines()
     replacements: list[tuple[int, str]] = []
     used_candidates: set[str] = set()
-    for start, _, table_rows in _pipe_table_spans(lines):
+    for start, _, table_rows in iter_table_spans(lines):
         if len(table_rows) < 2:
             continue
         current_header, *body_rows = table_rows
@@ -809,7 +759,7 @@ def _apply_span_edits(
 def _sectioned_candidate_rows(candidate: TableCandidate) -> set[tuple[str, ...]]:
     rows = {
         row
-        for _, _, rows in _pipe_table_spans(candidate.markdown.splitlines())
+        for _, _, rows in iter_table_spans(candidate.markdown.splitlines())
         for row in rows
     }
     # The rendered sectioned table normalizes inline bullet glyphs into
@@ -890,7 +840,7 @@ def _enforce_sectioned_candidate(
     lines = markdown.splitlines()
 
     anchor_pipe: set[int] = set()
-    for start, end, rows in _pipe_table_spans(lines):
+    for start, end, rows in iter_table_spans(lines):
         if rows and sum(1 for row in rows if row in candidate_rows) / len(rows) >= 0.5:
             anchor_pipe.update(range(start, end))
 
@@ -988,7 +938,7 @@ def _deterministic_anchor_texts(candidate: TableCandidate) -> set[str]:
             value = collapse_ws(str(cell)).lower()
             if value:
                 texts.add(value)
-    for _, _, rows in _pipe_table_spans(candidate.markdown.splitlines()):
+    for _, _, rows in iter_table_spans(candidate.markdown.splitlines()):
         for row in rows:
             for cell in row:
                 if not cell:
@@ -1057,7 +1007,7 @@ def _distinctive_fragments(cells: list[str]) -> set[str]:
 def _candidate_fragment_cells(candidate: TableCandidate) -> list[str]:
     """Cells from both candidate render and source grid for fallback matching."""
     cells: list[str] = []
-    for _, _, rows in _pipe_table_spans(candidate.markdown.splitlines()):
+    for _, _, rows in iter_table_spans(candidate.markdown.splitlines()):
         cells.extend(cell for row in rows for cell in row if cell)
     grid = (candidate.stats or {}).get("grid") or {}
     for row in grid.get("rows") or []:
@@ -1077,7 +1027,7 @@ def _fuzzy_anchor_spans(lines: list[str], candidate: TableCandidate) -> set[int]
         return set()
 
     anchors: set[int] = set()
-    for start, end, rows in _pipe_table_spans(lines):
+    for start, end, rows in iter_table_spans(lines):
         cells = [cell for row in rows for cell in row if cell]
         span_fragments = _distinctive_fragments(cells)
         if not span_fragments:
@@ -1109,7 +1059,7 @@ def _enforce_deterministic_candidate(
     lines = markdown.splitlines()
 
     anchor_pipe: set[int] = set()
-    for start, end, rows in _pipe_table_spans(lines):
+    for start, end, rows in iter_table_spans(lines):
         cells = [cell for row in rows for cell in row if cell]
         if not cells:
             continue
@@ -1219,7 +1169,7 @@ def drop_duplicate_subset_tables(
         for rows in [
             [
                 row
-                for _, _, table_rows in _pipe_table_spans(candidate.markdown.splitlines())
+                for _, _, table_rows in iter_table_spans(candidate.markdown.splitlines())
                 for row in table_rows
             ]
         ]
@@ -1229,7 +1179,7 @@ def drop_duplicate_subset_tables(
         return markdown, 0
 
     lines = markdown.splitlines()
-    tables = _pipe_table_spans(lines)
+    tables = iter_table_spans(lines)
     if len(tables) < 2:
         return markdown, 0
 
@@ -1323,7 +1273,7 @@ __all__ = [
     "insert_image_references_and_summaries", "image_block",
     "is_loose_symbol_line", "strip_loose_symbol_lines",
     "mark_redundant_summaries",
-    "standalone_value_line_count", "normalize_pipe_tables", "_pipe_table_spans",
+    "standalone_value_line_count", "normalize_pipe_tables",
     "drop_orphan_header_tables", "unwrap_layout_tables", "strip_br_lines",
     "drop_empty_header_row",
     "_rows_prefix_subset", "drop_duplicate_subset_tables", "replace_sectioned_tables",
