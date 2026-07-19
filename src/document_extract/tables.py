@@ -36,6 +36,7 @@ from .layout.prompt_map import (
 from .llm import ollama as ollama_client
 from .markdown import postprocess as sp
 from .markdown.formatting import normalize_pipe_tables
+from .markdown.pipe import is_separator_line, split_row
 from .models import PictureRecord, TableCandidate
 from .table_reconstruction import RECONSTRUCTION_VERSION, reconcile_table_grid
 # Accessed via the module so apply_detection_config's runtime overrides of the
@@ -1492,6 +1493,7 @@ def verify_region_table(
     and raw record counts. Region/KPI crops pass ``grid=None`` and are unaffected.
     """
     stats: dict[str, Any] = {}
+    # Blank pipe rows are non-data here, unlike is_separator_line().
     rows = [
         line.strip()
         for line in markdown.splitlines()
@@ -1503,9 +1505,7 @@ def verify_region_table(
         return False, stats
 
     if grid:
-        row_cells = [
-            [collapse_ws(cell) for cell in row.strip("|").split("|")] for row in rows
-        ]
+        row_cells = [[collapse_ws(cell) for cell in split_row(row)] for row in rows]
         num_cols, header_labels, min_records, raw_body = _grid_expected_shape(grid)
         table_cols = max((len(cells) for cells in row_cells), default=0)
         stats["source_columns"] = num_cols
@@ -1513,9 +1513,7 @@ def verify_region_table(
         separator_blocks = sum(
             1
             for line in markdown.splitlines()
-            if line.strip().startswith("|")
-            and set(line.strip()) <= set("|-: ")
-            and any(ch in "-:" for ch in line)
+            if is_separator_line(line)
         )
         if separator_blocks > 1:
             stats["fail"] = "multiple_header_blocks"
