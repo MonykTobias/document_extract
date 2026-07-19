@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.cli import parse_args
 from document_extract.config import argv_with_config_defaults, config_from_mapping, load_config
+from document_extract.api import _namespace_from_config
 from document_extract.prompts import DEFAULT_IMAGE_SUMMARY_PROMPT, load_prompt
 
 
@@ -86,6 +87,55 @@ def main() -> int:
             check(True, "out-of-range column gutter is rejected")
         else:
             raise AssertionError("out-of-range column gutter was accepted")
+
+        api_config = config_from_mapping(
+            {
+                "runtime": {
+                    "dpi": 144,
+                    "photo_summaries": True,
+                    "skip_picture_triage": True,
+                    "divider_reorder": False,
+                },
+                "models": {
+                    "base_url": "http://api.test:11434",
+                    "model": "MODEL_X",
+                    "triage_model": "TRIAGE_X",
+                    "temperature": 0.2,
+                    "num_ctx": 16384,
+                    "num_predict": 2000,
+                    "auto_num_ctx": True,
+                    "triage_num_predict": 77,
+                    "triage_confidence": 0.7,
+                    "photo_skip_confidence": 0.9,
+                    "vlm_concurrency": 2,
+                    "vlm_page_image_max_px": 1536,
+                },
+            }
+        )
+        api_args = _namespace_from_config(
+            "doc.pdf",
+            config=api_config,
+            config_files=(Path("overlay.yaml"),),
+            start_page=2,
+            end_page=4,
+            output_dir="out",
+            skip_vlm=True,
+            visual_values_mode="audit",
+            refine_mode="auto",
+            resume_from="table_detect",
+        )
+        cli_args = parse_args(
+            argv_with_config_defaults(
+                api_config,
+                [
+                    "doc.pdf", "--config", "overlay.yaml", "--start-page", "2",
+                    "--end-page", "4", "--output-dir", "out", "--skip-vlm",
+                    "--visual-values-mode", "audit", "--refine-mode", "auto",
+                    "--resume-from", "table_detect",
+                ],
+            )
+        )
+        check(vars(api_args) == vars(cli_args), "API and CLI build identical pipeline arguments")
     return 0
 
 
