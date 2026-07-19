@@ -48,6 +48,7 @@ def main() -> int:
     with clean_config_environment():
         defaults = load_config()
         check(defaults.runtime.dpi == 200, "bundled runtime defaults load")
+        check(defaults.runtime.refine_mode == "auto", "bundled refine mode defaults to auto")
         check(defaults.models.num_ctx == 8192, "bundled model defaults load")
         check(
             load_prompt("picture_generic.md") == DEFAULT_IMAGE_SUMMARY_PROMPT,

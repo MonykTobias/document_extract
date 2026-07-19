@@ -23,7 +23,7 @@ class RuntimeConfig:
     skip_picture_triage: bool = False
     photo_summaries: bool = False
     divider_reorder: bool = True
-    refine_mode: str = "always"
+    refine_mode: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -39,7 +39,7 @@ class ModelConfig:
     triage_confidence: float = 0.65
     photo_skip_confidence: float = 0.8
     vlm_concurrency: int = 1
-    vlm_page_image_max_px: int = 0
+    vlm_page_image_max_px: int = 1536
 
 
 @dataclass(frozen=True)
