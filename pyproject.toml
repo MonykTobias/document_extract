@@ -23,3 +23,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 document_extract = ["resources/config/*.yaml", "resources/prompts/*.md"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true

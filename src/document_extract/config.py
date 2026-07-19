@@ -5,9 +5,9 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, get_type_hints
+from typing import Any, Callable, Iterable, get_type_hints
 
-import yaml
+import yaml  # type: ignore[import-untyped]  # PyYAML publishes no bundled type stubs.
 
 
 RESOURCE_CONFIG_DIR = Path(__file__).resolve().parent / "resources" / "config"
@@ -133,7 +133,7 @@ def apply_environment_overrides(mapping: dict[str, Any]) -> None:
     internal YAML layout to deployment manifests.
     """
 
-    env_map = {
+    env_map: dict[str, tuple[str, str, Callable[[str], object]]] = {
         "OLLAMA_BASE_URL": ("models", "base_url", str),
         "OLLAMA_MODEL": ("models", "model", str),
         "OLLAMA_TRIAGE_MODEL": ("models", "triage_model", str),

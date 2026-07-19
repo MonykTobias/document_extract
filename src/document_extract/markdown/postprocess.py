@@ -23,6 +23,7 @@ from __future__ import annotations
 import difflib
 import re
 from html.parser import HTMLParser
+from typing import TypedDict, cast
 
 from .pipe import split_row
 
@@ -74,6 +75,45 @@ _KPI_RATING_WITH_FOOTNOTE_RE = re.compile(
 )
 _KPI_YEAR_RE = re.compile(r"^(?:19|20)\d{2}$")
 
+
+class KpiPanelStats(TypedDict):
+    n_rows: int
+    n_cols: int
+    non_empty: int
+    value_cells: int
+    label_cells: int
+    long_cells: int
+    value_rows: list[bool]
+    label_rows: list[bool]
+    alternating: bool
+    signal_ratio: float
+
+
+class KpiTextEntry(TypedDict):
+    line_index: int
+    entry_index: int
+    kind: str
+    text: str
+    pair: tuple[str, str] | None
+
+
+class SectionedTableSection(TypedDict):
+    title: str | None
+    qualifiers: list[str]
+    rows: list[list[str]]
+    source_rows: list[int]
+    is_group: bool
+
+
+class SectionedTableSplit(TypedDict):
+    header: list[str]
+    n_cols: int
+    sections: list[SectionedTableSection]
+    section_titles: list[str]
+    section_qualifiers: list[str]
+    section_kinds: list[str]
+    data_row_count: int
+
 # Numeric footnote reference / definition, e.g. ``[1]``.
 _FOOTNOTE_MARKER_RE = re.compile(r"\[(\d{1,3})\]")
 _FOOTNOTE_DEF_LINE_RE = re.compile(r"^\s*\[(\d{1,3})\]\s+\S")
@@ -119,7 +159,7 @@ def is_letter_rating(text: str) -> bool:
     return bool(_KPI_RATING_RE.fullmatch(text.strip()))
 
 
-def kpi_panel_stats(rows: list[list[str]]) -> dict[str, object]:
+def kpi_panel_stats(rows: list[list[str]]) -> KpiPanelStats:
     """Return deterministic shape signals for a compact KPI display panel."""
     clean_rows = [[str(cell or "").strip() for cell in row] for row in rows]
     cells = [cell for row in clean_rows for cell in row if cell]
@@ -159,7 +199,7 @@ def kpi_panel_stats(rows: list[list[str]]) -> dict[str, object]:
     }
 
 
-def looks_like_kpi_panel(rows: list[list[str]]) -> tuple[bool, dict[str, object]]:
+def looks_like_kpi_panel(rows: list[list[str]]) -> tuple[bool, KpiPanelStats]:
     """True only for small alternating display-value / caption grids."""
     stats = kpi_panel_stats(rows)
     is_kpi = (
@@ -184,7 +224,7 @@ def _pipe_table_rows(block: list[str]) -> list[list[str]]:
     ]
 
 
-def _kpi_list_lines(rows: list[list[str]], stats: dict[str, object]) -> list[str]:
+def _kpi_list_lines(rows: list[list[str]], stats: KpiPanelStats) -> list[str]:
     value_rows = list(stats["value_rows"])
     label_rows = list(stats["label_rows"])
     used: set[tuple[int, int]] = set()
@@ -287,9 +327,9 @@ def _classify_kpi_text_line(text: str) -> tuple[str, tuple[str, str] | None]:
     return "OTHER", None
 
 
-def _alternating_kpi_pairs(entries: list[dict[str, object]]) -> list[tuple[int, int]]:
+def _alternating_kpi_pairs(entries: list[KpiTextEntry]) -> list[tuple[int, int]]:
     """Return a >=2-pair alternating VALUE/LABEL prefix, or no pairs."""
-    prefix: list[dict[str, object]] = []
+    prefix: list[KpiTextEntry] = []
     for entry in entries:
         if entry["kind"] not in {"VALUE", "LABEL"}:
             break
@@ -315,7 +355,7 @@ def _alternating_kpi_pairs(entries: list[dict[str, object]]) -> list[tuple[int, 
 
 
 def _kpi_run_replacement(
-    entries: list[dict[str, object]],
+    entries: list[KpiTextEntry],
 ) -> tuple[list[str] | None, int]:
     """Build conservative bullet output for one candidate text run."""
     alternating_pairs = _alternating_kpi_pairs(entries)
@@ -335,7 +375,7 @@ def _kpi_run_replacement(
         consumed.update({label_index, value_index})
     for entry in mixed_pairs:
         index = int(entry["entry_index"])
-        label, value = entry["pair"]  # type: ignore[misc]
+        label, value = cast(tuple[str, str], entry["pair"])
         emitted[index] = f"- {label}: {value}"
         consumed.add(index)
 
@@ -365,7 +405,7 @@ def pair_kpi_text_runs(markdown: str) -> tuple[str, int]:
     """Convert loose KPI value/label text runs into ``- LABEL: value`` bullets."""
     lines = markdown.splitlines()
     replacements: list[tuple[int, int, list[str]]] = []
-    run: list[dict[str, object]] = []
+    run: list[KpiTextEntry] = []
     pending_blank = False
 
     def flush() -> None:
@@ -649,7 +689,7 @@ def _sectioned_is_qualifier(title: str) -> bool:
 
 def split_sectioned_grid(
     grid: list[list[str]], *, header_rows: int | None = None
-) -> dict[str, object] | None:
+) -> SectionedTableSplit | None:
     """Split a section-banded Docling grid into labeled subtables.
 
     Returns ``None`` (leave the table alone) unless the grid has a single header
@@ -668,8 +708,14 @@ def split_sectioned_grid(
     if not _sectioned_header_row_ok(header, header_rows):
         return None
 
-    sections: list[dict[str, object]] = [
-        {"title": None, "qualifiers": [], "rows": [], "source_rows": []}
+    sections: list[SectionedTableSection] = [
+        {
+            "title": None,
+            "qualifiers": [],
+            "rows": [],
+            "source_rows": [],
+            "is_group": False,
+        }
     ]
     for source_row, row in enumerate(rows[1:], start=1):
         padded = row + [""] * (n_cols - len(row))
@@ -682,7 +728,7 @@ def split_sectioned_grid(
                 and not current["rows"]
             ):
                 # "(in € millions)" directly under a just-opened section heading.
-                current["qualifiers"].append(title)  # type: ignore[union-attr]
+                current["qualifiers"].append(title)
             else:
                 sections.append(
                     {
@@ -690,11 +736,12 @@ def split_sectioned_grid(
                         "qualifiers": [],
                         "rows": [],
                         "source_rows": [],
+                        "is_group": False,
                     }
                 )
         else:
-            sections[-1]["rows"].append(padded)  # type: ignore[union-attr]
-            sections[-1]["source_rows"].append(source_row)  # type: ignore[union-attr]
+            sections[-1]["rows"].append(padded)
+            sections[-1]["source_rows"].append(source_row)
 
     # Drop the empty untitled lead section and any dangling trailing banner(s)
     # that never received data rows.
@@ -706,7 +753,7 @@ def split_sectioned_grid(
 
     if not any(s["title"] is not None and s["rows"] for s in sections):
         return None  # need at least one titled section that carries data
-    data_row_count = sum(len(s["rows"]) for s in sections)  # type: ignore[arg-type]
+    data_row_count = sum(len(s["rows"]) for s in sections)
     if data_row_count < SECTIONED_MIN_DATA_ROWS:
         return None
     # Reserve sectioning for a spanning title that governs two or more complete
@@ -715,7 +762,7 @@ def split_sectioned_grid(
     # title/detail table, handled deterministically by the table normalizer —
     # never split it into one bare-heading subtable per record.
     data_sections = [s for s in sections if s["title"] is not None and s["rows"]]
-    if data_sections and max(len(s["rows"]) for s in data_sections) < 2:  # type: ignore[arg-type]
+    if data_sections and max(len(s["rows"]) for s in data_sections) < 2:
         return None
 
     return {
@@ -726,7 +773,7 @@ def split_sectioned_grid(
         "section_qualifiers": [
             qualifier
             for s in sections
-            for qualifier in s["qualifiers"]  # type: ignore[union-attr]
+            for qualifier in s["qualifiers"]
         ],
         # One "group"/"data" entry per titled section, in order — lets the
         # enforcement pass assign consistent heading levels.
@@ -746,7 +793,7 @@ def sectioned_heading_line(title: str, qualifiers: list[str], level: int) -> str
     return "#" * max(1, min(level, 6)) + " " + heading
 
 
-def render_sectioned_tables(split: dict[str, object], base_level: int = 3) -> str:
+def render_sectioned_tables(split: SectionedTableSplit, base_level: int = 3) -> str:
     """Render a :func:`split_sectioned_grid` result as titled pipe subtables.
 
     Each data subtable repeats the original column header verbatim under its
@@ -755,13 +802,13 @@ def render_sectioned_tables(split: dict[str, object], base_level: int = 3) -> st
     ``base_level``, data sections one deeper when any group header exists (so
     sibling sub-categories share one level), otherwise at ``base_level``.
     """
-    header = list(split["header"])  # type: ignore[arg-type]
-    n_cols = int(split["n_cols"])  # type: ignore[call-overload]
-    kinds = list(split.get("section_kinds", []))  # type: ignore[union-attr]
+    header = list(split["header"])
+    n_cols = split["n_cols"]
+    kinds = split["section_kinds"]
     group_level = base_level
     data_level = base_level + 1 if "group" in kinds else base_level
     blocks: list[str] = []
-    for section in split["sections"]:  # type: ignore[union-attr]
+    for section in split["sections"]:
         title = section["title"]
         if title is not None:
             level = group_level if section.get("is_group") else data_level
