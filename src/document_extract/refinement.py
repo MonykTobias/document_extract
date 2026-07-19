@@ -33,6 +33,7 @@ from .markdown.formatting import (
     strip_br_lines,
     unwrap_layout_tables,
 )
+from .markdown.pipe import split_row
 from .models import PictureRecord, TableCandidate
 from .tables import verified_tables_prompt_block
 
@@ -119,9 +120,10 @@ def _pipe_table_symbol_counts(markdown: str, expected_values: set[str]) -> Count
     non_codes = {value for value in expected_values if not _SYMBOL_CODE_RE.fullmatch(value)}
     for line in markdown.splitlines():
         stripped = line.strip()
+        # Blank pipe rows are non-data here, unlike is_separator_line().
         if not stripped.startswith("|") or set(stripped) <= set("|-: "):
             continue
-        for cell in stripped.strip("|").split("|"):
+        for cell in split_row(line):
             clean = _MARKDOWN_IMAGE_RE.sub("", cell)
             normalized = collapse_ws(clean).upper()
             for code in _SYMBOL_CODE_TOKEN_RE.findall(normalized):
