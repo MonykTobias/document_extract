@@ -63,6 +63,14 @@ def test_inline_bullets():
     check(any("OUR TARGETS:" in l and not l.startswith("- ") for l in lines), "prefix kept as its own line")
 
 
+def test_collapse_internal_spaces():
+    markdown = "consumer  trends  and  unlock\n  - indented  item\n| a  | b  |\n"
+    collapsed = sp.collapse_internal_spaces(markdown)
+    check("consumer trends and unlock" in collapsed, "prose internal spaces collapse")
+    check("  - indented item" in collapsed, "list indentation stays intact")
+    check("| a  | b  |" in collapsed, "pipe-row cell padding stays intact")
+
+
 def test_redundant_list_glyphs():
     markdown = (
         "- ■ ongoing uncertainties are tracked.\n"

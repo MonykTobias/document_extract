@@ -310,6 +310,7 @@ def postprocess_markdown(
     final = sp.normalize_pipe_table_cell_bullets(final)
     final = sp.strip_redundant_list_glyphs(final)
     final = sp.normalize_bullets_and_headings(final)
+    final = sp.collapse_internal_spaces(final)
     final = sp.demote_datapoint_headings(final)
     flagged_summaries = mark_redundant_summaries(source_markdown, records)
     final = insert_image_references_and_summaries(final, records)

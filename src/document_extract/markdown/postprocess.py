@@ -53,6 +53,7 @@ _UNCERTAINTY_TITLE_RE = re.compile(r"^\s*#{1,6}\s*uncertain", re.IGNORECASE)
 _REDUNDANT_LIST_GLYPH_RE = re.compile(
     rf"^(\s*)-\s+([{GRID_BULLET_CHARS_STRONG}])\s+(\S.*)$"
 )
+_INTERNAL_SPACES_RE = re.compile(r"(?<=\S) {2,}(?=\S)")
 
 # KPI panels: display values + all-caps captions are not data tables. Keep the
 # classifier here because postprocessing must stay stdlib-only.
@@ -113,6 +114,14 @@ class SectionedTableSplit(TypedDict):
     section_qualifiers: list[str]
     section_kinds: list[str]
     data_row_count: int
+
+
+def collapse_internal_spaces(markdown: str) -> str:
+    """Collapse spaces inside prose lines without altering pipe rows or indentation."""
+    return "".join(
+        line if line.lstrip().startswith("|") else _INTERNAL_SPACES_RE.sub(" ", line)
+        for line in markdown.splitlines(keepends=True)
+    )
 
 # Numeric footnote reference / definition, e.g. ``[1]``.
 _FOOTNOTE_MARKER_RE = re.compile(r"\[(\d{1,3})\]")
