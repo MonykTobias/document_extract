@@ -123,6 +123,7 @@ def main() -> int:
             visual_values_mode="audit",
             refine_mode="auto",
             resume_from="table_detect",
+            shard=False,
         )
         cli_args = parse_args(
             argv_with_config_defaults(

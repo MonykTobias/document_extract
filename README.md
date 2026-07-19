@@ -98,6 +98,7 @@ document_extract report.pdf --start-page 1 --end-page 5
 | `--prompt-file FILE` | Custom page-refinement prompt. |
 | `--no-divider-reorder` | Disable deterministic reading-order reconstruction. |
 | `--resume-from STAGE` | Resume from a saved checkpoint stage. |
+| `--shard` | Suffix run-level output files with the run's page range. |
 
 Valid replay stages are:
 
@@ -198,6 +199,15 @@ outputs/
 
 `page_state.json` is the checkpoint used by `--resume-from`. It records stage
 history, extracted records, table candidates, warnings, and VLM usage.
+
+## Process-parallel shards
+
+Run one process per page range against the same `--output-dir`, adding `--shard`
+to each process. This writes range-suffixed run files such as
+`manifest_p0001-p0048.json` while sharing page directories. The final `all/`
+aggregation is rebuilt from page directories; concurrent workers can race on it,
+but the last finisher writes the same merged view. Run a final `--shard`-less
+aggregation if a single root-level run summary is needed.
 
 ## Pipeline stages
 

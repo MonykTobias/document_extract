@@ -22,6 +22,7 @@ def _namespace_from_config(
     visual_values_mode: str,
     refine_mode: str,
     resume_from: str | None,
+    shard: bool,
 ) -> argparse.Namespace:
     return argparse.Namespace(
         pdf=Path(pdf),
@@ -50,6 +51,7 @@ def _namespace_from_config(
         prompt_file=None,
         no_divider_reorder=not config.runtime.divider_reorder,
         resume_from=resume_from,
+        shard=shard,
     )
 
 
@@ -65,6 +67,7 @@ def run_extraction(
     visual_values_mode: str = "off",
     refine_mode: str = "always",
     resume_from: str | None = None,
+    shard: bool = False,
 ) -> int:
     """Run one extraction; use separate processes for concurrent runs."""
     effective_config = config or load_config(config_files)
@@ -82,6 +85,7 @@ def run_extraction(
                 visual_values_mode=visual_values_mode,
                 refine_mode=refine_mode,
                 resume_from=resume_from,
+                shard=shard,
             )
         )
     )

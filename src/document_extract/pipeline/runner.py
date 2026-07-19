@@ -241,23 +241,28 @@ def _write_all_outputs(output_root: Path) -> None:
     combine_markdown(all_page_dirs, all_out / "combined_docling_final_all.md", "docling_final.md")
 
 
-def _write_run_outputs(output_root: Path, states: list[PageState]) -> None:
+def _write_run_outputs(
+    output_root: Path, states: list[PageState], *, shard: bool = False
+) -> None:
     ordered = sorted(states, key=lambda state: state.page)
+    suffix = (
+        f"_p{ordered[0].page:04d}-p{ordered[-1].page:04d}" if shard and ordered else ""
+    )
     manifest = [_manifest_row(state) for state in ordered]
     successful = [state for state in ordered if state.status == "completed"]
     raw_dirs = [Path(state.page_dir) for state in ordered if (Path(state.page_dir) / "docling_raw.md").exists()]
     final_dirs = [Path(state.page_dir) for state in successful]
     block_rows = [row for state in successful for row in state.block_rows]
-    write_jsonl(output_root / "blocks.jsonl", block_rows)
-    (output_root / "manifest.json").write_text(
+    write_jsonl(output_root / f"blocks{suffix}.jsonl", block_rows)
+    (output_root / f"manifest{suffix}.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    (output_root / "token_usage.json").write_text(
+    (output_root / f"token_usage{suffix}.json").write_text(
         json.dumps(summarize_token_usage(manifest), indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
-    combine_markdown(raw_dirs, output_root / "combined_docling_raw.md", "docling_raw.md")
-    combine_markdown(final_dirs, output_root / "combined_docling_final.md", "docling_final.md")
+    combine_markdown(raw_dirs, output_root / f"combined_docling_raw{suffix}.md", "docling_raw.md")
+    combine_markdown(final_dirs, output_root / f"combined_docling_final{suffix}.md", "docling_final.md")
     _write_all_outputs(output_root)
     _warn_stale_page_dirs(output_root, ordered)
 
@@ -548,7 +553,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
         finally:
             if pool is not None:
                 pool.shutdown(wait=True, cancel_futures=True)
-            _write_run_outputs(output_root, states)
+            _write_run_outputs(output_root, states, shard=getattr(args, "shard", False))
 
     failed = [state for state in states if state.status == "failed"]
     print(

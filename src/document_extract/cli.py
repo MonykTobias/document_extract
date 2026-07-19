@@ -145,6 +145,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default=None,
         help="Resume selected pages from a saved page checkpoint at this stage.",
     )
+    parser.add_argument(
+        "--shard",
+        action="store_true",
+        help="Suffix run-level output files with this run's page range for process shards.",
+    )
     return parser.parse_args(argv)
 
 def run(argv: Sequence[str] | None = None) -> int:
