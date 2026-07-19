@@ -57,7 +57,9 @@ def effective_num_ctx(
         + max(num_predict, 1024)
         + 2048
     )
-    return max(num_ctx, estimate)
+    if estimate <= num_ctx:
+        return num_ctx
+    return ((estimate + 4095) // 4096) * 4096
 
 
 def _ollama_post(

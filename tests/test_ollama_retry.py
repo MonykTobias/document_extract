@@ -104,10 +104,27 @@ def test_client_error_is_not_retried() -> None:
     check(session.calls == 1, "client error is not retried")
 
 
+def test_effective_num_ctx_is_quantized() -> None:
+    common = {"num_ctx": 16384, "num_predict": 4000, "auto": True}
+    check(
+        ollama.effective_num_ctx(prompt="", **common) == 16384,
+        "auto context below the configured size is unchanged",
+    )
+    check(
+        ollama.effective_num_ctx(prompt="x" * 25348, **common) == 20480,
+        "auto context just above 16384 rounds up to 20480",
+    )
+    check(
+        ollama.effective_num_ctx(prompt="x" * 41728, **common) == 20480,
+        "auto context at 20480 stays on the same context step",
+    )
+
+
 def main() -> int:
     test_connection_error_retries()
     test_server_error_retries_three_times()
     test_client_error_is_not_retried()
+    test_effective_num_ctx_is_quantized()
     return 0
 
 
