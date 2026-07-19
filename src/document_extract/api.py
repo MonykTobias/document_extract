@@ -15,23 +15,23 @@ def _namespace_from_config(
     *,
     config: AppConfig,
     config_files: Sequence[Path],
-    start_page: int,
-    end_page: int,
-    output_dir: Path | str,
-    skip_vlm: bool,
+    start_page: int | None,
+    end_page: int | None,
+    output_dir: Path | str | None,
+    skip_vlm: bool | None,
     visual_values_mode: str,
-    refine_mode: str,
+    refine_mode: str | None,
     resume_from: str | None,
     shard: bool,
 ) -> argparse.Namespace:
     return argparse.Namespace(
         pdf=Path(pdf),
-        output_dir=Path(output_dir),
+        output_dir=Path(config.runtime.output_dir if output_dir is None else output_dir),
         config=[str(path) for path in config_files],
         dpi=config.runtime.dpi,
-        start_page=start_page,
-        end_page=end_page,
-        skip_vlm=skip_vlm,
+        start_page=config.runtime.start_page if start_page is None else start_page,
+        end_page=config.runtime.end_page if end_page is None else end_page,
+        skip_vlm=config.runtime.skip_vlm if skip_vlm is None else skip_vlm,
         visual_values_mode=visual_values_mode,
         ollama_base_url=config.models.base_url,
         ollama_model=config.models.model,
@@ -47,7 +47,7 @@ def _namespace_from_config(
         vlm_concurrency=config.models.vlm_concurrency,
         vlm_page_image_max_px=config.models.vlm_page_image_max_px,
         auto_num_ctx=config.models.auto_num_ctx,
-        refine_mode=refine_mode,
+        refine_mode=config.runtime.refine_mode if refine_mode is None else refine_mode,
         prompt_file=None,
         no_divider_reorder=not config.runtime.divider_reorder,
         resume_from=resume_from,
@@ -60,16 +60,19 @@ def run_extraction(
     *,
     config: AppConfig | None = None,
     config_files: Sequence[Path] = (),
-    start_page: int = 1,
-    end_page: int = 0,
-    output_dir: Path | str = "outputs_docling_rag",
-    skip_vlm: bool = False,
+    start_page: int | None = None,
+    end_page: int | None = None,
+    output_dir: Path | str | None = None,
+    skip_vlm: bool | None = None,
     visual_values_mode: str = "off",
-    refine_mode: str = "always",
+    refine_mode: str | None = None,
     resume_from: str | None = None,
     shard: bool = False,
 ) -> int:
     """Run one extraction in one process.
+
+    ``None`` runtime kwargs fall back to the loaded configuration, matching
+    the CLI.
 
     Concurrent runs must use separate processes: configuration updates module
     globals. Sequential calls in one process are supported because each call

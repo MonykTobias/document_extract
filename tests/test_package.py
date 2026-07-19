@@ -137,6 +137,50 @@ def main() -> int:
             )
         )
         check(vars(api_args) == vars(cli_args), "API and CLI build identical pipeline arguments")
+
+        runtime_config = config_from_mapping(
+            {
+                "runtime": {
+                    "refine_mode": "auto",
+                    "start_page": 5,
+                    "end_page": 7,
+                    "skip_vlm": True,
+                    "output_dir": "cfg_out",
+                }
+            }
+        )
+        fallback_args = _namespace_from_config(
+            "d.pdf",
+            config=runtime_config,
+            config_files=(),
+            start_page=None,
+            end_page=None,
+            output_dir=None,
+            skip_vlm=None,
+            visual_values_mode="off",
+            refine_mode=None,
+            resume_from=None,
+            shard=False,
+        )
+        check(
+            vars(fallback_args)
+            == vars(parse_args(argv_with_config_defaults(runtime_config, ["d.pdf"]))),
+            "None runtime kwargs fall back to config like the CLI",
+        )
+        override_args = _namespace_from_config(
+            "d.pdf",
+            config=runtime_config,
+            config_files=(),
+            start_page=None,
+            end_page=None,
+            output_dir=None,
+            skip_vlm=False,
+            visual_values_mode="off",
+            refine_mode=None,
+            resume_from=None,
+            shard=False,
+        )
+        check(override_args.skip_vlm is False, "explicit skip_vlm=False beats config True")
     return 0
 
 
