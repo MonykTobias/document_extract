@@ -233,6 +233,18 @@ default, images the triage classifies as photos with high confidence
 
 ## Python integration
 
+Use `run_extraction` for library callers:
+
+```python
+from document_extract import run_extraction
+
+exit_code = run_extraction("report.pdf", output_dir="outputs", skip_vlm=True)
+```
+
+Use one run per process. Configuration updates module-level algorithm settings,
+so concurrent threads in one process are unsupported; sequential calls in one
+process are safe because each run reapplies its configuration.
+
 The current stable integration surface is the argument-based runner:
 
 ```python

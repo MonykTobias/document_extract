@@ -69,7 +69,12 @@ def run_extraction(
     resume_from: str | None = None,
     shard: bool = False,
 ) -> int:
-    """Run one extraction; use separate processes for concurrent runs."""
+    """Run one extraction in one process.
+
+    Concurrent runs must use separate processes: configuration updates module
+    globals. Sequential calls in one process are supported because each call
+    reapplies its configuration; concurrent threads are not supported.
+    """
     effective_config = config or load_config(config_files)
     apply_detection_config(effective_config)
     return int(

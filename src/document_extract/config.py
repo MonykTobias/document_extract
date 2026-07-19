@@ -211,8 +211,9 @@ def argv_with_config_defaults(config: AppConfig, argv: list[str]) -> list[str]:
 
 
 def apply_detection_config(config: AppConfig) -> None:
-    """Apply YAML thresholds to the domain modules that own each algorithm."""
+    """Apply YAML thresholds to module globals; use one concurrent run per process."""
 
+    # These module-level settings make thread-concurrent extraction unsupported.
     from . import pictures, tables
     from .layout import prompt_map, reading_order
     from .markdown import formatting
