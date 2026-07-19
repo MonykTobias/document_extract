@@ -19,7 +19,7 @@ from ..docling_adapter import (
     item_text,
     iter_doc_items,
 )
-from ..layout.furniture import repeated_furniture_signatures
+from ..layout.furniture import repeated_furniture_prefixes, repeated_furniture_signatures
 from ..layout.geometry import bbox_to_normalized_rect
 from ..layout.prompt_map import layout_map_stats
 from ..prompts import load_page_repair_prompt, load_page_refinement_prompt, load_summary_prompt
@@ -382,6 +382,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
         document = None
         chunk_last_page = 0
         chunk_furniture: set[tuple[str, str]] = set()
+        chunk_furniture_prefixes: set[tuple[str, str]] = set()
         furniture_entries: dict[int, list[tuple[str, list[float] | None]]] = {}
         total_pages = len(pages)
         run_started_at = time.perf_counter()
@@ -404,6 +405,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                     furniture_entries.update(_chunk_page_entries(document, chunk, page_sizes))
                     # ponytail: later signatures do not retro-strip earlier chunks; buffer pages for a full two-pass pass.
                     chunk_furniture = repeated_furniture_signatures(furniture_entries)
+                    chunk_furniture_prefixes = repeated_furniture_prefixes(furniture_entries)
                     if chunk_index + 1 < len(chunks):
                         pending = _submit_chunk(pool, chunks[chunk_index + 1])
                 page_started_at = time.perf_counter()
@@ -476,6 +478,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
                             document=document,
                             page_size=page_sizes[page_number],
                             furniture_signatures=chunk_furniture,
+                            furniture_prefixes=chunk_furniture_prefixes,
                         )
                         start_index = stage_index("picture_triage")
 

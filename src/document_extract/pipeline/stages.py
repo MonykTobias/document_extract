@@ -20,7 +20,7 @@ from ..docling_adapter import (
     iter_furniture_items,
     rasterize_page,
 )
-from ..layout.furniture import furniture_band, is_chapter_tab
+from ..layout.furniture import _prefix_signature, furniture_band, is_chapter_tab
 from ..layout.geometry import bbox_to_normalized_rect
 from ..layout.prompt_map import (
     annotate_picture_values,
@@ -144,6 +144,7 @@ def _split_furniture_items(
     page_number: int,
     page_size: tuple[float, float],
     furniture_signatures: set[tuple[str, str]],
+    furniture_prefixes: set[tuple[str, str]],
 ) -> tuple[list[Any], set[str], int]:
     """Partition a page's items into (kept, furniture_texts, dropped_count).
 
@@ -172,7 +173,10 @@ def _split_furniture_items(
             dropped += 1
             continue
         normalized = normalize_furniture_text(text) if text else ""
-        if normalized and (normalized, furniture_band(rect)) in furniture_signatures:
+        if normalized and (
+            (normalized, furniture_band(rect)) in furniture_signatures
+            or _prefix_signature(text, rect) in furniture_prefixes
+        ):
             dropped += 1
             texts.add(normalized)
             continue
@@ -198,6 +202,7 @@ def _prepare_page(
     document: Any,
     page_size: tuple[float, float],
     furniture_signatures: set[tuple[str, str]] | None = None,
+    furniture_prefixes: set[tuple[str, str]] | None = None,
 ) -> dict[str, Any]:
     """Prepare one page from a document that was already converted by Docling.
 
@@ -226,6 +231,7 @@ def _prepare_page(
             state.page,
             page_size,
             furniture_signatures or set(),
+            furniture_prefixes or set(),
         )
         state.furniture_texts = sorted(furniture_texts)
         render_layout_overlay(

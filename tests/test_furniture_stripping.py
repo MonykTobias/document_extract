@@ -15,6 +15,7 @@ from document_extract.layout.furniture import (
     is_chapter_tab,
     page_furniture_texts,
     page_strip_texts,
+    repeated_furniture_prefixes,
     repeated_furniture_signatures,
 )
 from document_extract.markdown.postprocess import (
@@ -109,6 +110,41 @@ def check_section_start_protection() -> None:
     check(
         not repeated_furniture_signatures(letterless),
         "letterless (digit-only) texts never become signatures",
+    )
+
+
+def check_prefix_signatures() -> None:
+    headers = (
+        "OVERVIEW OF ACTIVITIES, RISK FACTORS 1.1 Strategic Priorities",
+        "OVERVIEW OF ACTIVITIES, RISK FACTORS 1.2 Climate Action",
+        "OVERVIEW OF ACTIVITIES, RISK FACTORS 1.3 Supply Chain",
+        "OVERVIEW OF ACTIVITIES, RISK FACTORS 1.4 Financial Outlook",
+    )
+    pages = {
+        page: [(header, TOP_RECT)]
+        for page, header in enumerate(headers, start=1)
+    }
+    prefixes = repeated_furniture_prefixes(pages)
+    prefix_text = " ".join(normalize_furniture_text(headers[0]).split()[:4])
+    prefix = (prefix_text, "top")
+    check(not repeated_furniture_signatures(pages), "varying header suffixes have no exact signature")
+    check(prefix in prefixes, "varying header prefix repeats across pages")
+    for page, entries in pages.items():
+        check(
+            normalize_furniture_text(entries[0][0]) in page_strip_texts(entries, set(), prefixes),
+            f"page {page} strips its full varying header",
+        )
+
+    exact_prefix = [(prefix_text, TOP_RECT)]
+    check(
+        not page_strip_texts(exact_prefix, set(), prefixes),
+        "exact-length header does not use the prefix path",
+    )
+    check(
+        not repeated_furniture_prefixes(
+            {page: [(entries[0][0], BODY_RECT)] for page, entries in pages.items()}
+        ),
+        "body-band entries do not create prefix signatures",
     )
 
 
@@ -263,6 +299,7 @@ def check_right_edge_dash() -> None:
 def main() -> int:
     check_signature_detection()
     check_section_start_protection()
+    check_prefix_signatures()
     check_footer_normalization()
     check_chunk_boundary_evidence()
     check_chapter_tabs()

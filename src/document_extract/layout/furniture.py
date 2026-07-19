@@ -27,6 +27,8 @@ FURNITURE_MIN_PAGES = 3
 # ...unless the run is short, where a page-share threshold applies instead.
 FURNITURE_SMALL_RUN_PAGES = 12
 FURNITURE_SMALL_RUN_SHARE = 0.25
+FURNITURE_PREFIX_TOKENS = 4
+FURNITURE_PREFIX_MIN_CHARS = 12
 
 # Sidebar chapter tabs: a bare 1-2 digit number or single capital letter at
 # the right page edge ("1".."7", "A"). These are furniture even without
@@ -72,6 +74,20 @@ def _signature(text: str, rect: list[float] | None) -> tuple[str, str] | None:
     return (normalized, band)
 
 
+def _prefix_signature(text: str, rect: list[float] | None) -> tuple[str, str] | None:
+    band = furniture_band(rect)
+    if band == "body":
+        return None
+    normalized = normalize_furniture_text(text)
+    tokens = normalized.split()
+    if len(tokens) <= FURNITURE_PREFIX_TOKENS:
+        return None
+    prefix = " ".join(tokens[:FURNITURE_PREFIX_TOKENS])
+    if len(prefix) < FURNITURE_PREFIX_MIN_CHARS or not re.search(r"[^\W\d_]", prefix):
+        return None
+    return (prefix, band)
+
+
 def repeated_furniture_signatures(
     pages_entries: dict[int, list[tuple[str, list[float] | None]]],
 ) -> set[tuple[str, str]]:
@@ -98,6 +114,27 @@ def repeated_furniture_signatures(
     return {sig for sig, pages in seen_on_pages.items() if len(pages) >= threshold}
 
 
+def repeated_furniture_prefixes(
+    pages_entries: dict[int, list[tuple[str, list[float] | None]]],
+) -> set[tuple[str, str]]:
+    """``(normalized_prefix, band)`` signatures repeated across enough pages."""
+    page_count = len(pages_entries)
+    if page_count < 2:
+        return set()
+    threshold = (
+        FURNITURE_MIN_PAGES
+        if page_count >= FURNITURE_SMALL_RUN_PAGES
+        else max(2, math.ceil(FURNITURE_SMALL_RUN_SHARE * page_count))
+    )
+    seen_on_pages: dict[tuple[str, str], set[int]] = {}
+    for page, entries in pages_entries.items():
+        for text, rect in entries:
+            sig = _prefix_signature(text, rect)
+            if sig is not None:
+                seen_on_pages.setdefault(sig, set()).add(page)
+    return {sig for sig, pages in seen_on_pages.items() if len(pages) >= threshold}
+
+
 def page_furniture_texts(
     entries: list[tuple[str, list[float] | None]],
     signatures: set[tuple[str, str]],
@@ -114,6 +151,7 @@ def page_furniture_texts(
 def page_strip_texts(
     entries: list[tuple[str, list[float] | None]],
     signatures: set[tuple[str, str]],
+    prefixes: set[tuple[str, str]] | None = None,
     extra_texts: set[str] | None = None,
 ) -> set[str]:
     """The furniture texts safe to strip from this page's markdown by text alone.
@@ -131,6 +169,10 @@ def page_strip_texts(
         if sig is not None and sig in signatures:
             strip.add(sig[0])
             continue
+        prefix = _prefix_signature(text, rect)
+        if prefix is not None and prefix in (prefixes or set()):
+            strip.add(normalize_furniture_text(text))
+            continue
         if is_chapter_tab(text, rect):
             continue
         normalized = normalize_furniture_text(text)
@@ -141,7 +183,8 @@ def page_strip_texts(
 
 __all__ = [
     "FURNITURE_BAND_FRACTION", "FURNITURE_MIN_PAGES", "CHAPTER_TAB_RE",
-    "RIGHT_EDGE_DASH_RE",
+    "RIGHT_EDGE_DASH_RE", "FURNITURE_PREFIX_TOKENS", "FURNITURE_PREFIX_MIN_CHARS",
     "furniture_band", "is_chapter_tab", "repeated_furniture_signatures",
+    "repeated_furniture_prefixes",
     "page_furniture_texts", "page_strip_texts",
 ]

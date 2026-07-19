@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.layout.furniture import (  # noqa: E402
     page_strip_texts,
+    repeated_furniture_prefixes,
     repeated_furniture_signatures,
 )
 from document_extract.markdown.postprocess import (  # noqa: E402
@@ -168,9 +169,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[fail-load] {page_dir.name}: {type(error).__name__}: {error}")
 
     signatures: set[tuple[str, str]] = set()
+    prefixes: set[tuple[str, str]] = set()
     footer_texts: set[str] = set()
     if not args.no_furniture:
         signatures = repeated_furniture_signatures(
+            {index: page["layout_entries"] for index, page in enumerate(pages)}
+        )
+        prefixes = repeated_furniture_prefixes(
             {index: page["layout_entries"] for index, page in enumerate(pages)}
         )
         footer_texts = _offline_footer_texts(pages)
@@ -181,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
     for page in pages:
         name = page["dir"].name
         furniture = page_strip_texts(
-            page["layout_entries"], signatures, extra_texts=footer_texts
+            page["layout_entries"], signatures, prefixes, extra_texts=footer_texts
         )
         try:
             final, warnings = replay_page(page, furniture)
