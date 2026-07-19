@@ -635,7 +635,11 @@ def _run_page_refine(
         plain_page = (
             getattr(args, "refine_mode", "always") == "auto"
             and page_is_plain_prose(
-                records, candidates, state.has_docling_table, state.reading_order
+                state.raw_markdown,
+                records,
+                candidates,
+                state.has_docling_table,
+                state.reading_order,
             )
         )
         if plain_page:

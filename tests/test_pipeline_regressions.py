@@ -607,19 +607,28 @@ def check_full_page_image_exemption() -> None:
 
 
 def check_plain_prose_refine_predicate() -> None:
+    long_body = "A plain prose paragraph. " * 20
     check(
-        page_is_plain_prose([], [], False, {"applied": False}),
-        "an empty page is plain prose",
+        page_is_plain_prose(long_body, [], [], False, {"applied": False}),
+        "a long empty page is plain prose",
     )
     check(
         not page_is_plain_prose(
-            [make_picture_record(summary="Sales chart")], [], False, {"applied": False}
+            long_body,
+            [make_picture_record(summary="Sales chart")],
+            [],
+            False,
+            {"applied": False},
         ),
         "a picture with a summary is not plain prose",
     )
     check(
-        not page_is_plain_prose([], [], False, {"applied": True}),
+        not page_is_plain_prose(long_body, [], [], False, {"applied": True}),
         "a reordered page is not plain prose",
+    )
+    check(
+        not page_is_plain_prose("x" * 100, [], [], False, {"applied": False}),
+        "a near-empty page is not plain prose",
     )
 
 

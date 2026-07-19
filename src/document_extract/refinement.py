@@ -41,16 +41,19 @@ from .tables import verified_tables_prompt_block
 _SYMBOL_CODE_RE = re.compile(r"^[A-Z]{1,3}\d{0,2}$")
 _SYMBOL_CODE_TOKEN_RE = re.compile(r"\b[A-Z]{1,3}\d{0,2}\b")
 _MARKDOWN_IMAGE_RE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+PLAIN_PAGE_MIN_CHARS = 300
 
 
 def page_is_plain_prose(
+    raw_markdown: str,
     records: list[PictureRecord],
     table_candidates: list[TableCandidate],
     has_docling_table: bool,
     reading_order: dict[str, Any],
 ) -> bool:
     return (
-        not any(record.summarize or record.summary for record in records)
+        len(raw_markdown.strip()) >= PLAIN_PAGE_MIN_CHARS
+        and not any(record.summarize or record.summary for record in records)
         and not table_candidates
         and not has_docling_table
         and not reading_order.get("applied")
