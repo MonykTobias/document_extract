@@ -584,10 +584,10 @@ def check_full_page_image_exemption() -> None:
         "unverified table candidates keep full VLM images",
     )
     check(
-        not stages._needs_full_page_image(
+        stages._needs_full_page_image(
             [TableCandidate("verified", "layout_region", None, verified=True)], ""
         ),
-        "verified tables with complete symbol geometry allow image downscaling",
+        "verified tables with complete symbol geometry keep full VLM images",
     )
     check(
         stages._needs_full_page_image(

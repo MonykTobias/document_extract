@@ -598,12 +598,7 @@ def _needs_full_page_image(
     candidates: list[TableCandidate], page_role: str
 ) -> bool:
     """Whether refine/repair must read dense table or TOC content from pixels."""
-    if page_role == "toc":
-        return True
-    return any(
-        not (candidate.verified and candidate.has_complete_symbol_geometry())
-        for candidate in candidates
-    )
+    return bool(candidates) or page_role == "toc"
 
 
 def _run_page_refine(
