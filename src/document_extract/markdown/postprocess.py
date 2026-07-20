@@ -296,6 +296,16 @@ def convert_kpi_pipe_tables_to_lists(markdown: str) -> tuple[str, int]:
     return "\n".join(out) + ("\n" if markdown.endswith("\n") else ""), converted
 
 
+def _is_bare_year_value(value: str) -> bool:
+    """A bare year qualifies a KPI, it is never the measured value itself.
+
+    Same rule :func:`_alternating_kpi_pairs` applies to whole runs; without it a
+    divider title ("... OUTLOOK FOR 2026") reads as label + value and gains a
+    fabricated colon.
+    """
+    return bool(_KPI_YEAR_RE.fullmatch(value.strip()))
+
+
 def _split_mixed_kpi_line(text: str) -> tuple[str, str] | None:
     """Return ``(label, value)`` only for a complete same-line KPI pair."""
     stripped = text.strip()
@@ -311,12 +321,12 @@ def _split_mixed_kpi_line(text: str) -> tuple[str, str] | None:
     for split_at in range(len(words) - 1, 0, -1):
         value = " ".join(words[:split_at])
         label = " ".join(words[split_at:])
-        if is_value_text(value) and is_kpi_label_text(label):
+        if is_value_text(value) and is_kpi_label_text(label) and not _is_bare_year_value(value):
             return label, value
     for split_at in range(len(words) - 1, 0, -1):
         label = " ".join(words[:split_at])
         value = " ".join(words[split_at:])
-        if is_kpi_label_text(label) and is_value_text(value):
+        if is_kpi_label_text(label) and is_value_text(value) and not _is_bare_year_value(value):
             return label, value
     return None
 

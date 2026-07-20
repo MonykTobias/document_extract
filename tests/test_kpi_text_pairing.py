@@ -8,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.markdown.postprocess import (
+    _classify_kpi_text_line,
     is_kpi_label_text,
     is_letter_rating,
     is_value_text,
@@ -121,6 +122,30 @@ def test_completeness_guard_and_postprocess_warnings() -> None:
     check(warnings.get("kpi_text_pairs") == 6, "postprocess records emitted KPI pairs")
 
 
+def test_bare_year_is_never_a_same_line_value() -> None:
+    """A divider title ending in a year must not become ``label: value``.
+
+    Observed on page 40: the title paired as
+    ``BUSINESS HIGHLIGHTS IN 2025 AND OUTLOOK FOR: 2026``, which also pushed the
+    run to the two-pair threshold and colonized the page footer -- the colon then
+    defeated the later furniture strip, so the footer survived into the output.
+    """
+    title = "BUSINESS HIGHLIGHTS IN 2025 AND OUTLOOK FOR 2026"
+    kind, pair = _classify_kpi_text_line(title)
+    check(kind == "LABEL" and pair is None, "a title ending in a year is a label, not a pair")
+
+    divider_page = (
+        "![Picture p0040-i001](images/picture_p0040_i001.png)\n\n"
+        "2\n\n"
+        f"{title}\n\n"
+        "DANONE - UNIVERSAL REGISTRATION DOCUMENT 2025 38\n"
+    )
+    out, pairs = pair_kpi_text_runs(divider_page)
+    check(pairs == 0, "a divider page yields no KPI pairs")
+    check(out == divider_page, "a divider page is left byte-identical")
+    check(":" not in out, "no colon is fabricated on a divider page")
+
+
 def main() -> int:
     test_shared_predicates()
     test_alternating_panel()
@@ -128,6 +153,7 @@ def main() -> int:
     test_full_page_idempotency_and_table_preservation()
     test_guards_and_leftovers()
     test_completeness_guard_and_postprocess_warnings()
+    test_bare_year_is_never_a_same_line_value()
     print("test_kpi_text_pairing: all checks passed")
     return 0
 
