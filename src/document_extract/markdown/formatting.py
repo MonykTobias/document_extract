@@ -691,9 +691,11 @@ def realign_collapsed_span_headers(
                 continue
             grid_header = _merge_grid_header(grid_rows, header_rows, num_cols)
             current_labels = [label.casefold() for label in current_header if label]
-            grid_labels = {
-                collapse_ws(label).casefold() for label in grid_header if label
-            }
+            grid_labels: set[str] = set()
+            for label in grid_header:
+                for piece in [label, *_BR_RE.split(label)]:
+                    if piece:
+                        grid_labels.add(collapse_ws(piece).casefold())
             if (
                 len(current_labels) >= sum(bool(label) for label in grid_header)
                 or not current_labels

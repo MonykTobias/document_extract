@@ -377,8 +377,6 @@ def postprocess_markdown(
         and (candidate.stats or {}).get("first_row")
     ]
     final = normalize_headerless_pipe_tables(final, headerless_rows)
-    final = sp.dedupe_span_header_cells(final)
-    final = sp.collapse_banner_rows(final)
     # Deterministically guarantee section-banded docling tables appear as their
     # pre-split subtables (splicing them in if the VLM degraded them into
     # headings + lists). Must precede drop_duplicate_subset_tables and the

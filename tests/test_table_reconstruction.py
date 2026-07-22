@@ -430,6 +430,141 @@ def test_r2_refuses_to_merge_two_components_sharing_a_region() -> None:
     assert not result["audit"]["merged_fragments"]
 
 
+def _mixed_span_fixture() -> tuple[dict, dict]:
+    """Two raw rows become three while horizontal and vertical spans survive."""
+
+    def entry(
+        row: int,
+        column: int,
+        text: str,
+        rect: tuple[float, float, float, float],
+        *,
+        row_start: int | None = None,
+        row_end: int | None = None,
+        col_start: int | None = None,
+        col_end: int | None = None,
+        header: bool = False,
+    ) -> dict:
+        row_start = row if row_start is None else row_start
+        row_end = row + 1 if row_end is None else row_end
+        col_start = column if col_start is None else col_start
+        col_end = column + 1 if col_end is None else col_end
+        left, top, right, bottom = rect
+        return {
+            "r": row,
+            "c": column,
+            "text": text,
+            "bbox": {
+                "l": left,
+                "t": top,
+                "r": right,
+                "b": bottom,
+                "origin": "TOPLEFT",
+            },
+            "column_header": header,
+            "start_row_offset_idx": row_start,
+            "end_row_offset_idx": row_end,
+            "start_col_offset_idx": col_start,
+            "end_col_offset_idx": col_end,
+            "row_span": row_end - row_start,
+            "col_span": col_end - col_start,
+        }
+
+    rows = [
+        ["Label", "Baseline", "Baseline", "Result"],
+        ["Group", "Wide body", "Wide body", "X"],
+        ["Group", "Y Z", "Q R", "W V"],
+    ]
+    cells = [entry(0, 0, "Label", (2, 2, 18, 8), header=True)]
+    cells.extend(
+        entry(
+            0, column, "Baseline", (24, 2, 70, 8),
+            col_start=1, col_end=3, header=True,
+        )
+        for column in (1, 2)
+    )
+    cells.append(entry(0, 3, "Result", (76, 2, 98, 8), header=True))
+    cells.extend(
+        entry(row, 0, "Group", (2, 12, 18, 53), row_start=1, row_end=3)
+        for row in (1, 2)
+    )
+    cells.extend(
+        entry(
+            1, column, "Wide body", (24, 12, 70, 22), col_start=1, col_end=3
+        )
+        for column in (1, 2)
+    )
+    cells.extend(
+        [
+            entry(1, 3, "X", (76, 12, 98, 22)),
+            entry(2, 1, "Y Z", (24, 29, 46, 52)),
+            entry(2, 2, "Q R", (50, 29, 70, 52)),
+            entry(2, 3, "W V", (76, 29, 98, 52)),
+        ]
+    )
+    grid = {"rows": rows, "num_cols": 4, "header_rows": 1, "cells": cells}
+    geometry = {
+        "rules": [
+            [0.10, 0.22, 1.0],
+            [0.25, 0.22, 1.0],
+            [0.40, 0.22, 1.0],
+            [0.55, 0.22, 1.0],
+        ],
+        "lines": [
+            {"id": "g", "block": 1, "text": "Group", "rect": [0.02, 0.12, 0.18, 0.53]},
+            {"id": "wide", "block": 2, "text": "Wide body", "rect": [0.24, 0.14, 0.70, 0.20]},
+            {"id": "x", "block": 3, "text": "X", "rect": [0.76, 0.14, 0.98, 0.20]},
+            {"id": "y", "block": 4, "text": "Y", "rect": [0.24, 0.29, 0.46, 0.34]},
+            {"id": "z", "block": 5, "text": "Z", "rect": [0.24, 0.44, 0.46, 0.49]},
+            {"id": "q", "block": 6, "text": "Q", "rect": [0.50, 0.29, 0.70, 0.34]},
+            {"id": "r", "block": 7, "text": "R", "rect": [0.50, 0.44, 0.70, 0.49]},
+            {"id": "w", "block": 8, "text": "W", "rect": [0.76, 0.29, 0.98, 0.34]},
+            {"id": "v", "block": 9, "text": "V", "rect": [0.76, 0.44, 0.98, 0.49]},
+        ],
+    }
+    return grid, geometry
+
+
+def test_horizontal_spans_survive_row_reconstruction_and_rendering() -> None:
+    grid, geometry = _mixed_span_fixture()
+    result = reconcile_table_grid(grid, [0.0, 0.10, 1.0, 0.55], geometry, (100.0, 100.0))
+    assert result["status"] == "repaired", result["audit"]
+    assert result["audit"]["horizontal_span_columns"] == [1, 2]
+    assert {
+        result["audit"]["source_content"][str(column)]["status"]
+        for column in (1, 2)
+    } == {"span_preserved"}
+    assert body(result) == [
+        ["Group", "Wide body", "Wide body", "X"],
+        ["Group", "Y", "Q", "W"],
+        ["Group", "Z", "R", "V"],
+    ]
+    assert all(len(row) == 4 for row in result["grid"]["rows"])
+
+    candidate = build_table_candidates(
+        cells=[],
+        page_size=(100.0, 100.0),
+        picture_records={},
+        layout_map={
+            "blocks": [
+                {
+                    "id": "b0001",
+                    "type": "table",
+                    "bbox": [0.0, 0.10, 1.0, 0.55],
+                    "_table_grid": grid,
+                    "grid_rows": grid["rows"],
+                }
+            ]
+        },
+        page_geometry=geometry,
+    )[0]
+    assert candidate.stats["grid_raw"] == grid
+    assert render_deterministic_docling_table(candidate, {}, (100.0, 100.0)) is True
+    assert "| Label | Baseline | Baseline | Result |" in candidate.markdown
+    assert "| Group | Wide body | Wide body | X |" in candidate.markdown
+    assert candidate.markdown.count("| Group |") == 3
+
+
 def test_r4_slot_collision_detection() -> None:
     """A slot join is legal only when its segments share a home band."""
     same = [

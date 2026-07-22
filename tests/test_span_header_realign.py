@@ -11,7 +11,6 @@ from document_extract.markdown.formatting import (
     normalize_pipe_tables,
     realign_collapsed_span_headers,
 )
-from document_extract.markdown.postprocess import dedupe_span_header_cells
 from document_extract.models import TableCandidate
 from document_extract.refinement import postprocess_markdown
 
@@ -72,11 +71,6 @@ def test_realigns_collapsed_and_padded_headers() -> None:
         "| PRIORITIES | KPI | Baseline | Baseline | Target | Target | 2025 Landing |"
     )
     check(count == 1 and expected in restored, "collapsed header restored from grid")
-    deduped = dedupe_span_header_cells(restored)
-    check(
-        "| PRIORITIES | KPI | Baseline |  | Target |  | 2025 Landing |" in deduped,
-        "restored header keeps span labels in their first physical columns",
-    )
 
     restored, count = realign_collapsed_span_headers(PADDED, [candidate()])
     check(count == 1 and expected in restored, "right-padded collapsed header restored")
@@ -205,17 +199,20 @@ def test_multirow_header_and_postprocess_order() -> None:
     )
     check(
         count == 1
-        and "| PRIORITIES | KPI | Year | Value | Year | Value | 2025 Landing |"
+        and (
+            "| PRIORITIES | KPI | Baseline<br>Year | Baseline<br>Value | "
+            "Target<br>Year | Target<br>Value | 2025 Landing |"
+        )
         in restored,
-        "multi-row grid uses its deepest header labels",
+        "multi-row grid preserves spanning and leaf header labels",
     )
 
     final, warnings = postprocess_markdown(COLLAPSED, COLLAPSED, [], [candidate()])
     check(warnings.get("span_headers_realigned") == 1, "postprocess records realignment")
     check(
-        "| PRIORITIES | KPI | Baseline |  | Target |  | 2025 Landing |"
+        "| PRIORITIES | KPI | Baseline | Baseline | Target | Target | 2025 Landing |"
         in final,
-        "postprocess normalizes, realigns, then deduplicates the header",
+        "postprocess keeps every restored span label duplicated",
     )
 
 

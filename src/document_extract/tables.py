@@ -583,18 +583,20 @@ def _merge_grid_header(
 ) -> list[str]:
     """Collapse multi-row headers into one flat header row.
 
-    Per column the deepest (last) non-empty header cell wins, so a stacked
-    header ("Location in the value chain" over "Upstream") keeps the specific
-    label. A spanning super-header left with an empty leading column is recovered
-    into column 0 (the impact/policy-name column), matching the visible table.
+    Distinct levels are joined top-to-bottom with ``<br>`` so every physical
+    column keeps both its spanning group label and its specific leaf label.
+    A spanning super-header left with an empty leading column is recovered into
+    column 0 (the impact/policy-name column), matching the visible table.
     """
     header = [""] * num_cols
     header_block = rows[:header_rows]
-    for row in header_block:
-        for column in range(num_cols):
+    for column in range(num_cols):
+        values: list[str] = []
+        for row in header_block:
             value = str(row[column]).strip() if column < len(row) else ""
-            if value:
-                header[column] = value
+            if value and value not in values:
+                values.append(value)
+        header[column] = "<br>".join(values)
     if header and not header[0]:
         for row in header_block:
             span = _grid_spanning_label(row)
@@ -1163,7 +1165,7 @@ def build_table_candidates(
 
 
 def _grid_source_corroborated(stats: dict[str, Any]) -> bool:
-    """Whether the accepted grid is fully corroborated by source PDF text."""
+    """Whether the accepted grid is source-safe for deterministic rendering."""
     audit = stats.get("reconstruction")
     if not isinstance(audit, dict):
         return False
@@ -1180,7 +1182,7 @@ def _grid_source_corroborated(stats: dict[str, Any]) -> bool:
         return False
     return all(
         isinstance(column, dict)
-        and column.get("status") in {"verified", "empty"}
+        and column.get("status") in {"verified", "empty", "span_preserved"}
         for column in source_content.values()
     )
 

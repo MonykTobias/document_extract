@@ -1,8 +1,4 @@
-"""Checks for table hygiene: span-header dedupe and banner-row collapse (WP5).
-
-Fixture rows are the exact strings from danoneurdaccessible pages 46/48
-(header) and 43 (banner). Run with ``python tests/test_table_hygiene.py``.
-"""
+"""End-to-end span propagation through markdown post-processing."""
 
 from __future__ import annotations
 
@@ -11,10 +7,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from document_extract.markdown.postprocess import (
-    collapse_banner_rows,
-    dedupe_span_header_cells,
-)
+from document_extract.markdown.pipe import is_separator_line, split_row
+from document_extract.refinement import postprocess_markdown
+
+
+HTML = """<table>
+<tr><th>Metric</th><th colspan="2">Baseline</th></tr>
+<tr><td rowspan="2">Shared group</td><td colspan="2">Wide body status label</td></tr>
+<tr><td>one</td><td>two</td></tr>
+</table>"""
 
 
 def check(condition: bool, message: str) -> None:
@@ -23,84 +24,18 @@ def check(condition: bool, message: str) -> None:
     print(f"[ok] {message}")
 
 
-def pipe_counts(markdown: str) -> list[int]:
-    return [
-        line.count("|")
-        for line in markdown.splitlines()
-        if line.strip().startswith("|")
-    ]
-
-
-HEADER_TABLE = (
-    "|  | Year ended December 31 | Year ended December 31 | Year ended December 31 | Year ended December 31 |\n"
-    "|---|---|---|---|---|\n"
-    "| (in € millions unless stated otherwise) | 2024 | 2025 | Reported changes | Like-for-like changes (a) |\n"
-    "| Sales | 27,376 | 27,283 | (0.3)% | +4.5% |\n"
-)
-BANNER_TABLE = (
-    "| Company | Country | Activity | Year | Method | Share |\n"
-    "|---|---|---|---|---|---|\n"
-    "| MAIN COMPANIES CONSOLIDATED FOR THE FIRST TIME DURING THE YEAR | MAIN COMPANIES CONSOLIDATED FOR THE FIRST TIME DURING THE YEAR | MAIN COMPANIES CONSOLIDATED FOR THE FIRST TIME DURING THE YEAR | MAIN COMPANIES CONSOLIDATED FOR THE FIRST TIME DURING THE YEAR | MAIN COMPANIES CONSOLIDATED FOR THE FIRST TIME DURING THE YEAR | MAIN COMPANIES CONSOLIDATED FOR THE FIRST TIME DURING THE YEAR |\n"
-    "| Functional Formularies | United States | Medical nutrition | 2024 | Full | 100% |\n"
-    "| - | - | - | - | - | - |\n"
-)
-
-
-def check_header_dedupe() -> None:
-    deduped = dedupe_span_header_cells(HEADER_TABLE)
-    check(
-        deduped.count("Year ended December 31") == 1,
-        "span header label kept exactly once",
-    )
-    header = deduped.splitlines()[0]
-    check(header.count("|") == 6, "header column count preserved")
-    check(
-        "| (in € millions unless stated otherwise) | 2024 | 2025 |" in deduped,
-        "body rows untouched by header dedupe",
-    )
-    check(
-        pipe_counts(deduped) == pipe_counts(HEADER_TABLE),
-        "all rows keep their pipe counts",
-    )
-
-    distinct = "| A | B | A |\n|---|---|---|\n| 1 | 2 | 3 |\n"
-    check(
-        dedupe_span_header_cells(distinct) == distinct,
-        "non-adjacent repeats in header left alone",
-    )
-
-
-def check_banner_collapse() -> None:
-    collapsed = collapse_banner_rows(BANNER_TABLE)
-    check(
-        collapsed.count("MAIN COMPANIES CONSOLIDATED FOR THE FIRST TIME DURING THE YEAR") == 1,
-        "banner value kept exactly once",
-    )
-    banner_line = collapsed.splitlines()[2]
-    check(banner_line.count("|") == 7, "banner row column count preserved")
-    check(
-        "| - | - | - | - | - | - |" in collapsed,
-        "short repeated placeholder row untouched",
-    )
-    check(
-        "| Functional Formularies | United States |" in collapsed,
-        "data rows untouched",
-    )
-    check(
-        pipe_counts(collapsed) == pipe_counts(BANNER_TABLE),
-        "all rows keep their pipe counts",
-    )
-
-    header_only = "| X | X |\n|---|---|\n| a | b |\n"
-    check(
-        collapse_banner_rows(header_only) == header_only,
-        "header rows are not banner-collapsed",
-    )
-
-
 def main() -> int:
-    check_header_dedupe()
-    check_banner_collapse()
+    final, warnings = postprocess_markdown(HTML, HTML, [], [], {})
+    check(final.count("Baseline") == 2, "header colspan remains repeated")
+    check(final.count("Wide body status label") == 2, "body colspan remains repeated")
+    check(final.count("Shared group") == 2, "body rowspan remains repeated")
+    rows = [
+        split_row(line)
+        for line in final.splitlines()
+        if line.startswith("|") and not is_separator_line(line)
+    ]
+    check(rows and {len(row) for row in rows} == {3}, "all logical rows are rectangular")
+    check(not warnings.get("content_loss_guard_triggered"), "span expansion loses no content")
     print("test_table_hygiene: all checks passed")
     return 0
 

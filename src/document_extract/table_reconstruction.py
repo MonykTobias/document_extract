@@ -36,7 +36,7 @@ from typing import Any
 from .layout.geometry import bbox_to_normalized_rect
 from .layout.reading_order import extract_divider_segments
 
-RECONSTRUCTION_VERSION = 3
+RECONSTRUCTION_VERSION = 4
 
 # A y position is a row boundary only when the rule segments sitting on it cover
 # at least this fraction of the table's width. Partial rules stopping at a
@@ -862,6 +862,14 @@ def reconcile_table_grid(
     audit["band_count"] = len(bands)
 
     owners = _collect_owners(grid)
+    horizontal_span_columns = {
+        column
+        for owner in owners
+        if owner["row_start"] >= header_rows
+        and owner["col_end"] - owner["col_start"] > 1
+        for column in range(owner["col_start"], min(owner["col_end"], num_cols))
+    }
+    audit["horizontal_span_columns"] = sorted(horizontal_span_columns)
     intervals = _column_intervals(owners, page_size, num_cols)
     by_column = _assign_lines_to_columns(geometry.get("lines") or [], intervals, table_bbox)
 
@@ -1004,7 +1012,9 @@ def reconcile_table_grid(
             "source_tokens": len(source_tokens),
             "component_ids": [component["id"] for component in components],
         }
-        if not raw_tokens:
+        if column in horizontal_span_columns:
+            entry.update({"status": "span_preserved", "reason": "horizontal_span"})
+        elif not raw_tokens:
             entry["status"] = "empty"
         elif not components:
             entry.update({"status": "untrusted", "reason": "no_source_components"})

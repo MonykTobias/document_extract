@@ -209,8 +209,15 @@ def test_title_detail_normalizes_to_one_row_and_one_header() -> None:
     check(norm is not None, "impact grid normalizes")
     check(norm["classification"] == "title_detail_table", "alternating title/detail grid is a title_detail_table")
     check(
-        norm["header"] == ["Location in the value chain", "Type", "Upstream", "Own operations", "Downstream", "ESRS coverage"],
-        "the two header rows collapse into one, super-header recovered into column 0",
+        norm["header"] == [
+            "Location in the value chain",
+            "Type",
+            "Location in the value chain<br>Upstream",
+            "Location in the value chain<br>Own operations",
+            "Location in the value chain<br>Downstream",
+            "ESRS coverage",
+        ],
+        "the two header rows retain their hierarchy, with the super-header recovered into column 0",
     )
     check(len(norm["records"]) == 3, "three title/detail pairs merge into three records")
     first = norm["records"][0]["cells"][0]
@@ -895,7 +902,12 @@ def test_deterministic_title_detail_replaces_raw_twin() -> None:
         "| Working hours and adequate rest |  |  |  |  |  |" not in out,
         "the standalone title-only row is gone",
     )
-    header = "| Location in the value chain | Type | Upstream | Own operations | Downstream | ESRS coverage |"
+    header = (
+        "| Location in the value chain | Type | "
+        "Location in the value chain<br>Upstream | "
+        "Location in the value chain<br>Own operations | "
+        "Location in the value chain<br>Downstream | ESRS coverage |"
+    )
     check(out.count(header) == 1, "the merged header appears exactly once")
     check("## Human rights impacts" in out, "unrelated heading preserved")
 
