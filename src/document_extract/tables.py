@@ -1164,26 +1164,78 @@ def build_table_candidates(
     return candidates
 
 
+def _column_body_cells(grid: dict[str, Any], column: int) -> list[str]:
+    """Body-cell values of one column, padding short rows like the renderer does."""
+    header_rows = int(grid.get("header_rows") or 0)
+    return [
+        row[column] if column < len(row) else ""
+        for row in (grid.get("rows") or [])[header_rows:]
+    ]
+
+
 def _grid_source_corroborated(stats: dict[str, Any]) -> bool:
-    """Whether the accepted grid is source-safe for deterministic rendering."""
+    """Whether the accepted grid is source-corroborated with rowwise-unchanged
+    untrusted columns, and so safe for deterministic rendering.
+
+    ``untrusted`` only means the reconciler could not match the column's tokens
+    back to page text; it says nothing about row placement, so an untrusted
+    column may ride along only when every one of its body cells is byte-identical
+    to ``grid_raw`` row for row. At least one genuinely ``verified`` column must
+    corroborate the repair -- ``span_preserved`` is an exemption, not evidence.
+    """
     audit = stats.get("reconstruction")
     if not isinstance(audit, dict):
         return False
+    status = audit.get("status")
     if not (
-        audit.get("status") == "repaired"
-        or (
-            audit.get("status") == "unchanged"
-            and audit.get("reason") == "raw_matches_rules"
-        )
+        status == "repaired"
+        or (status == "unchanged" and audit.get("reason") == "raw_matches_rules")
     ):
         return False
+    grid = stats.get("grid")
+    if not isinstance(grid, dict):
+        return False
+    try:
+        num_cols = int(grid.get("num_cols"))
+    except (TypeError, ValueError):
+        return False
+    if num_cols <= 0:
+        return False
     source_content = audit.get("source_content")
-    if not isinstance(source_content, dict) or not source_content:
+    if not isinstance(source_content, dict):
+        return False
+    if set(source_content) != {str(column) for column in range(num_cols)}:
+        return False
+    if not all(
+        isinstance(column, dict)
+        and column.get("status") in {"verified", "empty", "span_preserved", "untrusted"}
+        for column in source_content.values()
+    ):
+        return False
+    untrusted = [
+        index
+        for index in range(num_cols)
+        if source_content[str(index)].get("status") == "untrusted"
+    ]
+    if not untrusted:
+        return True
+    if not any(
+        column.get("status") == "verified" for column in source_content.values()
+    ):
+        return False
+    if status == "unchanged":
+        # The accepted grid is the original grid, so nothing moved.
+        return True
+    grid_raw = stats.get("grid_raw")
+    if not isinstance(grid_raw, dict):
+        return False
+    if grid_raw.get("num_cols") != num_cols:
+        return False
+    if int(grid_raw.get("header_rows") or 0) != int(grid.get("header_rows") or 0):
         return False
     return all(
-        isinstance(column, dict)
-        and column.get("status") in {"verified", "empty", "span_preserved"}
-        for column in source_content.values()
+        _column_body_cells(grid_raw, index) == _column_body_cells(grid, index)
+        for index in untrusted
     )
 
 
