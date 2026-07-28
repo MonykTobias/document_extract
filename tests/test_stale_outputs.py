@@ -76,8 +76,51 @@ def main() -> int:
         )
         pages = {row["page"] for row in json.loads((root / "all" / "manifest_all.json").read_text(encoding="utf-8"))}
         check(pages == {1, 2}, "all manifest rebuild covers both page shards")
+    check_empty_states_preserve_existing_outputs()
     print("test_stale_outputs: all checks passed")
     return 0
+
+
+def check_empty_states_preserve_existing_outputs() -> None:
+    """A run that completes no pages must not truncate a previous run's outputs.
+
+    ``run_pipeline`` writes run outputs from a ``finally``, and its Docling
+    chunk boundary sits outside the per-page error handler, so a conversion
+    failure reaches the write with an empty state list.
+    """
+    seeded = {
+        "manifest.json": '[{"page": 1, "status": "completed"}]',
+        "blocks.jsonl": '{"block_id": "p0001-b0001"}\n',
+        "token_usage.json": '{"totals": {"total_tokens": 1234}}',
+        "combined_docling_raw.md": "# raw from the previous run\n",
+        "combined_docling_final.md": "# final from the previous run\n",
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        for name, payload in seeded.items():
+            (root / name).write_text(payload, encoding="utf-8")
+
+        _write_run_outputs(root, [], shard=False)
+
+        check(
+            all(
+                (root / name).read_text(encoding="utf-8") == payload
+                for name, payload in seeded.items()
+            ),
+            "a run with no completed pages leaves existing aggregates byte-identical",
+        )
+        check(
+            not (root / "all").exists(),
+            "a run with no completed pages does not rebuild the all/ aggregates",
+        )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        _write_run_outputs(root, [], shard=True)
+        check(
+            not any(root.iterdir()),
+            "a sharded run with no completed pages writes nothing at all",
+        )
 
 
 if __name__ == "__main__":

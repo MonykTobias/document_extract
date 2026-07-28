@@ -244,6 +244,13 @@ def _write_all_outputs(output_root: Path) -> None:
 def _write_run_outputs(
     output_root: Path, states: list[PageState], *, shard: bool = False
 ) -> None:
+    # A run that dies before any page completes must never replace a previous
+    # run's aggregates with empty files. ``run_pipeline`` writes these from a
+    # ``finally``, and its chunk boundary (``pending.result()``) sits outside the
+    # per-page handler, so a failed Docling conversion escapes the page loop
+    # with no states at all. Nothing to summarize means nothing to write.
+    if not states:
+        return
     ordered = sorted(states, key=lambda state: state.page)
     suffix = (
         f"_p{ordered[0].page:04d}-p{ordered[-1].page:04d}" if shard and ordered else ""
