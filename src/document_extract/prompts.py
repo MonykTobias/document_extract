@@ -58,12 +58,20 @@ DEFAULT_KPI_PANEL_PROMPT = load_prompt("kpi_panel.md")
 
 
 def load_summary_prompt(path: Path | None) -> str:
+    """Load the picture-summary prompt, optionally from a caller-supplied file.
+
+    No shipped entry point passes a path -- there is no CLI flag for it and the
+    pipeline calls this with ``None`` -- but the function is a public export, so
+    the parameter stays for external callers. Wiring a ``--summary-prompt-file``
+    flag would be a feature, and it would need the same brace validation
+    ``assert_formattable`` applies to the refinement prompts.
+    """
     if path is None:
         return require_placeholders(load_prompt("picture_generic.md"), "context")
     template = path.expanduser().resolve().read_text(encoding="utf-8")
     if "{context}" not in template:
         template = template.rstrip() + "\n\nContext:\n{context}\n"
-    return template
+    return assert_formattable(template, "context")
 
 
 _REFINEMENT_PLACEHOLDERS = ("source_markdown", "layout_blocks", "verified_tables")

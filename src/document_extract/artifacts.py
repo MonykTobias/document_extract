@@ -148,6 +148,10 @@ def summarize_token_usage(manifest: list[dict[str, Any]]) -> dict[str, Any]:
         "totals": totals,
         "by_stage": by_stage,
         "pages": len({call["page"] for call in calls}),
+        # Always 0: the separate verification pass that produced this count no
+        # longer exists. The key is kept because token_usage.json is a consumed
+        # artifact with a frozen schema -- additive changes only -- so dropping
+        # a field would break readers outside this repository.
         "verify_calls": 0,
         "calls": calls,
     }
