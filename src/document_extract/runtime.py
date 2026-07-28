@@ -107,14 +107,17 @@ class PageState:
     @classmethod
     def load(cls, path: Path) -> "PageState":
         payload = json.loads(path.read_text(encoding="utf-8"))
-        history = [StageRecord(**entry) for entry in payload.pop("stage_history", [])]
-        state = cls(stage_history=history, **payload)
-        if state.schema_version != CHECKPOINT_SCHEMA_VERSION:
+        # Check the version before constructing: a checkpoint from a newer
+        # schema adds fields, so the dataclass call would raise TypeError for an
+        # unexpected keyword and this guard could never report the real reason.
+        version = payload.get("schema_version")
+        if version != CHECKPOINT_SCHEMA_VERSION:
             raise ValueError(
-                f"Unsupported page checkpoint schema {state.schema_version}; "
+                f"Unsupported page checkpoint schema {version}; "
                 f"expected {CHECKPOINT_SCHEMA_VERSION}: {path}"
             )
-        return state
+        history = [StageRecord(**entry) for entry in payload.pop("stage_history", [])]
+        return cls(stage_history=history, **payload)
 
 
 def new_page_state(

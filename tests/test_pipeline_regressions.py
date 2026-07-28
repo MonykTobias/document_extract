@@ -632,8 +632,73 @@ def check_plain_prose_refine_predicate() -> None:
     )
 
 
+def check_checkpoint_schema_version_guard() -> None:
+    """The version guard must fire before the dataclass rejects unknown fields.
+
+    A checkpoint from a newer schema adds fields, so constructing first turned
+    the intended ValueError into an opaque TypeError about a keyword argument.
+    """
+    base = {
+        "pdf_name": "doc.pdf",
+        "pdf_size": 1,
+        "page": 1,
+        "page_index": 1,
+        "total_pages": 1,
+        "dpi": 200,
+        "page_size": [10.0, 10.0],
+        "stage_history": [],
+    }
+    with tempfile.TemporaryDirectory() as temp:
+        page_dir = Path(temp)
+        path = page_dir / "page_state.json"
+
+        for label, payload in (
+            (
+                "with an unknown field",
+                {**base, "schema_version": 2, "page_dir": temp, "future_field": 42},
+            ),
+            ("without extra fields", {**base, "schema_version": 2, "page_dir": temp}),
+            ("with no version at all", {**base, "page_dir": temp}),
+        ):
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            try:
+                PageState.load(path)
+            except ValueError as error:
+                check(
+                    "Unsupported page checkpoint schema" in str(error),
+                    f"an unsupported checkpoint schema {label} is rejected by version",
+                )
+            else:
+                raise AssertionError(
+                    f"an unsupported checkpoint schema {label} was accepted"
+                )
+
+        # Current checkpoints keep round-tripping, including older ones written
+        # before the additive furniture_texts/page_role fields existed.
+        current = make_page_state()
+        current.page_dir = temp
+        current.furniture_texts = ["running header"]
+        current.save()
+        # Compare through JSON so the page_size tuple/list distinction that
+        # serialization erases does not mask a real field difference.
+        check(
+            json.loads(json.dumps(PageState.load(path).to_dict()))
+            == json.loads(json.dumps(current.to_dict())),
+            "a current checkpoint round-trips through save and load",
+        )
+
+        legacy = {**base, "schema_version": CHECKPOINT_SCHEMA_VERSION, "page_dir": temp}
+        path.write_text(json.dumps(legacy), encoding="utf-8")
+        older = PageState.load(path)
+        check(
+            older.furniture_texts == [] and older.page_role == "",
+            "an older checkpoint without the additive fields still loads",
+        )
+
+
 def main() -> int:
     check_detection_config_reaches_tables()
+    check_checkpoint_schema_version_guard()
     check_page_repair_replay_state()
     check_sectioned_table_survives_table_extract_replay()
     check_visual_value_invalidation()
