@@ -114,7 +114,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--vlm-page-image-max-px",
         type=int,
-        default=0,
+        default=1536,
         help="Maximum long side for page images sent to refine/repair VLM calls; 0 keeps full size.",
     )
     parser.add_argument(
@@ -125,7 +125,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--refine-mode",
         choices=("always", "auto"),
-        default="always",
+        default="auto",
         help="Use auto to skip VLM refinement for pages with no pictures, tables, or reordering.",
     )
     parser.add_argument(

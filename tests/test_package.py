@@ -70,6 +70,30 @@ def main() -> int:
         check(env_config.models.base_url == os.environ["OLLAMA_BASE_URL"], "environment overrides YAML")
         os.environ.pop("OLLAMA_BASE_URL")
 
+        # parse_args is a public export; a caller may build a Namespace with it
+        # and hand it straight to run_pipeline, bypassing the config injection
+        # that cli.run() performs. Its defaults must therefore agree with the
+        # packaged configuration or the two entry points behave differently.
+        bare = parse_args(["x.pdf"])
+        for key, configured in (
+            ("dpi", defaults.runtime.dpi),
+            ("start_page", defaults.runtime.start_page),
+            ("end_page", defaults.runtime.end_page),
+            ("refine_mode", defaults.runtime.refine_mode),
+            ("temperature", defaults.models.temperature),
+            ("num_ctx", defaults.models.num_ctx),
+            ("num_predict", defaults.models.num_predict),
+            ("triage_num_predict", defaults.models.triage_num_predict),
+            ("triage_confidence", defaults.models.triage_confidence),
+            ("photo_skip_confidence", defaults.models.photo_skip_confidence),
+            ("vlm_concurrency", defaults.models.vlm_concurrency),
+            ("vlm_page_image_max_px", defaults.models.vlm_page_image_max_px),
+        ):
+            check(
+                getattr(bare, key) == configured,
+                f"parse_args default for {key} matches the packaged config ({configured!r})",
+            )
+
         args = parse_args(
             argv_with_config_defaults(defaults, ["x.pdf", "--ollama-model", "USER_MODEL"])
         )
