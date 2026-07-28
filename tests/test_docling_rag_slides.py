@@ -820,6 +820,18 @@ def test_block_sidecar_serialization() -> None:
     check(rows[1]["heading_path"] == ["Performance"], "heading path carried forward")
     check(rows[1]["text"].startswith("Revenue grew"), "text snippet serialized")
 
+    # Downstream citation checks need the uncapped source text, so `text` stays
+    # capped for retrieval snippets and `text_full` carries the whole block.
+    long_item = SimpleNamespace(
+        text="x" * 600,
+        label="paragraph",
+        prov=prov,
+        self_ref="#/texts/3",
+    )
+    long_row = block_rows_for_page([long_item], 6, {})[0]
+    check(len(long_row["text"]) == 500, "capped text stays at 500 characters")
+    check(len(long_row["text_full"]) == 600, "text_full keeps the whole block")
+
 
 def fake_item(
     *,

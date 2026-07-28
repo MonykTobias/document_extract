@@ -35,6 +35,7 @@ def block_rows_for_page(
                 "type": item_kind(item),
                 "heading_path": heading_path.copy(),
                 "text": text[:500],
+                "text_full": text,
                 "image_path": record.rel_path if record else None,
                 "caption": record.caption if record else caption_text(item),
             }
