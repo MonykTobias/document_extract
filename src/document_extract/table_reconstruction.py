@@ -821,6 +821,38 @@ def _raw_home_segments(
     return segments
 
 
+def _visible_rules(
+    geometry: dict[str, Any],
+    table_bbox: list[float],
+    page_image_path: Any | None,
+    audit: dict[str, Any],
+) -> list[list[float]]:
+    """R1: a rule only bounds rows where the rendered page draws a visible line.
+
+    Without a page image every extracted rule is trusted, which is the
+    historical behaviour and is recorded as ``rule_visibility: "unchecked"``.
+    Writes its own audit keys and returns the rules to build bands from.
+    """
+    rules = geometry.get("rules") or []
+    audit["rule_visibility"] = "unchecked"
+    if page_image_path is None:
+        return rules
+    table_lines = [
+        line
+        for line in (geometry.get("lines") or [])
+        if table_bbox[1] <= (line["rect"][1] + line["rect"][3]) / 2 <= table_bbox[3]
+    ]
+    heights = [line["rect"][3] - line["rect"][1] for line in table_lines]
+    visible, dropped = filter_visible_rule_segments(
+        rules, page_image_path, _median(heights) if heights else 0.0
+    )
+    if visible is None:
+        return rules
+    audit["rule_visibility"] = "checked"
+    audit["dropped_invisible_rules"] = dropped
+    return visible
+
+
 def reconcile_table_grid(
     grid: dict[str, Any] | None,
     table_bbox: list[float] | None,
@@ -846,26 +878,7 @@ def reconcile_table_grid(
     if not rows or num_cols < 1 or header_rows >= len(rows):
         return {"status": "unchanged", "grid": grid, "audit": {**audit, "reason": "no_body"}}
 
-    # R1: a rule only bounds rows where the rendered page draws a visible line.
-    rules = geometry.get("rules") or []
-    audit["rule_visibility"] = "unchecked"
-    if page_image_path is not None:
-        table_lines = [
-            line
-            for line in (geometry.get("lines") or [])
-            if table_bbox[1] <= (line["rect"][1] + line["rect"][3]) / 2 <= table_bbox[3]
-        ]
-        heights = [line["rect"][3] - line["rect"][1] for line in table_lines]
-        # Not named ``kept``: the same name was later rebound to this function's
-        # per-column token lists, which made the two meanings easy to confuse in
-        # a 470-line body (and defeated type inference on the second binding).
-        visible_rules, dropped = filter_visible_rule_segments(
-            rules, page_image_path, _median(heights) if heights else 0.0
-        )
-        if visible_rules is not None:
-            rules = visible_rules
-            audit["rule_visibility"] = "checked"
-            audit["dropped_invisible_rules"] = dropped
+    rules = _visible_rules(geometry, table_bbox, page_image_path, audit)
 
     boundaries = _boundaries(rules, table_bbox)
     audit["boundaries"] = [round(boundary["y"], 6) for boundary in boundaries]
@@ -1276,13 +1289,47 @@ def reconcile_table_grid(
         }
     )
 
+    if not _text_is_preserved(
+        grid, new_grid, header_rows, num_cols, source_verified, source_audit, audit
+    ):
+        return {"status": "abstained", "grid": grid, "audit": audit}
+
+    if _same_shape(grid, new_grid):
+        return {"status": "unchanged", "grid": grid, "audit": {**audit, "reason": "raw_matches_rules"}}
+    return {"status": "repaired", "grid": new_grid, "audit": audit}
+
+
+def _text_is_preserved(
+    grid: dict[str, Any],
+    new_grid: dict[str, Any],
+    header_rows: int,
+    num_cols: int,
+    source_verified: dict[int, list[dict[str, Any]]],
+    source_audit: dict[str, Any],
+    audit: dict[str, Any],
+) -> bool:
+    """Whether the rebuilt grid says exactly what the input grid said.
+
+    Reconstruction only moves text up or down inside its own column, so every
+    column's token stream is invariant. Three separate ways that can fail, each
+    recorded as its own abstention reason:
+
+    * ``raw_text_not_preserved`` -- a token was dropped or duplicated;
+    * ``source_text_not_preserved`` -- a source-proven column no longer matches
+      the literal PDF components it was rebuilt from;
+    * ``untrusted_text_changed`` -- a column with no source proof was altered at
+      all, which it never may be.
+
+    Writes the reason and failed column into ``audit`` and returns False; the
+    caller turns that into an abstention on the untouched input grid.
+    """
     kept = _column_text(grid, header_rows, num_cols)
     rebuilt = _column_text(new_grid, header_rows, num_cols)
     for column in range(num_cols):
         if not _tokens_preserved(kept[column], rebuilt[column]):
             audit["reason"] = "raw_text_not_preserved"
             audit["failed_column"] = column
-            return {"status": "abstained", "grid": grid, "audit": audit}
+            return False
         if column in source_verified:
             expected = [
                 token
@@ -1292,16 +1339,13 @@ def reconcile_table_grid(
             if rebuilt[column] != expected:
                 audit["reason"] = "source_text_not_preserved"
                 audit["failed_column"] = column
-                return {"status": "abstained", "grid": grid, "audit": audit}
+                return False
             source_audit[str(column)]["output_tokens"] = len(rebuilt[column])
         elif kept[column] != rebuilt[column]:
             audit["reason"] = "untrusted_text_changed"
             audit["failed_column"] = column
-            return {"status": "abstained", "grid": grid, "audit": audit}
-
-    if _same_shape(grid, new_grid):
-        return {"status": "unchanged", "grid": grid, "audit": {**audit, "reason": "raw_matches_rules"}}
-    return {"status": "repaired", "grid": new_grid, "audit": audit}
+            return False
+    return True
 
 
 def _union(rects: list[list[float]]) -> list[float] | None:
