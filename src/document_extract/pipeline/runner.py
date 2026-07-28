@@ -10,7 +10,12 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Sequence
 
-from ..artifacts import combine_markdown, summarize_token_usage, write_jsonl
+from ..artifacts import (
+    combine_markdown,
+    summarize_token_usage,
+    write_jsonl,
+    write_text_atomic,
+)
 from ..docling_adapter import (
     bbox_dict,
     build_docling_converter,
@@ -230,9 +235,9 @@ def _write_all_outputs(output_root: Path) -> None:
             continue
         all_states.append(state)
 
-    (all_out / "manifest_all.json").write_text(
+    write_text_atomic(
+        all_out / "manifest_all.json",
         json.dumps([_manifest_row(state) for state in all_states], indent=2, ensure_ascii=False),
-        encoding="utf-8",
     )
     write_jsonl(
         all_out / "blocks_all.jsonl",
@@ -261,12 +266,13 @@ def _write_run_outputs(
     final_dirs = [Path(state.page_dir) for state in successful]
     block_rows = [row for state in successful for row in state.block_rows]
     write_jsonl(output_root / f"blocks{suffix}.jsonl", block_rows)
-    (output_root / f"manifest{suffix}.json").write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
+    write_text_atomic(
+        output_root / f"manifest{suffix}.json",
+        json.dumps(manifest, indent=2, ensure_ascii=False),
     )
-    (output_root / f"token_usage{suffix}.json").write_text(
+    write_text_atomic(
+        output_root / f"token_usage{suffix}.json",
         json.dumps(summarize_token_usage(manifest), indent=2, ensure_ascii=False),
-        encoding="utf-8",
     )
     combine_markdown(raw_dirs, output_root / f"combined_docling_raw{suffix}.md", "docling_raw.md")
     combine_markdown(final_dirs, output_root / f"combined_docling_final{suffix}.md", "docling_final.md")

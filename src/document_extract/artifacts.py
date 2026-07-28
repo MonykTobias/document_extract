@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -41,10 +42,25 @@ def block_rows_for_page(
     return rows
 
 
+def write_text_atomic(path: Path, text: str) -> None:
+    """Write through a sibling temp file so a reader never sees a partial file.
+
+    Process-parallel shards all rebuild the document-wide ``all/`` aggregates
+    against one output root, so two workers can write the same path at once.
+    ``os.replace`` makes the swap atomic; the pid suffix keeps the temp names
+    from colliding.
+    """
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
-    path.write_text(
-        "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows),
-        encoding="utf-8",
+    write_text_atomic(
+        path, "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows)
     )
 
 
@@ -145,9 +161,9 @@ def combine_markdown(page_dirs: list[Path], combined_path: Path, leaf_name: str)
             continue
         parts.append(f"\n\n===== {page_dir.name} =====\n\n")
         parts.append(page_md.read_text(encoding="utf-8"))
-    combined_path.write_text("".join(parts).lstrip(), encoding="utf-8")
+    write_text_atomic(combined_path, "".join(parts).lstrip())
 
 __all__ = [
-    "block_rows_for_page", "write_jsonl", "write_image_summaries",
-    "summarize_token_usage", "combine_markdown",
+    "block_rows_for_page", "write_text_atomic", "write_jsonl",
+    "write_image_summaries", "summarize_token_usage", "combine_markdown",
 ]
