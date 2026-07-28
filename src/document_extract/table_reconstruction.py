@@ -36,7 +36,7 @@ from typing import Any
 from .layout.geometry import bbox_to_normalized_rect
 from .layout.reading_order import extract_divider_segments
 
-RECONSTRUCTION_VERSION = 4
+RECONSTRUCTION_VERSION = 5
 
 # A y position is a row boundary only when the rule segments sitting on it cover
 # at least this fraction of the table's width. Partial rules stopping at a
@@ -432,6 +432,18 @@ def _is_subsequence(needle: list[str], haystack: list[str]) -> bool:
             if index == len(needle):
                 return True
     return False
+
+
+def _tokens_preserved(needle: list[str], haystack: list[str]) -> bool:
+    """Strict subsequence, or the same normalized stream tokenized differently.
+
+    The equality branch accepts only token-boundary drift ("equipandempower"
+    vs "equip and empower") across the complete stream. A single added,
+    removed, or reordered normalized character still fails.
+    """
+    if _is_subsequence(needle, haystack):
+        return True
+    return bool(needle) and bool(haystack) and "".join(needle) == "".join(haystack)
 
 
 def _raw_column_tokens(
@@ -1018,7 +1030,7 @@ def reconcile_table_grid(
             entry["status"] = "empty"
         elif not components:
             entry.update({"status": "untrusted", "reason": "no_source_components"})
-        elif not _is_subsequence(raw_tokens, source_tokens):
+        elif not _tokens_preserved(raw_tokens, source_tokens):
             entry.update({"status": "untrusted", "reason": "raw_not_source_subsequence"})
         else:
             regions = _regions(effective_dividing[column], len(bands))
@@ -1041,6 +1053,8 @@ def reconcile_table_grid(
                 )
             else:
                 entry["status"] = "verified"
+                if not _is_subsequence(raw_tokens, source_tokens):
+                    entry["match"] = "token_boundary_equivalent"
                 entry["restored_components"] = [
                     component["id"]
                     for component in components
@@ -1262,7 +1276,7 @@ def reconcile_table_grid(
     kept = _column_text(grid, header_rows, num_cols)
     rebuilt = _column_text(new_grid, header_rows, num_cols)
     for column in range(num_cols):
-        if not _is_subsequence(kept[column], rebuilt[column]):
+        if not _tokens_preserved(kept[column], rebuilt[column]):
             audit["reason"] = "raw_text_not_preserved"
             audit["failed_column"] = column
             return {"status": "abstained", "grid": grid, "audit": audit}

@@ -156,15 +156,15 @@ def test_uncorroborated_regular_tables_stay_deferred() -> None:
 
 
 def test_rowwise_unchanged_untrusted_columns_render() -> None:
-    # p168: columns 1, 3 and 6 are untrusted but survived the repair row for row;
-    # the repair only moved column 0's priority labels onto their logical rows.
-    p168 = candidate(
-        source_statuses="V U V U S S U",
+    # Columns 1, 3 and 6 are untrusted but survived the repair row for row; the
+    # repair only moved column 0's priority labels onto their logical rows.
+    mixed = candidate(
+        source_statuses="V U V U V V U",
         grid_raw=with_column(GRID, 0, ["", "Offer tastier food"]),
     )
-    check(render(p168), "repair with rowwise-unchanged untrusted columns renders")
+    check(render(mixed), "repair with rowwise-unchanged untrusted columns renders")
     check(
-        p168.markdown == render_grid_markdown(normalize_table_grid(GRID)),
+        mixed.markdown == render_grid_markdown(normalize_table_grid(GRID)),
         "the accepted grid, not grid_raw, is rendered",
     )
 
@@ -189,7 +189,7 @@ def test_moved_untrusted_cells_stay_deferred() -> None:
         grid_raw=with_column(GRID, 0, ["Equipandempower", ""]),
     )
     p175 = candidate(
-        source_statuses="U S S V V V U",
+        source_statuses="U S S V V V V",
         grid_raw=with_column(GRID, 0, ["", "Offer tastier food"]),
     )
     no_evidence = candidate(source_statuses="U U U", grid=SMALL_GRID, grid_raw=SMALL_GRID)
@@ -223,6 +223,51 @@ def test_moved_untrusted_cells_stay_deferred() -> None:
     ]
     for table, message in cases:
         check(not render(table) and not table.verified, message)
+
+
+def test_span_preserved_columns_stay_deferred() -> None:
+    # A horizontal span made source alignment ambiguous, so the column is raw
+    # Docling text (p174's "m3/t", p168's "CO2e") rather than source-verified.
+    six_col = {**GRID, "num_cols": 6, "rows": [row[:6] for row in GRID["rows"]]}
+    cases = [
+        (
+            candidate(source_statuses="S S S", grid=SMALL_GRID, grid_raw=SMALL_GRID),
+            "all-span audit stays deferred",
+        ),
+        (
+            candidate(source_statuses="V S S", grid=SMALL_GRID, grid_raw=SMALL_GRID),
+            "verified plus span audit stays deferred",
+        ),
+        (
+            candidate(
+                source_statuses="V V V V S S V",
+                grid_raw=with_column(GRID, 0, ["", "Offer tastier food"]),
+            ),
+            "p168 shape stays deferred",
+        ),
+        (
+            candidate(
+                source_statuses="V V V V S S",
+                grid=six_col,
+                grid_raw=with_column(six_col, 0, ["", "Offer tastier food"]),
+            ),
+            "p174 shape stays deferred",
+        ),
+    ]
+    for table, message in cases:
+        check(not render(table) and not table.verified, message)
+
+    p170 = candidate(
+        source_statuses="V V V V V V V",
+        grid_raw=with_column(GRID, 0, ["", "Offer tastier food"]),
+    )
+    check(render(p170) and p170.verified, "p170 keeps deterministic authority")
+    p172 = candidate(
+        source_statuses="V V V V V V",
+        grid=six_col,
+        grid_raw=with_column(six_col, 0, ["", "Offer tastier food"]),
+    )
+    check(render(p172) and p172.verified, "p172 keeps deterministic authority")
 
 
 def test_existing_renderer_paths_ignore_the_audit_gate() -> None:
@@ -288,6 +333,7 @@ def main() -> int:
     test_uncorroborated_regular_tables_stay_deferred()
     test_rowwise_unchanged_untrusted_columns_render()
     test_moved_untrusted_cells_stay_deferred()
+    test_span_preserved_columns_stay_deferred()
     test_existing_renderer_paths_ignore_the_audit_gate()
     test_postprocess_enforces_the_authoritative_grid()
     return 0

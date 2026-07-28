@@ -19,6 +19,7 @@ from document_extract.table_reconstruction import (  # noqa: E402
     RECONSTRUCTION_VERSION,
     _slot_collisions,
     _tokens,
+    _tokens_preserved,
     filter_visible_rule_segments,
     reconcile_table_grid,
 )
@@ -26,6 +27,7 @@ from document_extract.tables import (  # noqa: E402
     build_table_candidates,
     normalize_table_grid,
     render_deterministic_docling_table,
+    render_grid_markdown,
     verify_region_table,
 )
 from document_extract.visual_values import associate_table_cells  # noqa: E402
@@ -177,6 +179,19 @@ def test_non_subsequence_source_text_is_never_inserted() -> None:
     assert "Source" not in " ".join(row[0] for row in body(result))
 
 
+def test_token_boundary_equivalence_accepts_only_identical_streams() -> None:
+    """Glued/split tokens are the same text; a moved word is not."""
+    assert _tokens_preserved(
+        _tokens("Equipandempower communities ( i.e. , internal)"),
+        _tokens("Equip and empower communities (i.e., internal)"),
+    )
+    # p175: same characters, wrong order. It must stay untrusted.
+    assert not _tokens_preserved(
+        _tokens("capabilities of the future to in a fast-changing develop economy"),
+        _tokens("capabilities of the future to develop in a fast-changing economy"),
+    )
+
+
 def test_danone_183_merges_the_unsupported_row() -> None:
     """No PDF rule sits near y=495, so the final bullet and the initiative tail
     belong to the Academia record rather than a fourth one."""
@@ -286,9 +301,14 @@ def test_danone_199_spanning_labels_repeat_into_every_covered_row() -> None:
     assert column0[5] == column0[6]
     # Two sub-rows genuinely share one band: that join is allowed to stand.
     assert rows[0][4] == "2030 2050 (b)"
-    # Fragment merge is recorded, and no source restoration happened in col 0
-    # (it stays Docling's untrusted wording).
-    assert result["audit"]["merged_fragments"]
+    # Docling glued "recover as much"; the identical source stream is admitted
+    # through token-boundary equivalence and replaces it everywhere.
+    entry = result["audit"]["source_content"]["0"]
+    assert entry["status"] == "verified"
+    assert entry["match"] == "token_boundary_equivalent"
+    assert all("recover as much as Danone uses" in cell for cell in column0[7:10])
+    assert column0[7] == column0[8] == column0[9]
+    assert "recoverasmuch" not in " ".join(cell for row in rows for cell in row)
 
 
 def test_danone_200_no_cell_glues_two_rows() -> None:
@@ -306,6 +326,14 @@ def test_danone_200_no_cell_glues_two_rows() -> None:
     # The column the collision emptied now carries content in every KPI row.
     assert all(row[8].strip() for row in rows[:-1])
     assert result["audit"]["slot_collisions"]
+    # Docling split the parenthetical; the source stream is the same characters,
+    # so column 0 is admitted through token-boundary equivalence.
+    entry = result["audit"]["source_content"]["0"]
+    assert entry["status"] == "verified"
+    assert entry["match"] == "token_boundary_equivalent"
+    label = rows[5][0]
+    assert "(i.e., internal, external)" in label
+    assert "( i.e. , internal, external)" not in " ".join(flat)
 
 
 def test_danone_190_repaired_grid_is_authoritative_over_raw() -> None:
@@ -559,10 +587,13 @@ def test_horizontal_spans_survive_row_reconstruction_and_rendering() -> None:
         page_geometry=geometry,
     )[0]
     assert candidate.stats["grid_raw"] == grid
-    assert render_deterministic_docling_table(candidate, {}, (100.0, 100.0)) is True
-    assert "| Label | Baseline | Baseline | Result |" in candidate.markdown
-    assert "| Group | Wide body | Wide body | X |" in candidate.markdown
-    assert candidate.markdown.count("| Group |") == 3
+    # A span_preserved column is unresolved source text, so it defers
+    # deterministic authority; the reconstructed grid still renders correctly.
+    assert render_deterministic_docling_table(candidate, {}, (100.0, 100.0)) is False
+    markdown = render_grid_markdown(normalize_table_grid(candidate.stats["grid"]))
+    assert "| Label | Baseline | Baseline | Result |" in markdown
+    assert "| Group | Wide body | Wide body | X |" in markdown
+    assert markdown.count("| Group |") == 3
 
 
 def test_r4_slot_collision_detection() -> None:
@@ -704,11 +735,9 @@ def test_raw_text_is_retained_and_verified_source_text_is_complete() -> None:
         raw = stream(fixture["raw_grid"])
         rebuilt = stream(result["grid"])
         for column, tokens in raw.items():
-            index = 0
-            for token in rebuilt[column]:
-                if index < len(tokens) and token == tokens[index]:
-                    index += 1
-            assert index == len(tokens), (page, column)
+            # Raw wording survives verbatim, or retokenized into the identical
+            # character stream -- never partially.
+            assert _tokens_preserved(tokens, rebuilt[column]), (page, column)
         for column, audit in result["audit"]["source_content"].items():
             if audit["status"] == "verified":
                 assert audit["output_tokens"] == audit["source_tokens"], (page, column)

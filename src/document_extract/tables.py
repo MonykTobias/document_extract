@@ -1177,11 +1177,15 @@ def _grid_source_corroborated(stats: dict[str, Any]) -> bool:
     """Whether the accepted grid is source-corroborated with rowwise-unchanged
     untrusted columns, and so safe for deterministic rendering.
 
-    ``untrusted`` only means the reconciler could not match the column's tokens
-    back to page text; it says nothing about row placement, so an untrusted
-    column may ride along only when every one of its body cells is byte-identical
-    to ``grid_raw`` row for row. At least one genuinely ``verified`` column must
-    corroborate the repair -- ``span_preserved`` is an exemption, not evidence.
+    Only ``verified``/``empty`` columns are evidence. ``untrusted`` means the
+    reconciler could not match the column's tokens back to page text; it says
+    nothing about row placement, so an untrusted column may ride along only when
+    every one of its body cells is byte-identical to ``grid_raw`` row for row and
+    at least one genuinely ``verified`` column corroborates the repair.
+    ``span_preserved`` means a horizontal span made source alignment ambiguous
+    and the column was left as Docling emitted it -- unresolved, not verified, so
+    it defers deterministic authority entirely (p168's ``CO2e`` and p174's
+    ``m3/t`` are the raw cells such a column carries).
     """
     audit = stats.get("reconstruction")
     if not isinstance(audit, dict):
@@ -1210,6 +1214,10 @@ def _grid_source_corroborated(stats: dict[str, Any]) -> bool:
         isinstance(column, dict)
         and column.get("status") in {"verified", "empty", "span_preserved", "untrusted"}
         for column in source_content.values()
+    ):
+        return False
+    if any(
+        column.get("status") == "span_preserved" for column in source_content.values()
     ):
         return False
     untrusted = [
