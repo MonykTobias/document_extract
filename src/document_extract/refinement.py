@@ -26,6 +26,7 @@ from .markdown.formatting import (
     normalize_pipe_tables,
     pipe_row_count,
     realign_collapsed_span_headers,
+    reconcile_table_columns,
     replace_deterministic_tables,
     replace_sectioned_tables,
     standalone_value_line_count,
@@ -348,8 +349,10 @@ def postprocess_markdown(
     # After flatten_html_tables (escaped entities must not turn into real
     # HTML before the table parser runs), before the table/text cleanups.
     final = sp.unescape_html_entities(final)
+    # Before normalize_pipe_tables: once a short row is right-padded, whether
+    # its missing cell was internal or trailing can no longer be recovered.
+    final, table_warnings = reconcile_table_columns(final, table_candidates)
     final = normalize_pipe_tables(final)
-    table_warnings: dict[str, int] = {}
     final, realigned_headers = realign_collapsed_span_headers(final, table_candidates)
     if realigned_headers:
         table_warnings["span_headers_realigned"] = realigned_headers
@@ -619,6 +622,17 @@ def repair_regression_reasons(
         pre_body
     ):
         reasons.append("duplicate_content_added")
+    # Value retention is not column retention: a repair may move a total under
+    # the previous column's header. Rows the source grid can adjudicate are
+    # repositioned deterministically in postprocess; a repair that turns such a
+    # row into one the grid can no longer place is the case left to reject.
+    if table_candidates:
+        _, pre_columns = reconcile_table_columns(pre_body, table_candidates)
+        _, repaired_columns = reconcile_table_columns(repaired_body, table_candidates)
+        if repaired_columns.get("ambiguous_table_arity", 0) > pre_columns.get(
+            "ambiguous_table_arity", 0
+        ):
+            reasons.append("ambiguous_table_arity")
     if records is not None:
         pre_missing = audit_table_symbol_instances(
             pre_markdown, records, table_candidates

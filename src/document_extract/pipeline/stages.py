@@ -76,6 +76,16 @@ from .state import (
 )
 
 
+# Counts of structural table damage the postprocess pass had to repair or could
+# not resolve. An accepted repair pass may not lower them: they are the audit of
+# what arrived, not of what the last generation happened to emit.
+_STRUCTURAL_WARNING_KEYS = (
+    "table_rows_realigned",
+    "ambiguous_table_arity",
+    "span_headers_realigned",
+)
+
+
 def _repair_unplaced_lines(
     warnings: dict[str, Any], records: list[PictureRecord]
 ) -> list[str]:
@@ -787,7 +797,15 @@ def _run_page_repair(
             state.warnings["repair_rejected"] = reject_reasons
         else:
             state.final_markdown = repaired_final
-            state.warnings = repaired_warnings
+            # The repaired page replaces the markdown, not the structural audit:
+            # a repair that renders a fixed-up table cleanly must not erase the
+            # record that the table arrived malformed.
+            merged = dict(repaired_warnings)
+            for key in _STRUCTURAL_WARNING_KEYS:
+                before = state.warnings.get(key, 0)
+                if before > merged.get(key, 0):
+                    merged[key] = before
+            state.warnings = merged
             missing_tables = missing_verified_table_ids(state.final_markdown, candidates)
             if missing_tables:
                 state.warnings["verified_tables_missing"] = missing_tables

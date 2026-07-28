@@ -398,7 +398,10 @@ def check_repair_acceptance_replaces_markdown() -> None:
             raw_markdown=after,
             final_markdown=before,
             pre_repair_markdown=before,
-            warnings={"content_loss_guard_triggered": True},
+            warnings={
+                "content_loss_guard_triggered": True,
+                "table_rows_realigned": 2,
+            },
         )
         original = stages.repair_page_markdown
         stages.repair_page_markdown = fake_repair
@@ -424,6 +427,10 @@ def check_repair_acceptance_replaces_markdown() -> None:
         check(
             (page_dir / "page_repair.md").exists(),
             "an accepted repair writes page_repair.md",
+        )
+        check(
+            state.warnings.get("table_rows_realigned") == 2,
+            "an accepted repair cannot erase a structural table warning",
         )
 
 
