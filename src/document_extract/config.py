@@ -40,6 +40,10 @@ class ModelConfig:
     photo_skip_confidence: float = 0.8
     vlm_concurrency: int = 1
     vlm_page_image_max_px: int = 1536
+    # PEM path for verifying a remote Ollama over HTTPS; "" keeps requests'
+    # default trust store. The matching auth token is environment-only, so no
+    # credential can land in a committed YAML file.
+    ca_bundle: str = ""
 
 
 @dataclass(frozen=True)
@@ -158,6 +162,7 @@ def apply_environment_overrides(mapping: dict[str, Any]) -> None:
         "DOCLING_RAG_PHOTO_SKIP_CONFIDENCE": ("models", "photo_skip_confidence", float),
         "DOCLING_RAG_VLM_CONCURRENCY": ("models", "vlm_concurrency", int),
         "DOCLING_RAG_VLM_PAGE_IMAGE_MAX_PX": ("models", "vlm_page_image_max_px", int),
+        "DOCLING_RAG_OLLAMA_CA_BUNDLE": ("models", "ca_bundle", str),
     }
     for env_name, (section, key, converter) in env_map.items():
         raw = os.getenv(env_name)
@@ -216,6 +221,7 @@ def apply_detection_config(config: AppConfig) -> None:
     # These module-level settings make thread-concurrent extraction unsupported.
     from . import pictures, tables
     from .layout import prompt_map, reading_order
+    from .llm import ollama
     from .markdown import formatting
 
     picture_map = {
@@ -255,6 +261,7 @@ def apply_detection_config(config: AppConfig) -> None:
     prompt_map.NEARBY_BLOCK_DISTANCE = config.pictures.nearby_block_distance
     formatting.SUMMARY_DUP_MIN_TOKENS = config.pictures.summary_dup_min_tokens
     formatting.SUMMARY_DUP_COVERAGE = config.pictures.summary_dup_coverage
+    ollama.CA_BUNDLE = config.models.ca_bundle
     for key, value in table_map.items():
         setattr(tables, key, value)
     for key, value in reading_map.items():
