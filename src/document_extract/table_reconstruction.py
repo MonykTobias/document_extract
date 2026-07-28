@@ -856,11 +856,14 @@ def reconcile_table_grid(
             if table_bbox[1] <= (line["rect"][1] + line["rect"][3]) / 2 <= table_bbox[3]
         ]
         heights = [line["rect"][3] - line["rect"][1] for line in table_lines]
-        kept, dropped = filter_visible_rule_segments(
+        # Not named ``kept``: the same name was later rebound to this function's
+        # per-column token lists, which made the two meanings easy to confuse in
+        # a 470-line body (and defeated type inference on the second binding).
+        visible_rules, dropped = filter_visible_rule_segments(
             rules, page_image_path, _median(heights) if heights else 0.0
         )
-        if kept is not None:
-            rules = kept
+        if visible_rules is not None:
+            rules = visible_rules
             audit["rule_visibility"] = "checked"
             audit["dropped_invisible_rules"] = dropped
 
