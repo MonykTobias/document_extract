@@ -213,8 +213,41 @@ def check_docling_preflight() -> None:
                 check(True, "a resumed run skips the docling preflight")
 
 
+def check_readme_documents_every_cli_option() -> None:
+    """Every flag parse_args accepts must appear in the README options table."""
+    readme = (Path(__file__).resolve().parents[1] / "README.md").read_text(
+        encoding="utf-8"
+    )
+    # parse_args builds its parser internally; borrow it by intercepting the
+    # final parse call, so the option list can never drift from the real one.
+    captured: list[argparse.ArgumentParser] = []
+    original = argparse.ArgumentParser.parse_args
+
+    def capture(self, *args, **kwargs):
+        captured.append(self)
+        return original(self, *args, **kwargs)
+
+    argparse.ArgumentParser.parse_args = capture
+    try:
+        parse_args(["x.pdf"])
+    finally:
+        argparse.ArgumentParser.parse_args = original
+
+    undocumented = sorted(
+        option
+        for action in captured[0]._actions
+        for option in action.option_strings
+        if option not in {"-h", "--help"} and option not in readme
+    )
+    check(
+        not undocumented,
+        f"README documents every CLI option (missing: {', '.join(undocumented) or 'none'})",
+    )
+
+
 def main() -> int:
     check_custom_prompt_brace_validation()
+    check_readme_documents_every_cli_option()
     check_cli_reports_user_errors_without_tracebacks()
     check_docling_preflight()
     with clean_config_environment():

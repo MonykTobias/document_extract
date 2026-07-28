@@ -164,11 +164,13 @@ footer lines that exist only in pixels are captured. The refine prompt now
 requires keeping '<!-- image -->' markers in position so summaries land where
 the figure sits instead of at the page end.
 
-Detector-only changes can be validated offline against a finished run (no Docker):
+Post-processing changes can be validated offline against a finished run (no
+Docker, no GPU, no Ollama, no Docling):
 
-# Optional table-detector replay tooling is not included in the standalone package.
+python tools/reprocess_pages.py --pages-root outputs_docling_rag/danoneiar2025 --out replay_out
+
 # expected candidate pages for danoneiar2025: 8, 12, 13, 24, 39, 53
 
-UNIT TESTS (no Docker/Ollama needed):
+UNIT TESTS (no Docker/Ollama needed), from the repository root:
 
-py -3 test_docling_rag_slides.py
+python tests/run_all.py

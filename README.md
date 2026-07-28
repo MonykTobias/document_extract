@@ -95,10 +95,18 @@ document_extract report.pdf --start-page 1 --end-page 5
 | `--num-ctx N` | Ollama context size. |
 | `--num-predict N` | Main VLM output token cap. |
 | `--auto-num-ctx` | Estimate context size per call. |
-| `--prompt-file FILE` | Custom page-refinement prompt. |
+| `--refine-mode {always,auto}` | `auto` (default) skips VLM refinement on pages with no pictures, tables, or reordering. `always` refines every page. |
+| `--vlm-page-image-max-px N` | Maximum long side for page images sent to refine/repair calls (default 1536); `0` keeps full size. Pages with table candidates or a TOC always use the full-resolution image. |
+| `--vlm-concurrency N` | Concurrent Ollama calls for independent per-picture/per-table requests (default 1, serial). Real parallelism also needs `OLLAMA_NUM_PARALLEL` on the server, and each slot allocates its own `num_ctx` KV cache. |
+| `--visual-values-mode {off,audit,enforce}` | Tagged-PDF visual-value handling. `off` (default) ignores it; `audit` records evidence without changing tables; `enforce` lets trusted tagged values complete a table. |
+| `--prompt-file FILE` | Custom page-refinement prompt. Must contain `{source_markdown}`; any other literal brace must be escaped as `{{` or `}}`. |
 | `--no-divider-reorder` | Disable deterministic reading-order reconstruction. |
 | `--resume-from STAGE` | Resume from a saved checkpoint stage. |
 | `--shard` | Suffix run-level output files with the run's page range. |
+
+Errors caused by input (a missing PDF, a missing or invalid config overlay, a
+missing `docling` install) print a single `error: ...` line to stderr and exit
+`1`. Any other failure keeps its traceback, because it indicates a bug.
 
 Valid replay stages are:
 
@@ -161,16 +169,43 @@ OLLAMA_MODEL
 OLLAMA_TRIAGE_MODEL
 DOCLING_RAG_OUTPUT_DIR
 DOCLING_RAG_DPI
-DOCLING_RAG_NUM_CTX
-DOCLING_RAG_NUM_PREDICT
-DOCLING_RAG_TRIAGE_MODEL
-DOCLING_RAG_TRIAGE_NUM_PREDICT
-DOCLING_RAG_TRIAGE_CONFIDENCE
+DOCLING_RAG_START_PAGE
+DOCLING_RAG_END_PAGE
 DOCLING_RAG_SKIP_VLM
 DOCLING_RAG_SKIP_PICTURE_TRIAGE
-DOCLING_RAG_AUTO_NUM_CTX
+DOCLING_RAG_PHOTO_SUMMARIES
 DOCLING_RAG_DIVIDER_REORDER
+DOCLING_RAG_REFINE_MODE
+DOCLING_RAG_BASE_URL
+DOCLING_RAG_MODEL
+DOCLING_RAG_TRIAGE_MODEL
+DOCLING_RAG_TEMPERATURE
+DOCLING_RAG_NUM_CTX
+DOCLING_RAG_NUM_PREDICT
+DOCLING_RAG_AUTO_NUM_CTX
+DOCLING_RAG_TRIAGE_NUM_PREDICT
+DOCLING_RAG_TRIAGE_CONFIDENCE
+DOCLING_RAG_PHOTO_SKIP_CONFIDENCE
+DOCLING_RAG_VLM_CONCURRENCY
+DOCLING_RAG_VLM_PAGE_IMAGE_MAX_PX
+DOCLING_RAG_OLLAMA_CA_BUNDLE
 ```
+
+### Remote Ollama
+
+The default base URL is the Docker host's loopback. When `--ollama-base-url`
+points at a shared or remote GPU host, two optional settings apply:
+
+```text
+DOCLING_RAG_OLLAMA_AUTH_TOKEN   sent as "Authorization: Bearer <token>"
+DOCLING_RAG_OLLAMA_HEADERS      extra headers, "Name=value,Name=value"
+DOCLING_RAG_OLLAMA_CA_BUNDLE    PEM path for verifying an HTTPS endpoint
+```
+
+The token is environment-only on purpose: a CLI flag would expose it in
+process listings and a YAML field invites committing it. The CA bundle is only
+a path, so it can also be set as `models.ca_bundle` in a config overlay. With
+none of these set, requests are byte-identical to previous releases.
 
 Prompts are bundled under `src/document_extract/resources/prompts/`. The editable
 copies in `prompts/` are useful for inspection and project-level management.
@@ -204,10 +239,14 @@ history, extracted records, table candidates, warnings, and VLM usage.
 
 Run one process per page range against the same `--output-dir`, adding `--shard`
 to each process. This writes range-suffixed run files such as
-`manifest_p0001-p0048.json` while sharing page directories. The final `all/`
-aggregation is rebuilt from page directories; concurrent workers can race on it,
-but the last finisher writes the same merged view. Run a final `--shard`-less
-aggregation if a single root-level run summary is needed.
+`manifest_p0001-p0048.json` while sharing page directories. Every worker also
+rebuilds the document-wide `all/` aggregation from the page directories on
+disk; those files are written atomically, so a worker that finishes while
+another is writing still sees a complete file rather than a partial one. Run a
+final `--shard`-less aggregation if a single root-level run summary is needed.
+
+A run that fails before any page completes writes nothing, leaving an earlier
+run's outputs in the same directory untouched.
 
 ## Pipeline stages
 
@@ -287,19 +326,30 @@ docker run --rm --gpus all `
 
 ## Offline replay tools
 
-These tools operate on saved artifacts and do not call Ollama:
+`tools/reprocess_pages.py` replays the deterministic `postprocess_markdown`
+chain over the artifacts a previous run saved, so Markdown-cleanup changes can
+be validated against real pages without GPU, Ollama, or Docling:
 
-Offline replay scripts are not currently included in the standalone package.
-Use the saved `page_state.json`, layout maps, and table candidate artifacts for
-manual inspection or add the replay tools as a separate development module.
+```powershell
+python tools/reprocess_pages.py --pages-root outputs/report --out replay_out
+```
+
+It starts from each page's stored *refined* Markdown, so pages whose live run
+accepted a repair pass legitimately differ from the checked-in
+`docling_final.md`. Diff two harness runs (baseline vs. after a change) against
+each other rather than against live outputs. See the script's docstring for the
+furniture-emulation details and `--no-furniture`.
+
+The tools directory is not part of the installed package; run it from a clone.
 
 ## Development checks
 
 ```powershell
 python -m compileall -q src
-python tests/test_package.py
-python tests/test_docling_rag_slides.py
-python tests/test_slide_postprocess.py
+python tests/run_all.py
+python -m mypy --follow-imports=silent src/document_extract/markdown src/document_extract/layout src/document_extract/config.py src/document_extract/runtime.py src/document_extract/models.py
 ```
 
-The maintained integration and post-processing checks live under `tests/`.
+`tests/run_all.py` runs every `tests/test_*.py` script and exits nonzero if any
+fails; this is what CI runs. Individual scripts can also be run directly. See
+`CONTRIBUTING.md` for conventions.
