@@ -16,7 +16,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from document_extract.cli import parse_args
 from document_extract.config import argv_with_config_defaults, config_from_mapping, load_config
 from document_extract.api import _namespace_from_config
-from document_extract.prompts import DEFAULT_IMAGE_SUMMARY_PROMPT, load_prompt
+from document_extract.prompts import (
+    DEFAULT_IMAGE_SUMMARY_PROMPT,
+    load_page_refinement_prompt,
+    load_page_repair_prompt,
+    load_prompt,
+)
+from document_extract.refinement import format_page_refinement_prompt
 
 
 def check(condition: bool, message: str) -> None:
@@ -44,7 +50,64 @@ def clean_config_environment():
         os.environ.update(saved)
 
 
+def check_custom_prompt_brace_validation() -> None:
+    """A --prompt-file with a literal brace must fail at load, not per page.
+
+    Prompts render through str.format, so an unescaped brace used to raise
+    KeyError inside every page's refine stage -- after Docling conversion had
+    already run for the whole range.
+    """
+    check(
+        load_page_refinement_prompt(None) and load_page_repair_prompt(),
+        "packaged refinement and repair prompts pass brace validation",
+    )
+    with tempfile.TemporaryDirectory() as temp:
+        unescaped = Path(temp) / "unescaped.md"
+        unescaped.write_text(
+            'Return JSON like {"kind": "x"}.\n\nSource:\n{source_markdown}\n',
+            encoding="utf-8",
+        )
+        try:
+            load_page_refinement_prompt(unescaped)
+        except ValueError as error:
+            check(
+                "unescaped brace" in str(error) and "{{" in str(error),
+                "an unescaped brace in a custom prompt is rejected at load time",
+            )
+        else:
+            raise AssertionError("an unescaped brace in a custom prompt was accepted")
+
+        escaped = Path(temp) / "escaped.md"
+        escaped.write_text(
+            'Return JSON like {{"kind": "x"}}.\n\nSource:\n{source_markdown}\n',
+            encoding="utf-8",
+        )
+        rendered = format_page_refinement_prompt(
+            prompt_template=load_page_refinement_prompt(escaped),
+            source_markdown="BODY",
+            layout_blocks={},
+            table_candidates=[],
+        )
+        check(
+            '{"kind": "x"}' in rendered and "BODY" in rendered,
+            "an escaped brace renders as a literal brace alongside the substitution",
+        )
+
+        missing = Path(temp) / "missing.md"
+        missing.write_text("No placeholder here.\n", encoding="utf-8")
+        try:
+            load_page_refinement_prompt(missing)
+        except ValueError as error:
+            check(
+                "{source_markdown}" in str(error),
+                "the existing missing-placeholder check still fires first",
+            )
+        else:
+            raise AssertionError("a prompt without {source_markdown} was accepted")
+
+
 def main() -> int:
+    check_custom_prompt_brace_validation()
     with clean_config_environment():
         defaults = load_config()
         check(defaults.runtime.dpi == 200, "bundled runtime defaults load")
