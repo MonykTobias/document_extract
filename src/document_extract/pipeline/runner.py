@@ -312,6 +312,24 @@ def _stale_reconstruction(state: PageState) -> bool:
     )
 
 
+def _require_docling() -> None:
+    """Fail in the main process, where the reason is still visible.
+
+    ``build_docling_converter`` runs inside the convert pool's initializer, and
+    an initializer that raises kills the pool without surfacing its exception:
+    the caller sees only ``BrokenProcessPool``. docling is deliberately not a
+    declared dependency, so a missing install is the most likely first-run
+    failure and deserves an actionable message.
+    """
+    try:
+        import docling  # noqa: F401, PLC0415
+    except ImportError as error:
+        raise RuntimeError(
+            "docling is required for PDF conversion but is not installed. "
+            "Install it with: pip install -r requirements-docling-gpu.txt"
+        ) from error
+
+
 def run_pipeline(args: argparse.Namespace) -> int:
     import fitz  # noqa: PLC0415
 
@@ -325,6 +343,12 @@ def run_pipeline(args: argparse.Namespace) -> int:
     if getattr(args, "vlm_concurrency", 1) < 1:
         raise ValueError("--vlm-concurrency must be at least 1")
     pdf_path = ensure_pdf(args.pdf)
+    # After the argument checks, so a mistyped path reports itself rather than
+    # the environment. Resumed runs replay saved page state and never convert,
+    # so they must stay usable without docling: use_prefetch below is false and
+    # _prepare_page never runs.
+    if not args.resume_from:
+        _require_docling()
     visual_reader = None
     if visual_values_mode != "off":
         from pypdf import PdfReader  # noqa: PLC0415

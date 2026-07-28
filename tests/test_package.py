@@ -5,11 +5,15 @@ Run from the repository root with ``python tests/test_package.py``.
 
 from __future__ import annotations
 
+import argparse
+import contextlib
+import io
 import os
 import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -106,8 +110,113 @@ def check_custom_prompt_brace_validation() -> None:
             raise AssertionError("a prompt without {source_markdown} was accepted")
 
 
+def check_cli_reports_user_errors_without_tracebacks() -> None:
+    """Expected user errors print one line and exit 1; bugs keep their traceback."""
+    from document_extract import cli
+
+    def run_capturing(argv: list[str]) -> tuple[int, str]:
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            code = cli.run(argv)
+        return code, stderr.getvalue()
+
+    with clean_config_environment():
+        code, message = run_capturing(["definitely-missing.pdf", "--skip-vlm"])
+        check(
+            code == 1 and message.startswith("error: Missing PDF:"),
+            "a missing PDF reports one error line and exits 1",
+        )
+        check("Traceback" not in message, "a missing PDF prints no traceback")
+
+        code, message = run_capturing(["x.pdf", "--config", "definitely-missing.yaml"])
+        check(
+            code == 1 and "Missing configuration file" in message,
+            "a missing config overlay reports one error line and exits 1",
+        )
+
+        with tempfile.TemporaryDirectory() as temp:
+            overlay = Path(temp) / "bad.yaml"
+            overlay.write_text(
+                "reading_order:\n  column_gutter: 35\n", encoding="utf-8"
+            )
+            code, message = run_capturing(["x.pdf", "--config", str(overlay)])
+            check(
+                code == 1 and "column_gutter must be between 0 and 1" in message,
+                "an out-of-range config value reports one error line and exits 1",
+            )
+
+        # An unexpected exception type must keep its traceback rather than be
+        # flattened into a bland one-liner.
+        original = cli.run_pipeline
+
+        def exploding(_args):
+            raise KeyError("internal bug")
+
+        cli.run_pipeline = exploding
+        try:
+            cli.run(["x.pdf"])
+        except KeyError:
+            check(True, "an unexpected exception still propagates out of cli.run")
+        else:
+            raise AssertionError("an unexpected exception was swallowed by cli.run")
+        finally:
+            cli.run_pipeline = original
+
+
+def check_docling_preflight() -> None:
+    """A missing docling reports the install command instead of BrokenProcessPool."""
+    from document_extract.pipeline import runner
+
+    with tempfile.TemporaryDirectory() as temp:
+        # The preflight runs after ensure_pdf, so the check needs a real file.
+        pdf = Path(temp) / "doc.pdf"
+        pdf.write_bytes(b"%PDF-1.4\n")
+
+        def namespace(**overrides: object) -> argparse.Namespace:
+            args = argparse.Namespace(
+                pdf=pdf,
+                visual_values_mode="off",
+                triage_model="m",
+                ollama_model="m",
+                triage_confidence=0.5,
+                vlm_concurrency=1,
+                resume_from=None,
+            )
+            for key, value in overrides.items():
+                setattr(args, key, value)
+            return args
+
+        with mock.patch.dict(sys.modules, {"docling": None}):
+            try:
+                runner.run_pipeline(namespace())
+            except RuntimeError as error:
+                check(
+                    "docling is required" in str(error)
+                    and "requirements-docling-gpu.txt" in str(error),
+                    "a missing docling names the package and the install command",
+                )
+            else:
+                raise AssertionError("a missing docling did not raise RuntimeError")
+
+            # Resumed runs replay saved state and never convert, so they must
+            # stay usable without docling installed. This one gets past the
+            # preflight and fails later for an unrelated reason, which is fine.
+            try:
+                runner.run_pipeline(namespace(resume_from="page_refine"))
+            except RuntimeError as error:
+                if "docling is required" in str(error):
+                    raise AssertionError(
+                        "the docling preflight wrongly fired on a resume"
+                    )
+                check(True, "a resumed run skips the docling preflight")
+            except Exception:
+                check(True, "a resumed run skips the docling preflight")
+
+
 def main() -> int:
     check_custom_prompt_brace_validation()
+    check_cli_reports_user_errors_without_tracebacks()
+    check_docling_preflight()
     with clean_config_environment():
         defaults = load_config()
         check(defaults.runtime.dpi == 200, "bundled runtime defaults load")

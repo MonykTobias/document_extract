@@ -153,12 +153,26 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 def run(argv: Sequence[str] | None = None) -> int:
-    original = list(sys.argv[1:] if argv is None else argv)
-    config = load_config(_config_paths(original))
-    apply_detection_config(config)
-    translated = argv_with_config_defaults(config, original)
-    args = parse_args(translated)
-    return int(run_pipeline(args))
+    """Run the pipeline, reporting expected user errors without a traceback.
+
+    Only the three exception types the package raises for user-facing problems
+    are translated -- a missing PDF or config file, an invalid setting, an
+    unreachable or missing dependency. Everything else keeps its traceback,
+    because any other exception type means an internal bug worth debugging.
+
+    The exit code stays 1 so existing automation keeps working; run_pipeline
+    still raises, so library callers are unaffected.
+    """
+    try:
+        original = list(sys.argv[1:] if argv is None else argv)
+        config = load_config(_config_paths(original))
+        apply_detection_config(config)
+        translated = argv_with_config_defaults(config, original)
+        args = parse_args(translated)
+        return int(run_pipeline(args))
+    except (FileNotFoundError, ValueError, RuntimeError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
 
 def _config_paths(argv: list[str]) -> list[Path]:
     paths: list[Path] = []
