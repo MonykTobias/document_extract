@@ -167,19 +167,46 @@ limitation recorded on purpose).
   **Blocks an active task:** it will block the live end-to-end portion of LP-14
   until a current-contract extraction exists.
 
-## IMPL-012 — seven plan tasks are not implemented in this cycle
+## IMPL-013 — the reporting entity had to become required at ingestion too
 
-- **Evidence:** `IMPLEMENTATION_PROGRESS.md` records LP-08 through LP-13 as
+- **Evidence:** with the audit-side entity made explicit under LP-07, every
+  supported claim began returning `insufficient`: the fact's subject was still
+  `organization_name(document_name)`, so comparing "Danone S.A." against the
+  fixture's directory name was a mismatch on every fact.
+- **Severity:** major · **Component:** `claim_evidence/ingest.py` · **Under:** LP-08
+- **Detail:** GR-047 was only half fixed by LP-07. `ingest_document` now
+  requires `reporting_entity`, stores it as every fact's subject, keeps the
+  filename as an alias only, and includes it in the build fingerprint, since it
+  decides what gets stored. The frontend collects it on upload, register, and
+  re-index. This is a breaking change to both public entry points.
+- **Blocks an active task:** no.
+
+## IMPL-014 — the numeric tolerance and bound arithmetic are gone
+
+- **Evidence:** `facts.py::_apply_operator` returned a match for "roughly 40%"
+  against a reported 40.2%, and evaluated `>=`/`<=` bounds on magnitude.
+- **Severity:** note · **Component:** `claim_evidence/facts.py` · **Under:** LP-08
+- **Detail:** PD-07 admits only exact claims, and `claims.validate_claim`
+  refuses approximate and bounded ones before an audit opens. The comparator
+  now answers `incomparable` for anything that is not an exact `=`, rather than
+  applying a tolerance nobody asked for. The bound arithmetic is retained as
+  `_legacy_bounded`, uncalled, because reinstating it needs a product decision
+  about what a bound means against a range of reported figures. Two tests that
+  asserted the old behaviour were replaced by their successors.
+- **Blocks an active task:** no.
+
+## IMPL-012 — five plan tasks are not implemented in this cycle
+
+- **Evidence:** `IMPLEMENTATION_PROGRESS.md` records LP-10 through LP-13 as
   `Not started` and LP-14 as `Partially completed`.
 - **Severity:** blocker · **Component:** the plan as a whole
-- **Detail:** LP-01 through LP-07 are implemented, tested, and committed. The
-  remaining work — deterministic verdict truth tables (LP-08), real visual
-  evidence (LP-09), the public-surface and prompt-injection boundary (LP-10),
+- **Detail:** LP-01 through LP-09 are implemented, tested, and committed. The
+  remaining work — the public-surface and prompt-injection boundary (LP-10),
   loopback/CSRF/limits (LP-11), the browser job workflow and restart journal
   (LP-12), the evaluation corpus and browser end-to-end suite (LP-13), and the
   remaining fifteen acceptance checks (LP-14) — has not been done. The
   acceptance runner reports those checks as `missing`, which fails the run, so
   nothing here reports itself as accepted.
-- **Recommended action:** continue the plan from LP-08; its dependencies
-  (LP-05, LP-07) are complete. **Blocks an active task:** yes — the prototype is
+- **Recommended action:** continue the plan from LP-10; its dependencies
+  (LP-02, LP-05, LP-09) are complete. **Blocks an active task:** yes — the prototype is
   not accepted.

@@ -2,10 +2,10 @@
 
 ## 1. Result
 
-**The lean corrective plan is not fully implemented.** Seven of fourteen tasks
-(LP-01 through LP-07) are implemented, tested, and committed. LP-14 is
+**The lean corrective plan is not fully implemented.** Nine of fourteen tasks
+(LP-01 through LP-09) are implemented, tested, and committed. LP-14 is
 partially implemented — the acceptance runner and its report format exist and
-enforce the zero-skip rule, with two of seventeen checks registered. LP-08
+enforce the zero-skip rule, with two of seventeen checks registered. LP-10
 through LP-13 are not started.
 
 The prototype is **not accepted**: a full `verify_prototype.ps1` run reports
@@ -20,9 +20,9 @@ authoritative, across three repositories plus one uncommittable scaffold.
 
 | Repository | Start branch | Start HEAD | End branch | End HEAD |
 |---|---|---|---|---|
-| `claim_evidence` | `fix/m1-m9-remediation` | `0c245ad` | `feat/lean-prototype` | `c669097` |
+| `claim_evidence` | `fix/m1-m9-remediation` | `0c245ad` | `feat/lean-prototype` | `ab0b34a` |
 | `document_extract` | `audit-fixes` | `8e59206` | `feat/lean-prototype` | `5f5ed04` |
-| `gw_detector_v2` | `master` | `29d095b` | `feat/lean-prototype` | `16c0596` |
+| `gw_detector_v2` | `master` | `29d095b` | `feat/lean-prototype` | `e7caa91` |
 | `document_knowledge` | not a repository | — | not a repository | — (see `IMPL-001`) |
 
 All three implementation branches were created fresh from the recorded starting
@@ -119,9 +119,9 @@ multi-user support, and no performance certification.
 
 | Command | Result |
 |---|---|
-| `cd claim_evidence && python tests/run_all.py` | 16 suites, all pass |
+| `cd claim_evidence && python tests/run_all.py` | 18 suites, all pass |
 | `cd document_extract && python tests/run_all.py` | 28 suites, all pass |
-| `py -3.12 -m pytest gw_detector_v2/tests -q` | 191 passed, 2 skipped |
+| `py -3.12 -m pytest gw_detector_v2/tests -q` | 197 passed, 2 skipped |
 | `py -3.12 -m pytest document_extract/tests/test_run_contract.py document_extract/tests/test_progress_contract.py claim_evidence/tests/test_contract_v2.py gw_detector_v2/tests/test_contract_v2.py -q` | 38 passed |
 | `py -3.12 -m pytest claim_evidence/tests/test_db_init.py claim_evidence/tests/test_reset_dev.py -q` | 20 passed |
 | `py -3.12 -m pytest claim_evidence/tests/test_identity.py claim_evidence/tests/test_fingerprint.py -q` | 22 passed |
@@ -153,7 +153,7 @@ unwritten code, not an unavailable service.
 
 ## 10. Remaining blockers
 
-1. LP-08, LP-09, LP-10, LP-11, LP-12, LP-13 not started.
+1. LP-10, LP-11, LP-12, LP-13 not started.
 2. LP-14 partially done: fifteen acceptance checks unregistered.
 3. `IMPL-011`: the retained Danone extraction must be re-extracted under the
    current run contract before it can be indexed.

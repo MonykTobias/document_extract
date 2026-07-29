@@ -29,8 +29,8 @@ package and its tests.
 | LP-05 | Completed | claim_evidence | `6df072b` | `pytest claim_evidence/tests/test_source.py claim_evidence/tests/test_retrieve.py claim_evidence/tests/test_integration.py -q -k "artifact or provenance or source_order or activation"` → 10 passed | PA-07, PA-08 partially covered | narrative artifact path was broken and is fixed (`IMPL-008`) |
 | LP-06 | Completed | claim_evidence, gw_detector_v2 | `c889f94`, `9f4402a` | `pytest claim_evidence/tests/test_lifecycle.py gw_detector_v2/tests/test_jobs.py -q` → 19 passed | PA-16 covered by tests; not yet wired into the runner | |
 | LP-07 | Completed | claim_evidence, gw_detector_v2 | `c669097`, `16c0596` | `pytest claim_evidence/tests/test_claim_contract.py claim_evidence/tests/test_contract_v2.py gw_detector_v2/tests/test_web.py -q -k "claim or scope or unsupported or reporting_entity"` → 43 passed | PA-13 covered by tests; not yet wired into the runner | `audit_claim` signature changed (`IMPL-009`); UI now asks for the reporting entity |
-| LP-08 | Not started | | | | | Depends on LP-05, LP-07 — both complete, so unblocked |
-| LP-09 | Not started | | | | | Depends on LP-05, LP-08 |
+| LP-08 | Completed | claim_evidence, gw_detector_v2 | `422cbf9`, `1c4b245` | `pytest claim_evidence/tests/test_facts.py claim_evidence/tests/test_audit_semantics.py -q` → 35 passed | PA-10, PA-11, PA-12 behaviour covered by the truth table | comparator is exact-only; the entity is required at ingest too (`IMPL-013`) |
+| LP-09 | Completed | claim_evidence, gw_detector_v2 | `ab0b34a`, `e7caa91` | `pytest claim_evidence/tests/test_vision.py -q` → 15 passed | PA-09 deterministic half covered; the live vision call is not run | four outcomes; support is held to the visible figure |
 | LP-10 | Not started | | | | | Depends on LP-02, LP-05, LP-09 |
 | LP-11 | Not started | | | | | Depends on LP-01, LP-10 |
 | LP-12 | Not started | | | | | Depends on LP-06, LP-11 |
@@ -41,6 +41,6 @@ package and its tests.
 
 | Suite | Command | Result |
 |---|---|---|
-| `claim_evidence` | `python tests/run_all.py` | 16 suites, all green |
+| `claim_evidence` | `python tests/run_all.py` | 18 suites, all green |
 | `document_extract` | `python tests/run_all.py` | 28 suites, all green |
-| `gw_detector_v2` | `py -3.12 -m pytest tests -q` | 191 passed, 2 skipped |
+| `gw_detector_v2` | `py -3.12 -m pytest tests -q` | 197 passed, 2 skipped |
