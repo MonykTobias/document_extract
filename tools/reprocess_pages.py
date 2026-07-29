@@ -30,27 +30,24 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-
-from document_extract.layout.furniture import (  # noqa: E402
+from document_extract.layout.furniture import (
     page_strip_texts,
     repeated_furniture_prefixes,
     repeated_furniture_signatures,
 )
-from document_extract.markdown.postprocess import (  # noqa: E402
+from document_extract.markdown.postprocess import (
     IMAGE_PLACEHOLDER_LINE_RE,
     looks_like_toc,
     normalize_furniture_text,
 )
-from document_extract.pipeline.state import (  # noqa: E402
+from document_extract.pipeline.state import (
     _candidates_from_state,
     _records_from_state,
 )
-from document_extract.refinement import postprocess_markdown  # noqa: E402
-from document_extract.runtime import PageState  # noqa: E402
+from document_extract.refinement import postprocess_markdown
+from document_extract.runtime import PageState
 
 PAGE_DIR_RE = re.compile(r"^page_\d{4}$")
 # Footer emulation: only short plain paragraph lines qualify (headings,

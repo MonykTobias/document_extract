@@ -8,10 +8,8 @@ Run from the repository root with ``python tests/test_toc_handling.py``.
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.markdown.postprocess import (
     looks_like_toc,

@@ -27,8 +27,17 @@ adapters without changing the PDF pipeline.
 
 ## Installation
 
-Create or activate a virtual environment, then install the pipeline
-dependencies and this package:
+Python 3.12. This package produces the extraction artifacts that
+[`claim_evidence`](../claim_evidence) indexes and `gw_detector_v2` drives;
+install all three into one environment from the directory containing the
+checkouts, so no `sys.path` insertion is needed:
+
+```powershell
+py -3.12 -m pip install -e claim_evidence -e document_extract -r gw_detector_v2\requirements.txt
+```
+
+For this package alone, create or activate a virtual environment, then install
+the pipeline dependencies and this package:
 
 ```powershell
 python -m pip install -r requirements-docling-gpu.txt

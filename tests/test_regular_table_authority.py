@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import copy
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.models import TableCandidate
 from document_extract.refinement import postprocess_markdown

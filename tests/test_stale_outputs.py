@@ -9,11 +9,9 @@ import contextlib
 import io
 import json
 import os
-import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.artifacts import write_text_atomic
 from document_extract.pipeline.runner import _warn_stale_page_dirs, _write_run_outputs

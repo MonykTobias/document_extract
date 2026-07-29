@@ -9,14 +9,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from document_extract.markdown.formatting import replace_deterministic_tables  # noqa: E402
-from document_extract.models import TableCandidate, VisualCandidate  # noqa: E402
-from document_extract.table_reconstruction import (  # noqa: E402
+from document_extract.markdown.formatting import replace_deterministic_tables
+from document_extract.models import TableCandidate, VisualCandidate
+from document_extract.table_reconstruction import (
     RECONSTRUCTION_VERSION,
     _slot_collisions,
     _tokens,
@@ -24,14 +22,14 @@ from document_extract.table_reconstruction import (  # noqa: E402
     filter_visible_rule_segments,
     reconcile_table_grid,
 )
-from document_extract.tables import (  # noqa: E402
+from document_extract.tables import (
     build_table_candidates,
     normalize_table_grid,
     render_deterministic_docling_table,
     render_grid_markdown,
     verify_region_table,
 )
-from document_extract.visual_values import associate_table_cells  # noqa: E402
+from document_extract.visual_values import associate_table_cells
 
 
 def run_lengths(column: list[str]) -> list[int]:

@@ -15,7 +15,6 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.cli import parse_args
 from document_extract.config import argv_with_config_defaults, config_from_mapping, load_config

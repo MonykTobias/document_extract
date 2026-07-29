@@ -6,10 +6,8 @@ Fixture lines are the exact strings from the danoneurdaccessible run
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.markdown.postprocess import (
     extract_unplaced_sections,

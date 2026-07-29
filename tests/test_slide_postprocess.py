@@ -10,7 +10,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from document_extract.layout.prompt_map import NUMERIC_TOKEN_RE
 from document_extract.markdown import postprocess as sp
 from document_extract.refinement import postprocess_markdown

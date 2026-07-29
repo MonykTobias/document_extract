@@ -13,7 +13,6 @@ from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from document_extract import runtime, tables
 from document_extract.artifacts import block_rows_for_page, summarize_token_usage, write_image_summaries
 from document_extract.docling_adapter import (

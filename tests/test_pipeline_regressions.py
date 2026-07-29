@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract import pictures, tables
 from document_extract.config import apply_detection_config, config_from_mapping

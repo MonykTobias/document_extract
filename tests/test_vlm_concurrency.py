@@ -6,14 +6,12 @@ The Ollama client is stubbed at its single choke point; no network, no models.
 
 from __future__ import annotations
 
-import sys
 import tempfile
 import threading
 import time
 from pathlib import Path
 from types import SimpleNamespace
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import document_extract.llm.ollama as ollama_module
 from document_extract.llm.ollama import map_vlm_tasks

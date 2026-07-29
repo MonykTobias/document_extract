@@ -22,12 +22,10 @@ import argparse
 import contextlib
 import io
 import json
-import sys
 import tempfile
 from pathlib import Path
 from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.markdown.postprocess import normalize_furniture_text
 from document_extract.models import PictureRecord, TableCandidate

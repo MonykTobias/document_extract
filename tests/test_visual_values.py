@@ -7,14 +7,12 @@ from __future__ import annotations
 
 import copy
 import json
-import sys
 import tempfile
 from dataclasses import asdict
 import argparse
 import hashlib
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.models import TableCandidate, VisualCandidate
 from document_extract.pipeline.state import _sync_page_state, _visual_candidates_from_state
