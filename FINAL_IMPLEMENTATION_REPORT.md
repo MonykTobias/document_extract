@@ -79,10 +79,32 @@ classes with stable reason codes before any audit row or model call, mapped to
 HTTP 422. `audit_claim` requires an explicit scope and an explicit reporting
 entity. The dead `require_ready` helper is removed after a caller/export search.
 
+**LP-08 — exact verdicts.** The numeric comparator has one rule: equal or not
+equal, on `Decimal`. The tolerance and the bound arithmetic are gone; anything
+that is not an exact `=` is `incomparable`. The reporting entity now blocks a
+comparison when it disagrees, which required making it explicit at ingestion
+too — every stored fact is attributed to it, and it joins the build
+fingerprint. Repeated identical evidence counts once, so the same figure
+printed twice cannot look like corroboration, and verdict wording is
+corpus-qualified throughout ("supported by the indexed sources").
+
+**LP-09 — real visual evidence.** A crop verifies as `support`, `conflict`,
+`illegible`, or `unrelated`. Support is held to the claimed figure actually
+appearing in the text the model reports it can see; a conflict is exempt,
+because a different number on the page is exactly the point. Each verification
+persists its result, reason code, and visible text against the audit that ran
+it; the model's prose is neither stored nor published. Crop and vision failures
+return stable codes and never echo a server path, and the claim reaches the
+vision model delimited as data. The browser gets a crop only through
+`/api/evidence/<id>/image`, with crop/page, highlight, and fullscreen controls.
+
 ## 5. Findings
 
-Twelve new findings are recorded in `IMPLEMENTATION_FINDINGS.md`. Two are
+Fourteen new findings are recorded in `IMPLEMENTATION_FINDINGS.md`. Three are
 material product bugs found and fixed in passing:
+
+- `IMPL-013`: the fact subject was still filename-derived, so with the audit
+  side made explicit every supported claim returned `insufficient`.
 
 - `IMPL-008`: every narrative citation resolved its artifact to nothing.
 - `IMPL-007`: extraction settings did not reach the build fingerprint, so a
@@ -101,10 +123,13 @@ GR-I04, GR-I09, GR-I11, GR-I15, GR-I16, GR-I17, GR-I12, GR-I13, GR-P01,
 GR-P03, GR-P04, GR-P05, GR-P07, GR-P11, GR-P12, GR-P15, GR-T04, GR-T06,
 GR-T09, PV-004, PV-007, PV-008, PV-014.
 
-Not addressed: GR-014, GR-015, GR-022, GR-026, GR-027, GR-028, GR-029, GR-030,
-GR-031, GR-032, GR-033, GR-037, GR-038, GR-040, GR-042, GR-045, GR-046, GR-048,
-GR-057, GR-058, GR-064, GR-C04, GR-C09, GR-I05, GR-I06, GR-I14, GR-P06, GR-P08,
-GR-P09, GR-P10, GR-P14, PV-015 (partially — the runner exists).
+Also closed under LP-08 and LP-09: GR-022, GR-026, GR-028, GR-040, GR-I05,
+GR-T07.
+
+Not addressed: GR-014, GR-015, GR-027, GR-029, GR-030, GR-031, GR-032,
+GR-033, GR-037, GR-038, GR-042, GR-045, GR-046, GR-048, GR-057, GR-058,
+GR-064, GR-C04, GR-C09, GR-I06, GR-I14, GR-P06, GR-P08, GR-P09, GR-P10,
+GR-P14, PV-015 (partially — the runner exists).
 
 ## 6. Decisions followed
 
@@ -128,6 +153,8 @@ multi-user support, and no performance certification.
 | `py -3.12 -m pytest claim_evidence/tests/test_source.py claim_evidence/tests/test_retrieve.py claim_evidence/tests/test_integration.py -q -k "artifact or provenance or source_order or activation"` | 10 passed, 38 deselected |
 | `py -3.12 -m pytest claim_evidence/tests/test_integration.py claim_evidence/tests/test_lifecycle.py gw_detector_v2/tests/test_jobs.py -q` | 19 passed |
 | `py -3.12 -m pytest claim_evidence/tests/test_claim_contract.py claim_evidence/tests/test_contract_v2.py gw_detector_v2/tests/test_web.py -q -k "claim or scope or unsupported or reporting_entity"` | 43 passed, 159 deselected |
+| `py -3.12 -m pytest claim_evidence/tests/test_facts.py claim_evidence/tests/test_audit_semantics.py -q` | 35 passed |
+| `py -3.12 -m pytest claim_evidence/tests/test_vision.py -q` | 15 passed |
 | `powershell -File gw_detector_v2\scripts\verify_prototype.ps1 -Only PA-01,PA-02` | 2/2 pass |
 | `powershell -File gw_detector_v2\scripts\verify_prototype.ps1` | **fails** — 15 checks `missing` |
 
