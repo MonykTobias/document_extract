@@ -1,0 +1,11 @@
+{
+  "contract": "document_extract/progress",
+  "contract_version": "1.0",
+  "event": "page_stage",
+  "status": "start",
+  "stage": "table_detect",
+  "page": 2,
+  "page_index": 2,
+  "total_pages": 4,
+  "output_path": "C:/outputs/page_0002"
+}

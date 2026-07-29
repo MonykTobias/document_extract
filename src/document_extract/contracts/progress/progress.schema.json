@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document_extract/progress/1.0",
+  "title": "document_extract progress contract",
+  "description": "One JSON object per line on stdout, interleaved with human-readable status text. A consumer follows extraction by parsing only these lines; the human lines are a rendering and carry no contract. Enforced by document_extract.contracts.validate_progress_event.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "contract_version", "event", "status"],
+  "properties": {
+    "contract": { "const": "document_extract/progress" },
+    "contract_version": { "const": "1.0" },
+    "event": {
+      "enum": ["run", "page", "page_stage"],
+      "description": "run: the extraction as a whole. page: one page finished or failed. page_stage: one stage within a page."
+    },
+    "status": { "enum": ["start", "ok", "skip", "fail", "resume"] },
+    "stage": {
+      "type": "string",
+      "description": "Required for page_stage. One of the pipeline stage names."
+    },
+    "page": { "type": "integer", "minimum": 1, "description": "1-based PDF page." },
+    "page_index": { "type": "integer", "minimum": 1, "description": "Position within the selection, 1-based." },
+    "total_pages": { "type": "integer", "minimum": 1, "description": "Pages in the selection." },
+    "seconds": { "type": "number", "minimum": 0 },
+    "error_type": {
+      "type": "string",
+      "description": "Exception class name only. A raw exception message is never published here."
+    },
+    "detail": {
+      "type": "object",
+      "description": "Safe scalar counts and codes. Never a file path, prompt, or model response.",
+      "additionalProperties": true
+    }
+  }
+}

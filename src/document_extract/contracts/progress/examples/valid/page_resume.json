@@ -1,0 +1,12 @@
+{
+  "contract": "document_extract/progress",
+  "contract_version": "1.0",
+  "event": "page",
+  "status": "resume",
+  "page": 2,
+  "page_index": 2,
+  "total_pages": 4,
+  "detail": {
+    "from_stage": "table_detect"
+  }
+}

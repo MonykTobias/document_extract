@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "document_extract/run/1.0",
+  "title": "document_extract run contract",
+  "description": "run.json, written once at the output root when an extraction finishes. States what was extracted, from what, with which evidence-affecting settings, and where each artifact role lives relative to the root. Enforced by document_extract.contracts.validate_run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "contract_version", "generated_at", "source", "selection",
+    "coordinate_convention", "artifacts", "evidence_bearing_roles", "settings",
+    "pages", "warnings"
+  ],
+  "properties": {
+    "contract": { "const": "document_extract/run" },
+    "contract_version": {
+      "const": "1.0",
+      "description": "An unknown version is rejected with an instruction to re-extract. There is no compatibility reader."
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filename", "sha256", "page_count"],
+      "properties": {
+        "filename": { "type": "string", "description": "Base name only; never a server path." },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "page_count": { "type": "integer", "minimum": 1, "description": "Pages in the source PDF, not in the selection." }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "description": "The pages this run extracted. A partial run is normal and is stated here rather than inferred from the manifest length.",
+      "additionalProperties": false,
+      "required": ["start_page", "end_page", "page_count", "complete_document"],
+      "properties": {
+        "start_page": { "type": "integer", "minimum": 1 },
+        "end_page": { "type": "integer", "minimum": 1 },
+        "page_count": { "type": "integer", "minimum": 1 },
+        "complete_document": { "type": "boolean" }
+      }
+    },
+    "coordinate_convention": {
+      "const": "normalized_top_left",
+      "description": "Every bbox in every artifact is [left, top, right, bottom] normalized to 0-1 with a top-left origin."
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "page"],
+      "properties": {
+        "root": {
+          "type": "object",
+          "description": "Role -> path relative to the output root.",
+          "additionalProperties": { "type": "string" }
+        },
+        "page": {
+          "type": "object",
+          "description": "Role -> path relative to a page directory.",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "evidence_bearing_roles": {
+      "type": "array",
+      "description": "The roles a consumer must hash into a build fingerprint. Changing this list changes what triggers a rebuild.",
+      "items": { "type": "string" }
+    },
+    "settings": {
+      "type": "object",
+      "description": "Extraction settings that can change what evidence exists or where it sits. Timeouts, concurrency, and URLs are deliberately excluded.",
+      "additionalProperties": true
+    },
+    "pages": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["completed", "failed"],
+      "properties": {
+        "completed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "const": 0, "description": "A run with a failed page is not indexable." }
+      }
+    },
+    "warnings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "categories", "stale_page_dirs"],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Warning categories that actually fired, summed over pages. A category that is present but false is not a warning."
+        },
+        "categories": {
+          "type": "object",
+          "description": "Category name -> number of pages on which it fired.",
+          "additionalProperties": { "type": "integer" }
+        },
+        "stale_page_dirs": {
+          "type": "array",
+          "description": "Page directories under the root this run did not produce. Never deleted; the consumer ignores them.",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}
