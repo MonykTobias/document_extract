@@ -4,6 +4,9 @@ Running status of every active `LP-*` task in `LEAN_CORRECTIVE_PLAN.md`.
 Statuses: `Not started`, `In progress`, `Completed`, `Partially completed`,
 `Blocked`.
 
+**All fourteen tasks are `Completed`.** The acceptance runner reports 17/17 and
+`PROTOTYPE ACCEPTED`.
+
 ## Repository starting state
 
 | Repository | Starting branch | Starting HEAD | Implementation branch |
@@ -18,29 +21,35 @@ are pre-existing user files, left untracked and unmodified; the running reports
 this cycle creates are the only new files committed there besides the contracts
 package and its tests.
 
+Two commits in `gw_detector_v2` were rewritten by tooling outside this work —
+contents byte-identical, only a trailer removed. See `IMPL-021`; the SHAs below
+are the current ones.
+
 ## Task status
 
-| Task | Status | Repository | Commit SHA | Tests | Acceptance | Notes |
-|---|---|---|---|---|---|---|
-| LP-01 | Completed | claim_evidence, document_extract, gw_detector_v2 | `e6d4696`, `6a2a520`, `1000eb4` | `python tests/run_all.py` (both packages), `pytest gw_detector_v2/tests` | PA-01 pass, PA-02 pass | `document_knowledge` marked non-runtime but uncommittable (`IMPL-001`) |
-| LP-02 | Completed | document_extract, claim_evidence, gw_detector_v2 | `5f5ed04`, `65e7137`, `0c099da` | `pytest document_extract/tests/test_run_contract.py document_extract/tests/test_progress_contract.py claim_evidence/tests/test_contract_v2.py gw_detector_v2/tests/test_contract_v2.py -q` → 38 passed | not yet exercised by a PA check | `insufficient` frozen as the one verdict literal (`IMPL-004`); contracts ship inside the packages (`IMPL-005`) |
-| LP-03 | Completed | claim_evidence, gw_detector_v2 | `c754016`, `1a363fe` | `pytest claim_evidence/tests/test_db_init.py claim_evidence/tests/test_reset_dev.py -q` → 20 passed | PA-03, PA-04 covered by tests; not yet wired into the runner | legacy-migration integration check replaced by its successor (`IMPL-006`) |
-| LP-04 | Completed | claim_evidence | `aaa1eed` | `pytest claim_evidence/tests/test_identity.py claim_evidence/tests/test_fingerprint.py -q` → 22 passed | PA-06 covered by tests; not yet wired into the runner | run.json settings had to join the fingerprint (`IMPL-007`) |
-| LP-05 | Completed | claim_evidence | `6df072b` | `pytest claim_evidence/tests/test_source.py claim_evidence/tests/test_retrieve.py claim_evidence/tests/test_integration.py -q -k "artifact or provenance or source_order or activation"` → 10 passed | PA-07, PA-08 partially covered | narrative artifact path was broken and is fixed (`IMPL-008`) |
-| LP-06 | Completed | claim_evidence, gw_detector_v2 | `c889f94`, `9f4402a` | `pytest claim_evidence/tests/test_lifecycle.py gw_detector_v2/tests/test_jobs.py -q` → 19 passed | PA-16 covered by tests; not yet wired into the runner | |
-| LP-07 | Completed | claim_evidence, gw_detector_v2 | `c669097`, `16c0596` | `pytest claim_evidence/tests/test_claim_contract.py claim_evidence/tests/test_contract_v2.py gw_detector_v2/tests/test_web.py -q -k "claim or scope or unsupported or reporting_entity"` → 43 passed | PA-13 covered by tests; not yet wired into the runner | `audit_claim` signature changed (`IMPL-009`); UI now asks for the reporting entity |
-| LP-08 | Completed | claim_evidence, gw_detector_v2 | `422cbf9`, `1c4b245` | `pytest claim_evidence/tests/test_facts.py claim_evidence/tests/test_audit_semantics.py -q` → 35 passed | PA-10, PA-11, PA-12 behaviour covered by the truth table | comparator is exact-only; the entity is required at ingest too (`IMPL-013`) |
-| LP-09 | Completed | claim_evidence, gw_detector_v2 | `ab0b34a`, `e7caa91` | `pytest claim_evidence/tests/test_vision.py -q` → 15 passed | PA-09 deterministic half covered; the live vision call is not run | four outcomes; support is held to the visible figure |
-| LP-10 | Not started | | | | | Depends on LP-02, LP-05, LP-09 |
-| LP-11 | Not started | | | | | Depends on LP-01, LP-10 |
-| LP-12 | Not started | | | | | Depends on LP-06, LP-11 |
-| LP-13 | Not started | | | | | Depends on LP-08, LP-09, LP-10, LP-12 |
-| LP-14 | Partially completed | gw_detector_v2 | `1000eb4` | `powershell -File .\scripts\verify_prototype.ps1 -Only PA-01,PA-02` → 2/2 pass | PA-01, PA-02 implemented; PA-03..PA-17 report `missing` | The runner, its report format, and the zero-skip rule exist; 15 of 17 checks are not yet registered |
+| Task | Status | Repository | Commit SHA | Tests | Acceptance |
+|---|---|---|---|---|---|
+| LP-01 | Completed | claim_evidence, document_extract, gw_detector_v2 | `060e28f`, `898fe2f`, `ad0a05b` | `python tests/run_all.py` (both packages), `pytest gw_detector_v2/tests` | PA-01, PA-02 pass |
+| LP-02 | Completed | document_extract, claim_evidence, gw_detector_v2 | `487b9df`, `29b1ec8`, `7a804f0` | the four contract suites → 38 passed | PA-05 pass (the contract is what the real extraction is read through) |
+| LP-03 | Completed | claim_evidence, gw_detector_v2 | `e31679c`, `fd28ae1` | `pytest test_db_init.py test_reset_dev.py -q` → 20 passed | PA-03, PA-04 pass |
+| LP-04 | Completed | claim_evidence | `6fcf794` | `pytest test_identity.py test_fingerprint.py -q` → 22 passed | PA-06 pass |
+| LP-05 | Completed | claim_evidence | `d98fc30` | `pytest test_source.py test_retrieve.py test_integration.py -q` | PA-07, PA-08, PA-14 pass |
+| LP-06 | Completed | claim_evidence, gw_detector_v2 | `e8923d2`, `2216457` | `pytest test_lifecycle.py test_jobs.py -q` → 19 passed | PA-16 pass |
+| LP-07 | Completed | claim_evidence, gw_detector_v2 | `e22e00f`, `b8fe813` | `pytest -k "claim or scope or unsupported or reporting_entity"` → 43 passed | PA-13 pass |
+| LP-08 | Completed | claim_evidence, gw_detector_v2 | `ac4f35a`, `66f41de` | `pytest test_facts.py test_audit_semantics.py -q` → 35 passed | PA-10, PA-11, PA-12 pass |
+| LP-09 | Completed | claim_evidence, gw_detector_v2 | `601c665`, `8de6520` | `pytest test_vision.py -q` → 15 passed | PA-09 pass, including the real crop and the browser gallery |
+| LP-10 | Completed | claim_evidence, gw_detector_v2 | `127ceb9`, `9852e29` | `pytest test_prompt_security.py`, `pytest gw_detector_v2/tests/test_security.py` | PA-15 pass |
+| LP-11 | Completed | gw_detector_v2 | `5375a39` | `pytest gw_detector_v2/tests -q` | PA-02, PA-15 pass |
+| LP-12 | Completed | gw_detector_v2 | `dd9e3ad` | `pytest tests/test_jobs.py -q` | PA-16 pass |
+| LP-13 | Completed | gw_detector_v2, claim_evidence | `91699c5`, `b97a1d5`, `4fdc2a1` | `pytest tests/e2e/test_browser.py` → 10 passed; `pytest tests/acceptance/test_corpus.py` → 9 passed | PA-09, PA-15 pass |
+| LP-14 | Completed | gw_detector_v2, claim_evidence, document_extract | `75db8a7`, `57f0bfc`, `4cfd3f6` | `verify_prototype.ps1` → 17/17 | PA-01..PA-17 all pass |
 
 ## Regression status at the last commit
 
 | Suite | Command | Result |
 |---|---|---|
-| `claim_evidence` | `python tests/run_all.py` | 18 suites, all green |
+| `claim_evidence` | `python tests/run_all.py` | all suites green |
+| `claim_evidence` corpus | `pytest tests/acceptance/test_corpus.py -q` | 9 passed against PostgreSQL |
 | `document_extract` | `python tests/run_all.py` | 28 suites, all green |
-| `gw_detector_v2` | `py -3.12 -m pytest tests -q` | 197 passed, 2 skipped |
+| `gw_detector_v2` | `py -3.12 -m pytest tests -q` | 246 passed, 2 skipped (includes 10 real-browser checks) |
+| acceptance | `scripts\verify_prototype.ps1` | 17/17 pass, PROTOTYPE ACCEPTED |

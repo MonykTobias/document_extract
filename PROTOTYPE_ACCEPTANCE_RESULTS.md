@@ -2,42 +2,81 @@
 
 Results for every check in `PROTOTYPE_ACCEPTANCE_CHECKLIST.md`.
 
-Runner: `gw_detector_v2\scripts\verify_prototype.ps1`
-Target database: `claim_evidence_test` (disposable)
-Latest partial run: `gw_detector_v2/verification/prototype/prototype-20260729T175949Z.json`
+One run of the documented command, on 2026-07-30:
 
-**Overall outcome: NOT ACCEPTED.** Two of seventeen checks are implemented and
-pass. The other fifteen are not registered with the runner, which reports them
-as `missing` and exits non-zero — a missing check is never a pass.
+```powershell
+Set-Location "C:\Users\Tobia\Documents\Tobi&Anna\gw_detector_v2"
+powershell -ExecutionPolicy Bypass -File ".\scripts\verify_prototype.ps1"
+```
 
-Results: `Passed`, `Failed`, `Blocked`, `Not implemented`.
+**Overall outcome: ACCEPTED — 17/17 passed.** Zero failed, zero blocked, zero
+missing, zero skipped. Machine-readable evidence:
+`gw_detector_v2\verification\prototype\prototype-20260730T183616Z.json`, with a
+matching `.md`. Reports are gitignored development artifacts, as the checklist
+requires; the latest is kept locally for handoff.
 
-| Acceptance item | Result | Command/test | Evidence | Related tasks | Commit SHAs |
-|---|---|---|---|---|---|
-| PA-01 clean install, three packages, `document_knowledge` not a runtime backend | Passed | `verify_prototype.ps1 -Only PA-01` | Both packages import from a neutral directory with no `PYTHONPATH`; `document_knowledge` is not importable; no repository file inserts a checkout onto `sys.path`; `claim-evidence` CLI exits 0 | LP-01 | `e6d4696`, `6a2a520`, `1000eb4` |
-| PA-02 real frontend starts on loopback | Passed | `verify_prototype.ps1 -Only PA-02` | Bound `127.0.0.1:55154`; `GET /` 200; `GET /api/health` 200 with `database_reachable: true`; also starts under `GW_FAKE_ADAPTER=1` with both endpoints 200 | LP-01 | `1000eb4` |
-| PA-03 empty database initializes once and repeats without mutation | Not implemented (behaviour covered by tests) | `pytest claim_evidence/tests/test_db_init.py -q` → 10 passed | Marker records version, schema-file SHA-256, and initialization time; a repeat init returns `unchanged` and rewrites nothing | LP-03 | `c754016` |
-| PA-04 destructive reset is confined and preserves source data | Not implemented (behaviour covered by tests) | `pytest claim_evidence/tests/test_reset_dev.py -q` → 10 passed | Every PD-03 guard refuses; a confirmed reset leaves 10 source/config/extraction files byte-identical | LP-03 | `c754016`, `1a363fe` |
-| PA-05 retained PDF parses and indexes through the frontend workflow | Not implemented | — | The run contract, its consumer, and the progress consumer exist and are tested; the end-to-end run has not been performed | LP-02, LP-06 | `5f5ed04`, `65e7137`, `0c099da` |
-| PA-06 re-indexing is deterministic and reuses identity | Not implemented (behaviour covered by tests) | `pytest claim_evidence/tests/test_identity.py claim_evidence/tests/test_fingerprint.py -q` → 22 passed | Same PDF at another path is one document; every evidence-bearing artifact moves the fingerprint; operational settings do not; an exact repeat is byte-identical | LP-04 | `aaa1eed` |
-| PA-07 narrative evidence retains quote, page, bbox, artifact locator | Not implemented (partly covered) | `pytest claim_evidence/tests/test_source.py -q -k "artifact or provenance"` | Narrative provenance now resolves to the real root `blocks.jsonl`; activation refuses a build whose citations do not resolve | LP-05 | `6df072b` |
-| PA-08 table evidence retains cell/value context, page, and bbox | Not implemented (partly covered) | `pytest claim_evidence/tests/test_source.py -q` | Table row/value units carry descriptor, header path, unit, and four cited regions | LP-05 | `6df072b` |
-| PA-09 real visual evidence path returns and displays a source crop | Not implemented | — | LP-09 not started | LP-09, LP-13 | — |
-| PA-10 supported claim returns `supported` with deterministic comparison | Not implemented | — | LP-08 not started | LP-08 | — |
-| PA-11 conflicting evidence returns `contradicted` | Not implemented | — | LP-08 not started | LP-08 | — |
-| PA-12 absent evidence returns `insufficient` | Not implemented | — | LP-08 not started. The verdict literal is frozen as `insufficient` (`IMPL-004`) | LP-02, LP-08 | `65e7137` |
-| PA-13 unsupported claims are rejected before retrieval with no audit row | Not implemented (behaviour covered by tests) | `pytest claim_evidence/tests/test_claim_contract.py -q` → 25 passed | Sixteen unsupported classes refuse by stable reason code, mapped to HTTP 422, with no database or model touched | LP-07 | `c669097`, `16c0596` |
-| PA-14 every citation and asset resolves and stays bound to its version | Not implemented | — | Activation-time containment is in place; the public traversal check is not | LP-05, LP-10 | `6df072b` |
-| PA-15 public surfaces leak no paths, credentials, exceptions, or prompts | Not implemented (partly covered) | `pytest claim_evidence/tests/test_progress.py -q`, `pytest gw_detector_v2/tests -q` | Progress events carry code-like scalars only; contract refusals never echo values; existing sentinel tests still pass. The LP-10 recursive sentinel sweep is not written | LP-10 | — |
-| PA-16 interruption is represented honestly and ready data survives | Not implemented (behaviour covered by tests) | `pytest claim_evidence/tests/test_lifecycle.py -q` → 10 passed | Dead builds and audits reconcile to `interrupted`, never `failed`; a ready version is untouched and still queryable | LP-06 | `c889f94`, `9f4402a` |
-| PA-17 one runner completes reset-to-render with all rows present and no skip | Failed | `verify_prototype.ps1` | The runner, report format, and zero-skip rule exist and work; fifteen checks report `missing`, so the run exits non-zero as designed | LP-14 | `1000eb4` |
+## Environment behind that result
 
-## What "Not implemented" means here
+Recorded in the `metadata` block of every report:
 
-It is not a skip and not a pass. The runner has no check registered for that
-id, so a full run reports it `missing` and fails. Where a row says *behaviour
-covered by tests*, the product behaviour the check describes is implemented and
-has its own passing suite — what is missing is the acceptance check that
-exercises it through the runner, end to end, against a live database and model.
+| Key | Value |
+|---|---|
+| Python | 3.12.10, in a dedicated `.acceptance-venv` |
+| Database | `claim_evidence_test` on `localhost:5433`, dropped and recreated by the run |
+| Schema version | 6 |
+| Schema SQL SHA-256 | `e3c0254e299ddf068c640f5c29a49da566bc289ecaffd641ed9bcbb01e16de95` |
+| API contract | `claim_evidence/api` |
+| Extraction contracts | `document_extract/run`, `document_extract/progress` |
+| Embedding model | `qwen3-embedding:4b` @ `df5bd2e3c74cd8d0` |
+| Chat / vision model | `hf.co/unsloth/Qwen3-VL-4B-Instruct-GGUF:UD-Q8_K_XL` @ `ee0d341d11c29a4c` |
+| Fixture version | 1 — 14 artifacts, 11 labelled cases |
+| Browser | headless Edge (Chromium), Selenium 4.46 |
+| Extraction runtime | docling 2.70.0, torch 2.8.0+cu128 |
 
-No mandatory item is marked *not applicable*.
+Repository revisions are recorded per run. At this run they were
+`claim_evidence@127ceb9`, `document_extract@612a4ec`, `gw_detector_v2@b97a1d5`;
+the commits after those are the runner itself and documentation, listed in
+`FINAL_IMPLEMENTATION_REPORT.md`.
+
+## The seventeen checks
+
+| ID | Result | What actually ran | Tasks |
+|---|---|---|---|
+| PA-01 | Passed | Both packages imported from a neutral directory with no `PYTHONPATH`; no repository file inserts a checkout onto `sys.path`; `document_knowledge` is not importable; the CLI runs. | LP-01 |
+| PA-02 | Passed | The real `main.py` started on a loopback port and served `/` and `/api/health` with 200 twice — once against PostgreSQL, once against the deterministic fake adapter. | LP-01, LP-11 |
+| PA-03 | Passed | An empty database initialized to schema 6; a second initialization returned `unchanged` with an identical marker and no missing objects. | LP-03 |
+| PA-04 | Passed | Five reset attempts refused (wrong phrase, wrong database name, a production-looking name, wrong environment, application marker present); the fully confirmed call still defaulted to a dry run; all 14 corpus artifacts byte-identical afterwards; the reported target carries no credential. | LP-03 |
+| PA-05 | Passed | Two pages sliced from the retained `danoneurdaccessible.pdf`, uploaded over HTTP, parsed by real docling, and indexed to a queryable version carrying evidence — through the running frontend, not a library call. | LP-02, LP-06 |
+| PA-06 | Passed | The same extraction indexed twice: one document id, one ready version, `reused_existing` true, identical fingerprint. | LP-04 |
+| PA-07 | Passed | Every citable narrative unit served with unaltered text on its stored page, its artifact resolving to a real file inside the output root, in source order. | LP-05 |
+| PA-08 | Passed | The labelled table case returned `supported` citing page 1 with regions, naming `table_candidates`, and recorded the unit the page stated. | LP-05, LP-08 |
+| PA-09 | Passed | A crop and a full page fetched over HTTP as distinct PNGs, plus the gallery and fullscreen paths driven in a real headless browser. | LP-09, LP-13 |
+| PA-10 | Passed | `supported`, decided by `deterministic_comparison`, with a matching numeric comparison and citations carrying evidence ids. | LP-08 |
+| PA-11 | Passed | `contradicted`, with a comparison whose outcome is `conflict`. | LP-08 |
+| PA-12 | Passed | An absent metric returned `insufficient` with zero citations — absence is not contradiction. | LP-08 |
+| PA-13 | Passed | Four typed refusals (approximate, compound, qualitative, missing scope) each with its expected reason code, HTTP 422 from the running server, and zero audit rows written. | LP-07, LP-14 |
+| PA-14 | Passed | Every citation resolved through the public evidence endpoint to the same page, and every one belonged to the version the audit pinned. | LP-05, LP-10 |
+| PA-15 | Passed | Nine public surfaces plus CLI output scanned for paths, credentials, tracebacks, driver names and prompts — none present; JSON surfaces parse as JSON; the repository's own disclosure sweep and the browser hostile-text check both pass. | LP-10, LP-11 |
+| PA-16 | Passed | The frontend killed with a job in flight, restarted, and the job reported `interrupted` — never `completed` — while a version ready before the restart still audited to `supported`. | LP-06, LP-12 |
+| PA-17 | Passed | The report itself: exactly PA-01..PA-17, unique ids, every status `pass`, no skip-equivalent outcome. | LP-14 |
+
+## How the runner fails
+
+- A missing dependency is reported `blocked`, which counts as a failed run and
+  never as a skip.
+- A check with no registered implementation is reported `missing`, which is
+  also a failed run — this is what kept the earlier partial state honest.
+- `--only` runs exit on their own checks alone and print that a partial run
+  does not accept the prototype; `PA-17` refuses to pass unless the run
+  selected all seventeen ids.
+
+No mandatory item is marked *not applicable*, and no check is satisfied by a
+static source assertion.
+
+## Not covered by this run
+
+- The full 494-page Danone extraction. Two of its pages are parsed for real by
+  PA-05; the whole document stays a manual smoke test, as the checklist
+  intends.
+- Anything in deferred groups DG-01 through DG-05 — see the boundaries section
+  now present in all three READMEs.

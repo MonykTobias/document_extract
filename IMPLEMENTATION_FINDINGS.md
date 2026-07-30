@@ -152,20 +152,32 @@ limitation recorded on purpose).
   each addition needs a matching normalization on the fact side.
   **Blocks an active task:** no.
 
-## IMPL-011 — the retained 494-page Danone extraction is no longer indexable
+## IMPL-011 — the retained 494-page Danone extraction is no longer indexable (RESOLVED)
 
-- **Evidence:** `claim_evidence/tests/test_source.py::test_real_danone_page_359`
-  now skips: `gw_detector_v2/outputs_full_run/danoneurdaccessible/` has no
-  `run.json`.
-- **Severity:** note · **Component:** retained extraction output · **Under:** LP-02
-- **Detail:** PD-02 states there is no compatibility reader for output written
-  before the current run contract, and that such output is rejected with a
-  re-extraction instruction. The existing Danone run predates it, so it must be
-  re-extracted before it can be indexed again. That re-extraction needs Docling
-  and a GPU and was not performed in this cycle.
-- **Activation trigger:** any acceptance item that needs live Danone data.
-  **Blocks an active task:** it will block the live end-to-end portion of LP-14
-  until a current-contract extraction exists.
+- **Evidence:** the retained `outputs_full_run/` tree predates the frozen
+  `document_extract/run@1.0` contract, so `source.py` refuses it and asks for
+  re-extraction — which needs docling, torch, and a GPU that were not installed.
+- **Severity:** note · **Component:** the retained corpus · **Under:** LP-04
+- **Detail:** by PD-01 an old extraction output is re-extracted rather than read
+  through a compatibility shim, so this was the designed behaviour meeting an
+  environment that could not perform the re-extraction.
+- **Resolution:** the extraction runtime was installed into the acceptance
+  environment from `document_extract/requirements-docling-gpu.txt`, and PA-05
+  now parses two pages sliced out of the retained `danoneurdaccessible.pdf`
+  through the real docling pipeline and indexes them through the running
+  frontend. The full 494-page run stays a manual smoke test and is deliberately
+  not part of every acceptance run.
+- **Blocks an active task:** no longer.
+
+## IMPL-012 — five plan tasks are not implemented in this cycle (RESOLVED)
+
+- **Evidence:** at the time of writing, `IMPLEMENTATION_PROGRESS.md` recorded
+  LP-10 through LP-13 as `Not started` and LP-14 as `Partially completed`.
+- **Severity:** blocker · **Component:** the plan as a whole
+- **Detail:** LP-10 through LP-14 have since been implemented, tested, and
+  committed. The acceptance runner no longer reports any check as `missing`.
+- **Resolution:** `verify_prototype.ps1` reports 17/17 PASS and
+  `PROTOTYPE ACCEPTED`. **Blocks an active task:** no longer.
 
 ## IMPL-013 — the reporting entity had to become required at ingestion too
 
@@ -195,18 +207,105 @@ limitation recorded on purpose).
   asserted the old behaviour were replaced by their successors.
 - **Blocks an active task:** no.
 
-## IMPL-012 — five plan tasks are not implemented in this cycle
+## IMPL-015 — the browser suite's own server blocked on an unread pipe
 
-- **Evidence:** `IMPLEMENTATION_PROGRESS.md` records LP-10 through LP-13 as
-  `Not started` and LP-14 as `Partially completed`.
-- **Severity:** blocker · **Component:** the plan as a whole
-- **Detail:** LP-01 through LP-09 are implemented, tested, and committed. The
-  remaining work — the public-surface and prompt-injection boundary (LP-10),
-  loopback/CSRF/limits (LP-11), the browser job workflow and restart journal
-  (LP-12), the evaluation corpus and browser end-to-end suite (LP-13), and the
-  remaining fifteen acceptance checks (LP-14) — has not been done. The
-  acceptance runner reports those checks as `missing`, which fails the run, so
-  nothing here reports itself as accepted.
-- **Recommended action:** continue the plan from LP-10; its dependencies
-  (LP-02, LP-05, LP-09) are complete. **Blocks an active task:** yes — the prototype is
-  not accepted.
+- **Evidence:** `pytest tests/e2e/test_browser.py` → "4 failed, 6 passed in
+  213.17s", each failure a 60s page-load timeout; the same four tests passed in
+  isolation in 5.40s.
+- **Severity:** major · **Component:** `gw_detector_v2/tests/e2e/test_browser.py`
+  · **Under:** LP-13
+- **Detail:** the suite started `main.py` with `stdout=subprocess.PIPE` and never
+  read it. Flask logs every request, so after a few dozen the 64 KB pipe buffer
+  filled and the server blocked forever on the write. Every test after that
+  point timed out and every one of them passed alone — the classic shape of a
+  defect misread as test-order flakiness. Server output now goes to a file under
+  the runtime directory, which the failure messages quote. 246s → 6s, 10/10.
+- **Blocks an active task:** no (fixed).
+
+## IMPL-016 — the fixture corpus digests depended on the platform that built it
+
+- **Evidence:** `git add` warned *"LF will be replaced by CRLF the next time Git
+  touches it"* on `northwind_report.pdf`.
+- **Severity:** minor · **Component:** `gw_detector_v2/acceptance/fixtures.py`
+  · **Under:** LP-13
+- **Detail:** the generator wrote text artifacts in Windows text mode, and git
+  sniffed the mostly-ASCII synthetic PDF as text. The catalogue records a
+  SHA-256 per artifact, so a fresh clone would have checked out bytes that did
+  not match its own catalogue. Every text write now pins `newline="\n"`, and a
+  `.gitattributes` marks the whole fixture tree binary. Caught from a git
+  warning rather than a failing test — nothing yet verifies the catalogue
+  against the tree, which is why it stayed quiet.
+- **Blocks an active task:** no (fixed).
+
+## IMPL-017 — an unsupported claim was accepted as a job and failed afterwards
+
+- **Evidence:** PA-13 → "unsupported-approximate returned HTTP 202, not a client
+  error".
+- **Severity:** major · **Component:** `gw_detector_v2/main.py`,
+  `claim_evidence/client.py` · **Under:** LP-14
+- **Detail:** `POST /api/audit` submitted a background job without checking the
+  claim, so every refusal the version-1 grammar makes arrived as a *failed job*
+  rather than a client error. The user waited for a rejection knowable at
+  submission time, and a failed row was written describing work nobody intended
+  to run. `ClaimEvidence.check_claim` now exposes the same validation
+  `audit_claim` already performs — no retrieval, no model call, no audit row —
+  and the route calls it before enqueueing. PD-07's contract is unchanged; only
+  where it is enforced moved.
+- **Blocks an active task:** no (fixed).
+
+## IMPL-018 — an interrupted job came back as 404 after a restart
+
+- **Evidence:** PA-16 → "the job is not retrievable after restart (404)".
+- **Severity:** major · **Component:** `gw_detector_v2/main.py` · **Under:** LP-14
+- **Detail:** the journal recorded the job, startup reconciled it to
+  `interrupted`, and then nothing read the result: `/api/jobs/<id>` answers from
+  the in-memory registry, which a fresh process has never populated. A browser
+  watching a job across a crash was told the job never existed rather than that
+  it was interrupted — precisely the honesty LP-12 exists for, and it made the
+  journal a file written for nobody. `JobRegistry.adopt_interrupted` now takes
+  those entries as terminal `interrupted` rows at startup. Nothing is resumed;
+  the user asks again.
+- **Blocks an active task:** no (fixed).
+
+## IMPL-019 — the acceptance harness had the same unread-pipe defect
+
+- **Evidence:** found by inspection while wiring PA-05..PA-16, before it could
+  bite: `Frontend.__enter__` used `stdout=subprocess.PIPE` and read it only in
+  `__exit__`.
+- **Severity:** minor · **Component:** `gw_detector_v2/acceptance/harness.py`
+  · **Under:** LP-14
+- **Detail:** identical to IMPL-015 in a sibling caller. PA-05 and PA-15 drive
+  far more than a few dozen requests through one frontend, so this would have
+  hung the acceptance run rather than a test. Fixed the same way at the same
+  time — a symptom fixed in one caller and left in the other is half a fix.
+- **Blocks an active task:** no (fixed).
+
+## IMPL-020 — a terminated frontend leaves its application marker behind
+
+- **Evidence:** PA-04 → "ResetRefused: the local application is running (its
+  marker file exists)", with nothing running.
+- **Severity:** note · **Component:** `gw_detector_v2/acceptance/harness.py`
+  · **Under:** LP-14
+- **Detail:** `main.py` removes its marker in a `finally`, which
+  `Popen.terminate()` on Windows never reaches. The product's own docstring
+  already treats this as deliberate — a stale marker is cleared by starting and
+  stopping the app again, which it argues beats a reset that proceeds anyway —
+  so the product behaviour was left exactly as it is. The harness was at fault
+  for leaking a marker between checks: each acceptance run now points
+  `CLAIM_EVIDENCE_APP_MARKER` at its own runtime root and removes it after each
+  frontend. PA-04 additionally writes a marker on purpose to prove the guard
+  fires.
+- **Blocks an active task:** no (fixed).
+
+## IMPL-021 — two commits on the branch were rewritten by something outside this work
+
+- **Evidence:** `git reflog` in `gw_detector_v2` shows `rebase (reword)` and
+  `commit (amend)` entries that were not issued here; `git diff 70c3210
+  91699c5` is empty and the only message difference is a removed
+  `Co-Authored-By` trailer.
+- **Severity:** note · **Component:** the `feat/lean-prototype` branch
+- **Detail:** commit contents are byte-identical and all fourteen task commits
+  remain on the branch; only two commit hashes changed. Recorded because the
+  git-history table below lists hashes, and two of them differ from what the
+  commit command originally printed.
+- **Blocks an active task:** no.

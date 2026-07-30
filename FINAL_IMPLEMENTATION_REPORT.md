@@ -2,14 +2,13 @@
 
 ## 1. Result
 
-**The lean corrective plan is not fully implemented.** Nine of fourteen tasks
-(LP-01 through LP-09) are implemented, tested, and committed. LP-14 is
-partially implemented — the acceptance runner and its report format exist and
-enforce the zero-skip rule, with two of seventeen checks registered. LP-10
-through LP-13 are not started.
+**The lean corrective plan is fully implemented.** All fourteen tasks (LP-01
+through LP-14) are implemented, tested, and committed across the three
+repositories.
 
-The prototype is **not accepted**: a full `verify_prototype.ps1` run reports
-fifteen checks as `missing` and exits non-zero.
+The prototype is **accepted**: one run of `verify_prototype.ps1` reports 17/17
+checks passing, with no failed, blocked, missing, or skipped row, and exits
+zero.
 
 ## 2. Scope
 
@@ -20,13 +19,51 @@ authoritative, across three repositories plus one uncommittable scaffold.
 
 | Repository | Start branch | Start HEAD | End branch | End HEAD |
 |---|---|---|---|---|
-| `claim_evidence` | `fix/m1-m9-remediation` | `0c245ad` | `feat/lean-prototype` | `ab0b34a` |
-| `document_extract` | `audit-fixes` | `8e59206` | `feat/lean-prototype` | `5f5ed04` |
-| `gw_detector_v2` | `master` | `29d095b` | `feat/lean-prototype` | `e7caa91` |
+| `claim_evidence` | `fix/m1-m9-remediation` | `0c245ad` | `feat/lean-prototype` | `4fdc2a1` |
+| `document_extract` | `audit-fixes` | `8e59206` | `feat/lean-prototype` | `4cfd3f6` |
+| `gw_detector_v2` | `master` | `29d095b` | `feat/lean-prototype` | `75db8a7` |
 | `document_knowledge` | not a repository | — | not a repository | — (see `IMPL-001`) |
 
 All three implementation branches were created fresh from the recorded starting
-HEADs. No existing commit was amended, squashed, rebased, reset, or force-pushed.
+HEADs. Nothing here amended, squashed, rebased, reset, or force-pushed a commit.
+Tooling outside this work did rewrite two `gw_detector_v2` commits — contents
+byte-identical, one trailer removed — which is recorded as `IMPL-021`.
+
+### Git history
+
+| Task | Repository | Commit | Subject |
+|---|---|---|---|
+| LP-01 | claim_evidence | `060e28f` | refactor(packaging): import the installed packages, not a checkout path |
+| LP-01 | document_extract | `898fe2f` | refactor(packaging): import the installed package, not a checkout path |
+| LP-01 | document_extract | `215495c` | docs: record implementation progress, findings, and acceptance results |
+| LP-01 | gw_detector_v2 | `ad0a05b` | feat(acceptance): document install/start and add the PA runner harness |
+| LP-02 | document_extract | `487b9df` | feat(contracts): freeze and publish the current run and progress contracts |
+| LP-02 | claim_evidence | `29b1ec8` | feat(contracts): consume the run contract and freeze the public API vocabulary |
+| LP-02 | gw_detector_v2 | `7a804f0` | feat(contracts): drive progress and vocabulary from the contracts, not copies |
+| LP-03 | claim_evidence | `e31679c` | feat(db): one current schema, and a reset that has to be asked for exactly |
+| LP-03 | gw_detector_v2 | `fd28ae1` | feat(app): hold the application-running marker while the server runs |
+| LP-04 | claim_evidence | `6fcf794` | fix(identity): key documents on their bytes and fingerprint the whole build |
+| LP-05 | claim_evidence | `d98fc30` | fix(evidence): resolve narrative provenance and gate activation on containment |
+| LP-06 | claim_evidence | `e8923d2` | feat(lifecycle): degraded builds, targeted fact retry, honest interruption |
+| LP-06 | gw_detector_v2 | `2216457` | feat(jobs): treat degraded as usable and reconcile interrupted work at startup |
+| LP-07 | claim_evidence | `e22e00f` | feat(claims): refuse everything outside the version-1 grammar before any work |
+| LP-07 | gw_detector_v2 | `b8fe813` | feat(audit): require an explicit scope and reporting entity in the browser |
+| LP-08 | claim_evidence | `ac4f35a` | feat(verdicts): exact comparison only, and one corpus-qualified answer |
+| LP-08 | gw_detector_v2 | `66f41de` | feat(ingest): require the reporting entity when indexing a document |
+| LP-08 | document_extract | `ccdb1cf` | docs: record LP-08 and LP-09 progress and findings |
+| LP-08 | document_extract | `612a4ec` | docs: complete the LP-08 and LP-09 sections of the final report |
+| LP-09 | claim_evidence | `601c665` | feat(vision): four visual outcomes, and support that has to be earned |
+| LP-09 | gw_detector_v2 | `8de6520` | test(evidence): pin the crop, highlight, and fullscreen rendering path |
+| LP-10 | claim_evidence | `127ceb9` | fix(safety): stop the CLI printing raw causes and delimit every prompt |
+| LP-10 | gw_detector_v2 | `9852e29` | test(security): recursively scan every public surface for disclosure |
+| LP-11 | gw_detector_v2 | `5375a39` | feat(security): loopback-only startup, CSRF, typed config, and real limits |
+| LP-12 | gw_detector_v2 | `dd9e3ad` | feat(jobs): refuse a duplicate ingestion and journal state across restarts |
+| LP-13 | gw_detector_v2 | `91699c5` | test(acceptance): a labelled corpus, and the workflow driven by a real browser |
+| LP-13 | gw_detector_v2 | `b97a1d5` | fix(fixtures): generate the corpus with LF endings so its digests hold |
+| LP-13 | claim_evidence | `4fdc2a1` | test(acceptance): audit the labelled corpus against a real database |
+| LP-14 | claim_evidence | `57f0bfc` | feat(claims): answer whether a claim is auditable before any work is queued |
+| LP-14 | gw_detector_v2 | `75db8a7` | feat(acceptance): one command that proves PA-01..PA-17 or fails saying why |
+| LP-14 | document_extract | `4cfd3f6` | docs(readme): state the prototype's boundaries and its deferred groups |
 
 ## 4. Behaviour implemented
 
@@ -98,38 +135,86 @@ return stable codes and never echo a server path, and the claim reaches the
 vision model delimited as data. The browser gets a crop only through
 `/api/evidence/<id>/image`, with crop/page, highlight, and fullscreen controls.
 
+**LP-10 — safe errors, DTOs, and the prompt boundary.** Every public DTO
+forbids unknown keys; the CLI classifies each failure to a typed code and
+prints the raw cause only under `CLAIM_EVIDENCE_DEBUG`. Prompts state that text
+inside the delimited passage is data, evidence is wrapped in tagged blocks with
+closing tags neutralized, and the adjudicator is told where an evidence id may
+come from. Progress details are filtered to numbers, booleans, and code-like
+tokens, so a driver message cannot ride out on an event.
+
+**LP-11 — loopback, CSRF, configuration, and limits.** The server refuses to
+bind anywhere but loopback, carries a per-process CSRF token checked alongside
+Origin and Referer, and validates its configuration into a typed object whose
+errors name the variable and never echo its value. Upload size, page count,
+runtime-directory budget, and concurrent jobs are all bounded before a byte is
+written, and a rejected upload's directory — and only that directory — is
+removed.
+
+**LP-12 — the browser workflow, duplicate jobs, and the restart journal.** Two
+requests to index the same logical document cannot both be admitted; the check
+runs under the lock that admits the job. Job state is journalled with an
+allowlist of safe fields, written append-only with `fsync` and rewritten
+atomically, and never raises — journalling is bookkeeping, and a failed note
+must not fail the work it describes. On startup, anything left non-terminal is
+reconciled to `interrupted` and adopted into the registry so the browser that
+was watching gets an answer rather than a 404.
+
+**LP-13 — the evaluation corpus and the browser end-to-end suite.** A two-page
+synthetic corpus carries narrative, table row, table value, visual, and page
+markdown evidence plus a hostile passage, with eleven labelled cases pinning
+verdict, page, artifact role, and kind, and a catalogue recording a SHA-256 per
+artifact. The browser suite runs the real server on a loopback port under a
+headless Chromium and fails — never skips — when no browser is present.
+
+**LP-14 — one zero-skip runner.** All seventeen acceptance checks execute for
+real against a disposable `_test` database and a temporary runtime root, with
+the redacted target printed before anything destructive. Each run writes a
+timestamped JSON and Markdown report recording repository revisions, schema
+version and SQL checksum, contract versions, model tags with digests, and the
+fixture version. The prototype's boundaries and deferred groups are now stated
+in all three READMEs.
+
 ## 5. Findings
 
-Fourteen new findings are recorded in `IMPLEMENTATION_FINDINGS.md`. Three are
+Twenty-one findings are recorded in `IMPLEMENTATION_FINDINGS.md`. Six are
 material product bugs found and fixed in passing:
 
 - `IMPL-013`: the fact subject was still filename-derived, so with the audit
   side made explicit every supported claim returned `insufficient`.
-
 - `IMPL-008`: every narrative citation resolved its artifact to nothing.
 - `IMPL-007`: extraction settings did not reach the build fingerprint, so a
   re-extraction under different rules could be reused as if unchanged.
+- `IMPL-017`: `POST /api/audit` accepted every unsupported claim as a job and
+  failed it a moment later, instead of refusing it at submission.
+- `IMPL-018`: a job interrupted by a restart came back as HTTP 404 — the
+  journal was written, reconciled, and then read by nobody.
+- `IMPL-015` / `IMPL-019`: the test and acceptance harnesses each started the
+  server with `stdout` on a pipe nobody drained, which deadlocked it after a
+  few dozen requests and looked exactly like test-order flakiness.
 
-`IMPL-012` records the incomplete plan. `IMPL-011` records that the retained
-494-page Danone extraction predates the run contract and must be re-extracted
-before it can be indexed.
+`IMPL-011` and `IMPL-012` are both now resolved: the extraction runtime was
+installed and PA-05 parses real PDF pages through docling, and every plan task
+is implemented. `IMPL-021` records two commits rewritten by tooling outside
+this work.
 
 Findings closed from `COMPLETE_GAP_REGISTER.md`: GR-001, GR-002, GR-003,
 GR-004, GR-008, GR-009, GR-010, GR-012, GR-013, GR-018, GR-020, GR-021,
-GR-023, GR-024, GR-025, GR-034, GR-035, GR-041, GR-047, GR-049, GR-051,
-GR-056, GR-059, GR-060, GR-061, GR-063, GR-065, GR-066, GR-070, GR-071,
-GR-072, GR-C01, GR-C02, GR-C05, GR-C06, GR-C10, GR-C11, GR-I02, GR-I03,
-GR-I04, GR-I09, GR-I11, GR-I15, GR-I16, GR-I17, GR-I12, GR-I13, GR-P01,
-GR-P03, GR-P04, GR-P05, GR-P07, GR-P11, GR-P12, GR-P15, GR-T04, GR-T06,
-GR-T09, PV-004, PV-007, PV-008, PV-014.
+GR-022, GR-023, GR-024, GR-025, GR-026, GR-028, GR-034, GR-035, GR-040,
+GR-041, GR-047, GR-049, GR-051, GR-056, GR-059, GR-060, GR-061, GR-063,
+GR-065, GR-066, GR-070, GR-071, GR-072, GR-C01, GR-C02, GR-C05, GR-C06,
+GR-C10, GR-C11, GR-I02, GR-I03, GR-I04, GR-I05, GR-I09, GR-I11, GR-I12,
+GR-I13, GR-I15, GR-I16, GR-I17, GR-P01, GR-P03, GR-P04, GR-P05, GR-P07,
+GR-P11, GR-P12, GR-P15, GR-T04, GR-T06, GR-T07, GR-T09, PV-004, PV-007,
+PV-008, PV-014.
 
-Also closed under LP-08 and LP-09: GR-022, GR-026, GR-028, GR-040, GR-I05,
-GR-T07.
+Closed under LP-10 through LP-14: GR-014, GR-015, GR-027, GR-029, GR-030,
+GR-031, GR-032, GR-033, GR-037, GR-038, GR-042, GR-045, GR-046, GR-048,
+GR-057, GR-058, GR-064, GR-C04, GR-C09, GR-I06, GR-I14, GR-P06, GR-P08,
+GR-P09, GR-P10, GR-P14, PV-015.
 
-Not addressed: GR-014, GR-015, GR-027, GR-029, GR-030, GR-031, GR-032,
-GR-033, GR-037, GR-038, GR-042, GR-045, GR-046, GR-048, GR-057, GR-058,
-GR-064, GR-C04, GR-C09, GR-I06, GR-I14, GR-P06, GR-P08, GR-P09, GR-P10,
-GR-P14, PV-015 (partially — the runner exists).
+All remaining identifiers stay recorded in `COMPLETE_GAP_REGISTER.md` under
+deferred groups DG-01 through DG-05.
 
 ## 6. Decisions followed
 
@@ -144,49 +229,64 @@ multi-user support, and no performance certification.
 
 | Command | Result |
 |---|---|
-| `cd claim_evidence && python tests/run_all.py` | 18 suites, all pass |
+| `cd claim_evidence && python tests/run_all.py` | all suites pass |
 | `cd document_extract && python tests/run_all.py` | 28 suites, all pass |
-| `py -3.12 -m pytest gw_detector_v2/tests -q` | 197 passed, 2 skipped |
-| `py -3.12 -m pytest document_extract/tests/test_run_contract.py document_extract/tests/test_progress_contract.py claim_evidence/tests/test_contract_v2.py gw_detector_v2/tests/test_contract_v2.py -q` | 38 passed |
-| `py -3.12 -m pytest claim_evidence/tests/test_db_init.py claim_evidence/tests/test_reset_dev.py -q` | 20 passed |
-| `py -3.12 -m pytest claim_evidence/tests/test_identity.py claim_evidence/tests/test_fingerprint.py -q` | 22 passed |
-| `py -3.12 -m pytest claim_evidence/tests/test_source.py claim_evidence/tests/test_retrieve.py claim_evidence/tests/test_integration.py -q -k "artifact or provenance or source_order or activation"` | 10 passed, 38 deselected |
-| `py -3.12 -m pytest claim_evidence/tests/test_integration.py claim_evidence/tests/test_lifecycle.py gw_detector_v2/tests/test_jobs.py -q` | 19 passed |
-| `py -3.12 -m pytest claim_evidence/tests/test_claim_contract.py claim_evidence/tests/test_contract_v2.py gw_detector_v2/tests/test_web.py -q -k "claim or scope or unsupported or reporting_entity"` | 43 passed, 159 deselected |
-| `py -3.12 -m pytest claim_evidence/tests/test_facts.py claim_evidence/tests/test_audit_semantics.py -q` | 35 passed |
-| `py -3.12 -m pytest claim_evidence/tests/test_vision.py -q` | 15 passed |
-| `powershell -File gw_detector_v2\scripts\verify_prototype.ps1 -Only PA-01,PA-02` | 2/2 pass |
-| `powershell -File gw_detector_v2\scripts\verify_prototype.ps1` | **fails** — 15 checks `missing` |
+| `py -3.12 -m pytest gw_detector_v2/tests -q` | 246 passed, 2 skipped |
+| `py -3.12 -m pytest gw_detector_v2/tests/e2e/test_browser.py -q` | 10 passed (real headless browser) |
+| `py -3.12 -m pytest claim_evidence/tests/acceptance/test_corpus.py -q` | 9 passed (real PostgreSQL) |
+| the four contract suites | 38 passed |
+| `pytest claim_evidence/tests/test_db_init.py claim_evidence/tests/test_reset_dev.py -q` | 20 passed |
+| `pytest claim_evidence/tests/test_identity.py claim_evidence/tests/test_fingerprint.py -q` | 22 passed |
+| `pytest claim_evidence/tests/test_facts.py claim_evidence/tests/test_audit_semantics.py -q` | 35 passed |
+| `pytest claim_evidence/tests/test_vision.py -q` | 15 passed |
+| `powershell -File gw_detector_v2\scripts\verify_prototype.ps1` | **17/17 pass — PROTOTYPE ACCEPTED** |
 
 The two skips in `gw_detector_v2/tests` are pre-existing and unrelated to this
-cycle. No test was deleted, weakened, or skipped to obtain a green result; the
-two behaviour changes to existing tests (`IMPL-006`, and the claim fixtures that
-LP-07 made unsupported) are recorded with their reasons.
+cycle. No test was deleted, weakened, or skipped to obtain a green result. Four
+browser tests that failed only in module order were fixed by removing the cause
+(`IMPL-015`), not by relaxing what they assert; the two behaviour changes to
+existing tests (`IMPL-006`, and the claim fixtures LP-07 made unsupported) are
+recorded with their reasons.
 
 ## 8. Prototype acceptance
 
-See `PROTOTYPE_ACCEPTANCE_RESULTS.md`. PA-01 and PA-02 pass with recorded
-evidence. PA-17 fails. The other fourteen are not implemented as runner checks,
-though the product behaviour behind PA-03, PA-04, PA-06, PA-13, and PA-16 is
-implemented and has its own passing suite.
+See `PROTOTYPE_ACCEPTANCE_RESULTS.md`. One run of
+`gw_detector_v2\scripts\verify_prototype.ps1` produces seventeen present,
+passing rows and exits zero. Nothing the checklist requires to be real is
+faked: PA-05 parses a retained PDF through docling and indexes it through the
+running frontend, PA-09 fetches a real crop over HTTP and renders it in a
+headless browser, PA-16 kills the frontend mid-job and restarts it, and PA-04
+exercises the reset guards against a disposable database. A blocked dependency
+is reported as a failed run, never as a skip.
 
 ## 9. End-to-end workflow
 
-Not run. The full sequence — guarded reset → schema init → PDF extraction →
-indexing → audits → citations → real visual evidence → browser display —
-requires LP-08 through LP-13 and a current-contract extraction (`IMPL-011`).
-PostgreSQL and Ollama were both available throughout, so the blocker is
-unwritten code, not an unavailable service.
+Run, in one command. `verify_prototype.ps1` performs the whole sequence:
+disposable database dropped and recreated → schema initialized and re-verified
+→ guarded reset attempts refused → a retained PDF sliced, uploaded, parsed by
+docling and indexed → the labelled corpus indexed and audited to `supported`,
+`contradicted`, and `insufficient` verdicts with citations → citations resolved
+through the public API → a real crop fetched and rendered in a headless browser
+→ the frontend killed mid-job and restarted → the report checked against
+itself.
 
 ## 10. Remaining blockers
 
-1. LP-10, LP-11, LP-12, LP-13 not started.
-2. LP-14 partially done: fifteen acceptance checks unregistered.
-3. `IMPL-011`: the retained Danone extraction must be re-extracted under the
-   current run contract before it can be indexed.
-4. `IMPL-001`: `document_knowledge` edits are uncommittable.
-5. The browser end-to-end suite (LP-13) needs a Chromium binary and Selenium,
-   neither of which is installed here.
+None for the plan. Two standing limitations remain, both recorded rather than
+fixed:
+
+1. `IMPL-001`: `document_knowledge` is not a git repository, so the edits
+   marking it non-runtime are uncommittable. The runtime packages do not
+   reference it and PA-01 proves it is not importable.
+2. The full 494-page Danone extraction stays a manual smoke test. PA-05 parses
+   two of its pages for real; running all 494 in every acceptance run is
+   exactly the kind of large-load fixture DG-05 defers.
+
+Running the acceptance suite needs PostgreSQL on 5433, Ollama with the three
+models, a Chromium-family browser, and the extraction runtime from
+`document_extract/requirements-docling-gpu.txt`. Each of those was available
+for the recorded run; any one of them missing is reported as a failed check
+with a message naming what to install.
 
 ## 11. Rollback
 
@@ -211,6 +311,11 @@ created under schema 6 unreadable by the older code (reset and re-init), and
 reverting LP-07 restores the defaulted `audit_claim` signature.
 
 The uncommitted `document_knowledge` edits must be reverted by hand.
+
+Reverting LP-14 removes the acceptance runner but leaves the product
+behaviour it exposed — `check_claim` (LP-14, `claim_evidence`) and
+`adopt_interrupted` (LP-14, `gw_detector_v2`) are real fixes and are
+reverted with their own commits.
 
 ## 12. Intentionally deferred
 
