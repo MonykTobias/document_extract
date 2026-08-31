@@ -7,15 +7,14 @@ other case is synthetic so the suite needs no Docling, GPU, PDF, or Ollama.
 
 from __future__ import annotations
 
+import hashlib
 import json
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from document_extract.markdown.formatting import replace_deterministic_tables  # noqa: E402
-from document_extract.models import TableCandidate, VisualCandidate  # noqa: E402
-from document_extract.table_reconstruction import (  # noqa: E402
+from document_extract.markdown.formatting import replace_deterministic_tables
+from document_extract.models import TableCandidate, VisualCandidate
+from document_extract.table_reconstruction import (
     RECONSTRUCTION_VERSION,
     _slot_collisions,
     _tokens,
@@ -23,14 +22,14 @@ from document_extract.table_reconstruction import (  # noqa: E402
     filter_visible_rule_segments,
     reconcile_table_grid,
 )
-from document_extract.tables import (  # noqa: E402
+from document_extract.tables import (
     build_table_candidates,
     normalize_table_grid,
     render_deterministic_docling_table,
     render_grid_markdown,
     verify_region_table,
 )
-from document_extract.visual_values import associate_table_cells  # noqa: E402
+from document_extract.visual_values import associate_table_cells
 
 
 def run_lengths(column: list[str]) -> list[int]:
@@ -886,6 +885,41 @@ def test_visual_values_associate_against_the_reconstructed_grid() -> None:
     associate_table_cells(visuals, tables, page_size)
     assert all(candidate.target.get("column_index") == 4 for candidate in visuals)
     assert sorted(candidate.target.get("record_index") for candidate in visuals) == [0, 1, 2]
+
+
+def test_reconciler_output_is_byte_stable() -> None:
+    """Pin the whole reconciler result -- grid and audit -- for every fixture.
+
+    The named checks above cover the behaviour that matters; this one is the
+    refactoring net. reconcile_table_grid is a single 470-line function, so any
+    structural change to it must leave every fixture's serialized output
+    untouched. A digest mismatch means behaviour moved, not that the digest is
+    stale: investigate before updating it.
+
+    RECONSTRUCTION_VERSION is pinned alongside because bumping it makes
+    _stale_reconstruction force a table_detect replay of every existing
+    checkpoint.
+    """
+    expected = {
+        183: "971c492aa3917291",
+        184: "270d8e57f64ea162",
+        185: "47616c49665b49b5",
+        190: "7bb5db2a71c3fe25",
+        199: "48563fa97d0de369",
+        200: "5825c65144544006",
+    }
+    assert RECONSTRUCTION_VERSION == 5, (
+        f"RECONSTRUCTION_VERSION moved to {RECONSTRUCTION_VERSION}; that "
+        "invalidates every saved checkpoint's reconstruction state"
+    )
+    for page, digest in expected.items():
+        result = reconcile(load(page))
+        blob = json.dumps(result, sort_keys=True, ensure_ascii=False, default=str)
+        actual = hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
+        assert actual == digest, (
+            f"page {page} reconciler output changed ({actual} != {digest}); "
+            f"status={result['status']}"
+        )
 
 
 def main() -> int:

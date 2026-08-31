@@ -11,3 +11,4 @@ models:
   photo_skip_confidence: 0.8
   vlm_concurrency: 1
   vlm_page_image_max_px: 1536
+  ca_bundle: ""

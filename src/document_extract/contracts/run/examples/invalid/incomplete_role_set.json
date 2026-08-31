@@ -1,0 +1,71 @@
+{
+  "contract": "document_extract/run",
+  "contract_version": "1.0",
+  "generated_at": "2026-07-29T12:00:00+00:00",
+  "source": {
+    "filename": "sustainability_report.pdf",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "page_count": 4
+  },
+  "selection": {
+    "start_page": 1,
+    "end_page": 4,
+    "page_count": 4,
+    "complete_document": true
+  },
+  "coordinate_convention": "normalized_top_left",
+  "artifacts": {
+    "root": {
+      "run": "run.json",
+      "manifest": "manifest.json",
+      "blocks": "blocks.jsonl"
+    },
+    "page": {
+      "page_markdown": "docling_final.md",
+      "page_image": "page.png",
+      "layout_map": "layout_prompt_map.json",
+      "table_candidates": "table_candidates.json",
+      "page_state": "page_state.json"
+    }
+  },
+  "evidence_bearing_roles": [
+    "manifest",
+    "blocks",
+    "page_markdown",
+    "page_image",
+    "layout_map",
+    "table_candidates",
+    "page_state",
+    "image_summaries"
+  ],
+  "settings": {
+    "dpi": 200,
+    "refine_mode": "auto",
+    "visual_values_mode": "enforce",
+    "vlm_model": "hf.co/unsloth/Qwen3-VL-4B-Instruct-GGUF:UD-Q8_K_XL",
+    "triage_model": "hf.co/unsloth/Qwen3-VL-4B-Instruct-GGUF:UD-Q8_K_XL",
+    "triage_confidence": 0.5,
+    "num_ctx": 16384,
+    "num_predict": 4000,
+    "temperature": 0.0,
+    "vlm_page_image_max_px": 1536,
+    "table_reconstruction_version": 3,
+    "visual_collector_version": 2,
+    "prompt_sha256": {
+      "page_refinement": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "page_repair": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "picture_summary": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  "pages": {
+    "completed": 4,
+    "failed": 0
+  },
+  "warnings": {
+    "total": 1,
+    "categories": {
+      "content_loss_guard_triggered": 1
+    },
+    "stale_page_dirs": []
+  }
+}

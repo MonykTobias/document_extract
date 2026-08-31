@@ -21,6 +21,24 @@ def require_placeholders(template: str, *names: str) -> str:
     return template
 
 
+def assert_formattable(template: str, *names: str) -> str:
+    """Fail now if ``str.format`` would fail when the prompt is rendered.
+
+    Prompts are rendered with ``str.format``, so a literal brace -- a JSON
+    example is the obvious case -- raises KeyError once per page, after the
+    expensive Docling conversion has already run. Rendering with dummy values
+    here turns that into one actionable error before any work starts.
+    """
+    try:
+        template.format(**{name: "" for name in names})
+    except (KeyError, IndexError, ValueError) as error:
+        raise ValueError(
+            f"Prompt template has an unescaped brace ({error}). "
+            "Literal { and } must be written as {{ and }}."
+        ) from error
+    return template
+
+
 DEFAULT_OLLAMA_MODEL = "hf.co/unsloth/Qwen3-VL-8B-Instruct-GGUF:Q4_K_M"
 
 # Resource files are authoritative; these names preserve the existing prompt
@@ -40,21 +58,38 @@ DEFAULT_KPI_PANEL_PROMPT = load_prompt("kpi_panel.md")
 
 
 def load_summary_prompt(path: Path | None) -> str:
+    """Load the picture-summary prompt, optionally from a caller-supplied file.
+
+    No shipped entry point passes a path -- there is no CLI flag for it and the
+    pipeline calls this with ``None`` -- but the function is a public export, so
+    the parameter stays for external callers. Wiring a ``--summary-prompt-file``
+    flag would be a feature, and it would need the same brace validation
+    ``assert_formattable`` applies to the refinement prompts.
+    """
     if path is None:
         return require_placeholders(load_prompt("picture_generic.md"), "context")
     template = path.expanduser().resolve().read_text(encoding="utf-8")
     if "{context}" not in template:
         template = template.rstrip() + "\n\nContext:\n{context}\n"
-    return template
+    return assert_formattable(template, "context")
+
+
+_REFINEMENT_PLACEHOLDERS = ("source_markdown", "layout_blocks", "verified_tables")
+_REPAIR_PLACEHOLDERS = (
+    "current_markdown",
+    "layout_blocks",
+    "verified_tables",
+    "unplaced_lines",
+)
 
 
 def load_page_refinement_prompt(path: Path | None) -> str:
     if path is None:
-        return require_placeholders(
-            load_prompt("page_refinement.md"),
-            "source_markdown",
-            "layout_blocks",
-            "verified_tables",
+        return assert_formattable(
+            require_placeholders(
+                load_prompt("page_refinement.md"), *_REFINEMENT_PLACEHOLDERS
+            ),
+            *_REFINEMENT_PLACEHOLDERS,
         )
     template = path.expanduser().resolve().read_text(encoding="utf-8")
     if "{source_markdown}" not in template:
@@ -63,16 +98,13 @@ def load_page_refinement_prompt(path: Path | None) -> str:
         template = template.rstrip() + "\n\nCompact layout block map:\n{layout_blocks}\n"
     if "{verified_tables}" not in template:
         template = template.rstrip() + "\n\nPre-verified tables:\n{verified_tables}\n"
-    return template
+    return assert_formattable(template, *_REFINEMENT_PLACEHOLDERS)
 
 
 def load_page_repair_prompt() -> str:
-    return require_placeholders(
-        load_prompt("page_repair.md"),
-        "current_markdown",
-        "layout_blocks",
-        "verified_tables",
-        "unplaced_lines",
+    return assert_formattable(
+        require_placeholders(load_prompt("page_repair.md"), *_REPAIR_PLACEHOLDERS),
+        *_REPAIR_PLACEHOLDERS,
     )
 
 
@@ -92,6 +124,7 @@ __all__ = [
     "DEFAULT_OLLAMA_MODEL",
     "load_prompt",
     "require_placeholders",
+    "assert_formattable",
     "load_summary_prompt",
     "load_page_refinement_prompt",
     "load_page_repair_prompt",

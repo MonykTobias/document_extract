@@ -18,6 +18,8 @@ Rules:
 - A pre-verified table may be supplied as a group of consecutive `###`-titled subtables that repeat the same column headers: place the whole group verbatim and in order, and never merge them back into one table, convert them to lists, or turn a section title into anything other than its `###` heading.
 - A pre-verified table has exactly one header row. Never repeat its header labels as a body row, and never turn a data row into a `### heading`, a section banner, or a separate `- label: value` field block.
 - Every table row, including its header, must have the same number of cells as its body rows; repeat every visually spanning header or body value in each covered column and row.
+- When a table's rows begin with a row-label column, its header row must begin with a cell for that column too; leave that cell blank when the source prints no label there, but never leave it out.
+- Write every blank cell of a table row explicitly, including blank cells between two values: never shorten a row by omitting them, because a shortened row moves the values after the gap into the wrong columns.
 - A pre-verified table row whose first cell joins a bold title and its detail text with `<br>` is one single row: keep the title and detail together in that one cell. Never split them into two rows, promote the title to a heading, or drop the detail text.
 - A pre-verified table cell may contain a bulleted list written as `<br>`-joined `- item` fragments: keep those fragments together in that one cell exactly as given. Never spill them into separate rows or drop the `<br>` separators.
 - If the page contains grouped panels, KPI blocks, or category/value summaries, ensure each value is attached to the correct label and output as `- LABEL: value` lines.

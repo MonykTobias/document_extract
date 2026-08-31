@@ -1,0 +1,7 @@
+{
+  "contract": "document_extract/progress",
+  "contract_version": "1.0",
+  "event": "run",
+  "status": "start",
+  "total_pages": 4
+}

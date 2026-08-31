@@ -8,12 +8,12 @@ from __future__ import annotations
 import contextlib
 import io
 import json
-import sys
+import os
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from document_extract.artifacts import write_text_atomic
 from document_extract.pipeline.runner import _warn_stale_page_dirs, _write_run_outputs
 from document_extract.runtime import CHECKPOINT_SCHEMA_VERSION, PageState
 
@@ -76,8 +76,95 @@ def main() -> int:
         )
         pages = {row["page"] for row in json.loads((root / "all" / "manifest_all.json").read_text(encoding="utf-8"))}
         check(pages == {1, 2}, "all manifest rebuild covers both page shards")
+    check_empty_states_preserve_existing_outputs()
+    check_atomic_writes()
     print("test_stale_outputs: all checks passed")
     return 0
+
+
+def check_atomic_writes() -> None:
+    """Aggregate writes swap in atomically and never leave a temp file behind.
+
+    Process-parallel shards all rebuild the document-wide all/ aggregates
+    against one output root, so two workers can target the same path at once.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        target = root / "combined.md"
+        target.write_text("old content", encoding="utf-8")
+
+        write_text_atomic(target, "new content")
+        check(
+            target.read_text(encoding="utf-8") == "new content",
+            "an atomic write replaces the file contents",
+        )
+        check(
+            [path.name for path in root.iterdir()] == ["combined.md"],
+            "a successful atomic write leaves no temp file",
+        )
+
+        original_replace = os.replace
+
+        def failing_replace(*_args, **_kwargs):
+            raise OSError("replace refused")
+
+        os.replace = failing_replace
+        try:
+            write_text_atomic(target, "should not land")
+        except OSError:
+            check(True, "an atomic write propagates a failed replace")
+        finally:
+            os.replace = original_replace
+        check(
+            target.read_text(encoding="utf-8") == "new content",
+            "a failed atomic write leaves the original file intact",
+        )
+        check(
+            [path.name for path in root.iterdir()] == ["combined.md"],
+            "a failed atomic write cleans up its temp file",
+        )
+
+
+def check_empty_states_preserve_existing_outputs() -> None:
+    """A run that completes no pages must not truncate a previous run's outputs.
+
+    ``run_pipeline`` writes run outputs from a ``finally``, and its Docling
+    chunk boundary sits outside the per-page error handler, so a conversion
+    failure reaches the write with an empty state list.
+    """
+    seeded = {
+        "manifest.json": '[{"page": 1, "status": "completed"}]',
+        "blocks.jsonl": '{"block_id": "p0001-b0001"}\n',
+        "token_usage.json": '{"totals": {"total_tokens": 1234}}',
+        "combined_docling_raw.md": "# raw from the previous run\n",
+        "combined_docling_final.md": "# final from the previous run\n",
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        for name, payload in seeded.items():
+            (root / name).write_text(payload, encoding="utf-8")
+
+        _write_run_outputs(root, [], shard=False)
+
+        check(
+            all(
+                (root / name).read_text(encoding="utf-8") == payload
+                for name, payload in seeded.items()
+            ),
+            "a run with no completed pages leaves existing aggregates byte-identical",
+        )
+        check(
+            not (root / "all").exists(),
+            "a run with no completed pages does not rebuild the all/ aggregates",
+        )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        _write_run_outputs(root, [], shard=True)
+        check(
+            not any(root.iterdir()),
+            "a sharded run with no completed pages writes nothing at all",
+        )
 
 
 if __name__ == "__main__":

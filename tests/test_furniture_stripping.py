@@ -5,10 +5,8 @@ Run from the repository root with ``python tests/test_furniture_stripping.py``.
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.layout.furniture import (
     furniture_band,
@@ -167,6 +165,36 @@ def check_chunk_boundary_evidence() -> None:
     )
 
 
+def check_late_debut_header_leaks_in_first_chunk() -> None:
+    """Pin the known chunk-boundary leak (finding 3.12) so a fix is deliberate.
+
+    Signatures accumulate forward across convert chunks but never retroactively
+    clean pages already processed. A footer that debuts near the end of chunk 1
+    has too few occurrences *within that chunk* to clear the threshold, so those
+    pages keep it; the full run has the evidence but can no longer act on it.
+
+    This asserts the current, deliberate behaviour -- see the ``ponytail:``
+    marker in pipeline/runner.py and PLAN_furniture_chunk_recovery.md. When that
+    plan is implemented this check must be updated on purpose, not silently.
+    """
+    footer = "Company annual report"
+    signature = (normalize_furniture_text(footer), "bottom")
+    # 32-page chunk; the footer only starts on page 31, so two occurrences.
+    first_chunk = {
+        page: ([(footer, BOTTOM_RECT)] if page >= 31 else [("Body text", BODY_RECT)])
+        for page in range(1, 33)
+    }
+    later = {page: [(footer, BOTTOM_RECT)] for page in range(33, 41)}
+    check(
+        signature not in repeated_furniture_signatures(first_chunk),
+        "a footer debuting late in the first chunk is not yet detectable there",
+    )
+    check(
+        signature in repeated_furniture_signatures({**first_chunk, **later}),
+        "the full run does have the evidence the first chunk lacked",
+    )
+
+
 def check_chapter_tabs() -> None:
     check(is_chapter_tab("4", RIGHT_RECT), "right-band digit is a chapter tab")
     check(is_chapter_tab("A", RIGHT_RECT), "right-band capital is a chapter tab")
@@ -302,6 +330,7 @@ def main() -> int:
     check_prefix_signatures()
     check_footer_normalization()
     check_chunk_boundary_evidence()
+    check_late_debut_header_leaks_in_first_chunk()
     check_chapter_tabs()
     check_strip_tab_runs()
     check_strip_protections()

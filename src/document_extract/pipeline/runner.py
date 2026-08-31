@@ -3,14 +3,29 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import time
 from concurrent.futures import Future, ProcessPoolExecutor
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
-from ..artifacts import combine_markdown, summarize_token_usage, write_jsonl
+from ..artifacts import (
+    combine_markdown,
+    summarize_token_usage,
+    write_jsonl,
+    write_text_atomic,
+)
+from ..contracts import (
+    COORDINATE_CONVENTION,
+    EVIDENCE_BEARING_ROLES,
+    PAGE_ARTIFACT_ROLES,
+    ROOT_ARTIFACT_ROLES,
+    RUN_CONTRACT,
+    RUN_CONTRACT_VERSION,
+)
 from ..docling_adapter import (
     bbox_dict,
     build_docling_converter,
@@ -29,6 +44,7 @@ from ..runtime import (
     STAGES,
     PageState,
     StatusReporter,
+    emit_progress,
     clear_downstream_artifacts,
     invalidate_from,
     new_page_state,
@@ -180,6 +196,118 @@ def _manifest_row(state: PageState) -> dict[str, Any]:
     }
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _fired_warnings(states: list[PageState]) -> tuple[int, dict[str, int]]:
+    """Warning categories that actually fired, per category and in total.
+
+    A page writes every flag it knows about whether or not it triggered, so
+    counting keys reports a clean page as a warning. A category counts once per
+    page: the number published is "on how many pages did this go wrong", not
+    "how many instances were there".
+    """
+    categories: dict[str, int] = {}
+    for state in states:
+        warnings = state.warnings if isinstance(state.warnings, dict) else {}
+        for name, value in warnings.items():
+            if value:
+                categories[name] = categories.get(name, 0) + 1
+    return sum(categories.values()), dict(sorted(categories.items()))
+
+
+def write_run_contract(
+    output_root: Path,
+    states: list[PageState],
+    *,
+    pdf_path: Path,
+    source_page_count: int,
+    selected: list[int],
+    args: argparse.Namespace,
+    prompt_texts: dict[str, str],
+) -> Path:
+    """Publish ``run.json``: what was extracted, from what, and under which
+    evidence-affecting settings.
+
+    Written even when pages failed. The numbers are the truth about the run;
+    it is the *consumer* that refuses to index a run with a failed page, and it
+    can only do that if the run says so.
+    """
+    completed = [s for s in states if s.status == "completed"]
+    total, categories = _fired_warnings(states)
+    payload = {
+        "contract": RUN_CONTRACT,
+        "contract_version": RUN_CONTRACT_VERSION,
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source": {
+            # Base name only: the output root already locates the run, and the
+            # absolute path is the caller's business, not the artifact's.
+            "filename": pdf_path.name,
+            "sha256": _sha256_file(pdf_path),
+            "page_count": source_page_count,
+        },
+        "selection": {
+            "start_page": selected[0],
+            "end_page": selected[-1],
+            "page_count": len(selected),
+            "complete_document": selected[0] == 1 and selected[-1] == source_page_count,
+        },
+        "coordinate_convention": COORDINATE_CONVENTION,
+        "artifacts": {
+            "root": dict(ROOT_ARTIFACT_ROLES),
+            "page": dict(PAGE_ARTIFACT_ROLES),
+        },
+        "evidence_bearing_roles": list(EVIDENCE_BEARING_ROLES),
+        "settings": {
+            "dpi": int(args.dpi),
+            "refine_mode": getattr(args, "refine_mode", "auto"),
+            "visual_values_mode": getattr(args, "visual_values_mode", "off"),
+            "vlm_model": getattr(args, "ollama_model", ""),
+            "triage_model": getattr(args, "triage_model", "") or getattr(args, "ollama_model", ""),
+            "triage_confidence": float(getattr(args, "triage_confidence", 0.0)),
+            "num_ctx": int(getattr(args, "num_ctx", 0) or 0),
+            "num_predict": int(getattr(args, "num_predict", 0) or 0),
+            "temperature": float(getattr(args, "temperature", 0.0)),
+            "vlm_page_image_max_px": int(getattr(args, "vlm_page_image_max_px", 0) or 0),
+            "table_reconstruction_version": RECONSTRUCTION_VERSION,
+            "visual_collector_version": COLLECTOR_VERSION,
+            # The prompts decide what a page's evidence says, so their content
+            # belongs in the fingerprint; their text does not belong in a
+            # published artifact.
+            "prompt_sha256": {
+                name: hashlib.sha256(text.encode("utf-8")).hexdigest()
+                for name, text in sorted(prompt_texts.items())
+            },
+        },
+        "pages": {
+            "completed": len(completed),
+            "failed": len(states) - len(completed),
+        },
+        "warnings": {
+            "total": total,
+            "categories": categories,
+            "stale_page_dirs": _stale_page_dirs(output_root, states),
+        },
+    }
+    path = output_root / ROOT_ARTIFACT_ROLES["run"]
+    write_text_atomic(path, json.dumps(payload, indent=2, ensure_ascii=False))
+    return path
+
+
+def _stale_page_dirs(output_root: Path, states: list[PageState]) -> list[str]:
+    current = {Path(state.page_dir).name for state in states}
+    return sorted(
+        child.name
+        for child in output_root.glob("page_*")
+        if child.is_dir() and child.name not in current
+    )
+
+
 def _warn_stale_page_dirs(output_root: Path, states: list[PageState]) -> list[str]:
     """List page_* dirs under the output root that this run did not produce.
 
@@ -230,9 +358,9 @@ def _write_all_outputs(output_root: Path) -> None:
             continue
         all_states.append(state)
 
-    (all_out / "manifest_all.json").write_text(
+    write_text_atomic(
+        all_out / "manifest_all.json",
         json.dumps([_manifest_row(state) for state in all_states], indent=2, ensure_ascii=False),
-        encoding="utf-8",
     )
     write_jsonl(
         all_out / "blocks_all.jsonl",
@@ -244,6 +372,13 @@ def _write_all_outputs(output_root: Path) -> None:
 def _write_run_outputs(
     output_root: Path, states: list[PageState], *, shard: bool = False
 ) -> None:
+    # A run that dies before any page completes must never replace a previous
+    # run's aggregates with empty files. ``run_pipeline`` writes these from a
+    # ``finally``, and its chunk boundary (``pending.result()``) sits outside the
+    # per-page handler, so a failed Docling conversion escapes the page loop
+    # with no states at all. Nothing to summarize means nothing to write.
+    if not states:
+        return
     ordered = sorted(states, key=lambda state: state.page)
     suffix = (
         f"_p{ordered[0].page:04d}-p{ordered[-1].page:04d}" if shard and ordered else ""
@@ -254,12 +389,13 @@ def _write_run_outputs(
     final_dirs = [Path(state.page_dir) for state in successful]
     block_rows = [row for state in successful for row in state.block_rows]
     write_jsonl(output_root / f"blocks{suffix}.jsonl", block_rows)
-    (output_root / f"manifest{suffix}.json").write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8"
+    write_text_atomic(
+        output_root / f"manifest{suffix}.json",
+        json.dumps(manifest, indent=2, ensure_ascii=False),
     )
-    (output_root / f"token_usage{suffix}.json").write_text(
+    write_text_atomic(
+        output_root / f"token_usage{suffix}.json",
         json.dumps(summarize_token_usage(manifest), indent=2, ensure_ascii=False),
-        encoding="utf-8",
     )
     combine_markdown(raw_dirs, output_root / f"combined_docling_raw{suffix}.md", "docling_raw.md")
     combine_markdown(final_dirs, output_root / f"combined_docling_final{suffix}.md", "docling_final.md")
@@ -305,6 +441,24 @@ def _stale_reconstruction(state: PageState) -> bool:
     )
 
 
+def _require_docling() -> None:
+    """Fail in the main process, where the reason is still visible.
+
+    ``build_docling_converter`` runs inside the convert pool's initializer, and
+    an initializer that raises kills the pool without surfacing its exception:
+    the caller sees only ``BrokenProcessPool``. docling is deliberately not a
+    declared dependency, so a missing install is the most likely first-run
+    failure and deserves an actionable message.
+    """
+    try:
+        import docling  # noqa: F401, PLC0415
+    except ImportError as error:
+        raise RuntimeError(
+            "docling is required for PDF conversion but is not installed. "
+            "Install it with: pip install -r requirements-docling-gpu.txt"
+        ) from error
+
+
 def run_pipeline(args: argparse.Namespace) -> int:
     import fitz  # noqa: PLC0415
 
@@ -318,6 +472,12 @@ def run_pipeline(args: argparse.Namespace) -> int:
     if getattr(args, "vlm_concurrency", 1) < 1:
         raise ValueError("--vlm-concurrency must be at least 1")
     pdf_path = ensure_pdf(args.pdf)
+    # After the argument checks, so a mistyped path reports itself rather than
+    # the environment. Resumed runs replay saved page state and never convert,
+    # so they must stay usable without docling: use_prefetch below is false and
+    # _prepare_page never runs.
+    if not args.resume_from:
+        _require_docling()
     visual_reader = None
     if visual_values_mode != "off":
         from pypdf import PdfReader  # noqa: PLC0415
@@ -339,7 +499,11 @@ def run_pipeline(args: argparse.Namespace) -> int:
     image_summary_prompt = load_summary_prompt(None)
 
     with fitz.open(pdf_path) as pdf_doc:
-        pages = selected_page_numbers(len(pdf_doc), args.start_page, args.end_page)
+        # The source document's own length, which the run contract publishes
+        # next to the selection: "4 of 494 pages" and "all 4 pages" are
+        # different runs, and only the source count tells them apart.
+        source_page_count = len(pdf_doc)
+        pages = selected_page_numbers(source_page_count, args.start_page, args.end_page)
         page_sizes = {}
         for page in pages:
             rect = pdf_doc.load_page(page - 1).rect
@@ -387,6 +551,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
         total_pages = len(pages)
         run_started_at = time.perf_counter()
         states: list[PageState] = []
+        emit_progress("run", "start", total_pages=total_pages)
 
         try:
             for page_index, page_number in enumerate(pages, start=1):
@@ -558,8 +723,28 @@ def run_pipeline(args: argparse.Namespace) -> int:
             if pool is not None:
                 pool.shutdown(wait=True, cancel_futures=True)
             _write_run_outputs(output_root, states, shard=getattr(args, "shard", False))
+            if states and not getattr(args, "shard", False):
+                write_run_contract(
+                    output_root,
+                    states,
+                    pdf_path=pdf_path,
+                    source_page_count=source_page_count,
+                    selected=pages,
+                    args=args,
+                    prompt_texts={
+                        "page_refinement": page_refinement_prompt,
+                        "page_repair": page_repair_prompt,
+                        "picture_summary": image_summary_prompt,
+                    },
+                )
 
     failed = [state for state in states if state.status == "failed"]
+    emit_progress(
+        "run",
+        "fail" if failed else "ok",
+        total_pages=total_pages,
+        seconds=time.perf_counter() - run_started_at,
+    )
     print(
         f"Done. Outputs written to {output_root} "
         f"pages={len(states)} failed={len(failed)}",

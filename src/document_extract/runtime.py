@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -107,14 +108,17 @@ class PageState:
     @classmethod
     def load(cls, path: Path) -> "PageState":
         payload = json.loads(path.read_text(encoding="utf-8"))
-        history = [StageRecord(**entry) for entry in payload.pop("stage_history", [])]
-        state = cls(stage_history=history, **payload)
-        if state.schema_version != CHECKPOINT_SCHEMA_VERSION:
+        # Check the version before constructing: a checkpoint from a newer
+        # schema adds fields, so the dataclass call would raise TypeError for an
+        # unexpected keyword and this guard could never report the real reason.
+        version = payload.get("schema_version")
+        if version != CHECKPOINT_SCHEMA_VERSION:
             raise ValueError(
-                f"Unsupported page checkpoint schema {state.schema_version}; "
+                f"Unsupported page checkpoint schema {version}; "
                 f"expected {CHECKPOINT_SCHEMA_VERSION}: {path}"
             )
-        return state
+        history = [StageRecord(**entry) for entry in payload.pop("stage_history", [])]
+        return cls(stage_history=history, **payload)
 
 
 def new_page_state(
@@ -187,7 +191,14 @@ def resolve_page_path(path: str | Path | None, page_dir: Path) -> str | None:
 
 
 class StatusReporter:
-    """Print compact, flushed stage status lines for long-running pages."""
+    """Publish stage progress twice: as a status line, and as a contract event.
+
+    The line is for a person watching a console and carries no promises. The
+    JSON object on the line after it is ``document_extract/progress`` and is the
+    only supported way for another program to follow a run -- a consumer that
+    regex-matches the human line is reading a rendering, and breaks the first
+    time a message is reworded.
+    """
 
     def __init__(self, *, page_index: int, total_pages: int, page: int) -> None:
         self.page_index = page_index
@@ -205,6 +216,15 @@ class StatusReporter:
         if fields:
             line += f" {fields}"
         print(line, flush=True)
+        emit_progress(
+            "page" if stage == "page" else "page_stage",
+            status,
+            stage=None if stage == "page" else stage,
+            page=self.page,
+            page_index=self.page_index,
+            total_pages=self.total_pages,
+            **details,
+        )
 
     def start(self, stage: str, **details: Any) -> float:
         started = time.perf_counter()
@@ -229,6 +249,88 @@ class StatusReporter:
             message=str(error)[:160],
         )
         return elapsed
+
+
+def emit_progress(
+    event: str,
+    status: str,
+    *,
+    stage: str | None = None,
+    page: int | None = None,
+    page_index: int | None = None,
+    total_pages: int | None = None,
+    **details: Any,
+) -> None:
+    """Write one contract progress event to stdout, or nothing at all.
+
+    Never raises and never blocks a run: progress is an observation of the
+    extraction, and an extraction must not fail because someone was watching
+    it. The payload is validated before it is written, so a malformed event is
+    dropped here instead of breaking a consumer downstream.
+
+    ``message`` is deliberately discarded -- ``fail`` carries a raw exception
+    string, which belongs in the console and the local log, never in a
+    structured field another process forwards to a browser.
+    """
+    from .contracts import (  # local: contracts imports nothing from runtime
+        PROGRESS_CONTRACT,
+        PROGRESS_CONTRACT_VERSION,
+        ContractError,
+        validate_progress_event,
+    )
+
+    payload: dict[str, Any] = {
+        "contract": PROGRESS_CONTRACT,
+        "contract_version": PROGRESS_CONTRACT_VERSION,
+        "event": event,
+        "status": status,
+    }
+    if stage:
+        payload["stage"] = stage
+    for key, value in (
+        ("page", page), ("page_index", page_index), ("total_pages", total_pages)
+    ):
+        if value is not None:
+            payload[key] = int(value)
+    if details.get("seconds") is not None:
+        try:
+            payload["seconds"] = round(float(details["seconds"]), 3)
+        except (TypeError, ValueError):
+            pass
+    if details.get("error"):
+        payload["error_type"] = str(details["error"])[:80]
+    detail = {
+        key: safe
+        for key, value in details.items()
+        if key not in ("seconds", "error", "message")
+        and (safe := _safe_detail(value)) is not None
+    }
+    if detail:
+        payload["detail"] = detail
+    try:
+        validate_progress_event(payload)
+    except ContractError:
+        return
+    print(json.dumps(payload, ensure_ascii=False, separators=(",", ":")), flush=True)
+
+
+_CODE_LIKE = re.compile(r"^[A-Za-z0-9_.:-]{1,64}$")
+
+
+def _safe_detail(value: Any) -> Any | None:
+    """One published detail value, or ``None`` when it must not be published.
+
+    Counts and flags are always safe. A string is only safe when it is
+    code-like -- a stage name, a reason code, a candidate id. Anything with a
+    separator, a space, or any length to it is prose or a path: the stage
+    details this reads from are ordinary keyword arguments, so the rule has to
+    be what a value looks like rather than what a caller remembered to omit.
+    """
+    if isinstance(value, bool) or isinstance(value, (int, float)):
+        return value
+    if isinstance(value, str) and _CODE_LIKE.match(value):
+        return value
+    return None
 
 
 def _format_value(value: Any) -> str:

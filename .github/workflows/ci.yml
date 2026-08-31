@@ -16,4 +16,7 @@ jobs:
       - run: python -m compileall -q src
       - run: python tests/run_all.py
       - run: python -m pip install "mypy==1.18.2"
-      - run: python -m mypy src/document_extract/markdown src/document_extract/layout src/document_extract/config.py src/document_extract/runtime.py src/document_extract/models.py
+      # --follow-imports=silent keeps the check to the listed pure modules.
+      # Without it mypy also reports errors in every module they import, which
+      # is exactly the set this step deliberately does not type-check.
+      - run: python -m mypy --follow-imports=silent src/document_extract/markdown src/document_extract/layout src/document_extract/config.py src/document_extract/runtime.py src/document_extract/models.py

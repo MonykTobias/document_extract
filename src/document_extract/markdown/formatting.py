@@ -444,6 +444,220 @@ def normalize_pipe_tables(markdown: str) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Source-column reconciliation: put model-written cells back on their real
+# columns while the original row arity is still visible.
+# --------------------------------------------------------------------------- #
+
+_EMPHASIS_RE = re.compile(r"\*+|__")
+# How well a table span must map onto source rows before its rows are rebuilt.
+_RECONCILE_MIN_ROWS = 2
+_RECONCILE_MIN_RATIO = 0.5
+
+
+def _grid_cell_key(text: Any) -> str:
+    """Cell text normalized for grid/model comparison (emphasis, case, spacing)."""
+    return collapse_ws(_EMPHASIS_RE.sub("", str(text))).casefold()
+
+
+def _cell_runs(cells: list[str]) -> tuple[str, ...]:
+    """Non-empty normalized cell values with adjacent repeats collapsed.
+
+    Docling repeats a spanning value in every column it covers while the model
+    writes it once, so runs — not raw cells — are what the two representations
+    can be compared on.
+    """
+    runs: list[str] = []
+    for value in (_grid_cell_key(cell) for cell in cells):
+        if value and (not runs or runs[-1] != value):
+            runs.append(value)
+    return tuple(runs)
+
+
+def _reconcilable_candidates(
+    table_candidates: list[TableCandidate] | None,
+) -> list[TableCandidate]:
+    """Docling candidates whose grid is the coordinate authority for a VLM table."""
+    return [
+        candidate
+        for candidate in table_candidates or []
+        if candidate.kind == "docling_table"
+        and not candidate.verified
+        and not (candidate.stats or {}).get("headerless")
+        and not (candidate.stats or {}).get("kpi_panel")
+        and (candidate.stats or {}).get("format") != "kpi_list"
+    ]
+
+
+def _candidate_grid(candidate: TableCandidate) -> tuple[list[list[str]], int] | None:
+    """``(rows, num_cols)`` of a candidate's structured grid, when usable."""
+    grid = (candidate.stats or {}).get("grid")
+    if not isinstance(grid, dict):
+        return None
+    rows = [
+        [str(cell).strip() for cell in row]
+        for row in grid.get("rows") or []
+        if isinstance(row, list)
+    ]
+    num_cols = int(grid.get("num_cols") or max((len(row) for row in rows), default=0))
+    return (rows, num_cols) if rows and num_cols >= 2 else None
+
+
+def _match_rows_to_grid(
+    rows: list[list[str]], grid_rows: list[list[str]], cursor: int
+) -> list[tuple[int, int]]:
+    """Greedily pair markdown rows with source rows, in order, from ``cursor``.
+
+    In-order matching (rather than a global search) is what lets one Docling
+    table serve several stacked subtables that repeat the same row labels: the
+    second subtable's rows can only match source rows below the first's.
+    """
+    pairs: list[tuple[int, int]] = []
+    for index, cells in enumerate(rows):
+        runs = _cell_runs(cells)
+        if not runs:
+            continue
+        for grid_index in range(cursor, len(grid_rows)):
+            if _cell_runs(grid_rows[grid_index]) == runs:
+                pairs.append((index, grid_index))
+                cursor = grid_index + 1
+                break
+    return pairs
+
+
+def _align_row_to_grid(
+    cells: list[str], grid_row: list[str], num_cols: int
+) -> list[str] | None:
+    """This row's values at their source columns, or None when unresolvable.
+
+    Abstains when the source repeats a value the model wrote fewer times: the
+    row's own text cannot say how many columns that span covers.
+    """
+    values = [cell for cell in cells if cell]
+    filled = [(index, text) for index, text in enumerate(grid_row) if text]
+    if not filled or len(filled) > len(values) or len(grid_row) > num_cols:
+        return None
+    if _cell_runs(grid_row) != _cell_runs(cells):
+        return None
+    # One model-written text per run, reused for every column the source spans,
+    # so the model's own wording (bold labels included) survives the move.
+    run_texts: list[str] = []
+    previous = ""
+    for cell in values:
+        key = _grid_cell_key(cell)
+        if key != previous:
+            run_texts.append(cell)
+            previous = key
+    out = [""] * num_cols
+    run_index = -1
+    previous = ""
+    for index, text in filled:
+        key = _grid_cell_key(text)
+        if key != previous:
+            run_index += 1
+            previous = key
+        out[index] = run_texts[run_index]
+    return out
+
+
+def _padding_keeps_source_columns(cells: list[str], grid_row: list[str]) -> bool:
+    """True when a short row's written cells already sit on their source columns.
+
+    Right-padding leaves every written cell at its own index, so a row that
+    already agrees with the source row there loses nothing by it: the cells it
+    omitted are provably the trailing empties.
+    """
+    return all(
+        not cell
+        or (
+            index < len(grid_row)
+            and _grid_cell_key(grid_row[index]) == _grid_cell_key(cell)
+        )
+        for index, cell in enumerate(cells)
+    )
+
+
+def reconcile_table_columns(
+    markdown: str, table_candidates: list[TableCandidate] | None
+) -> tuple[str, dict[str, int]]:
+    """Rebuild model-written table rows at their source-grid columns.
+
+    Markdown carries no coordinates, so a row that dropped an internal empty
+    cell is indistinguishable from one missing a trailing cell — and padding it
+    on the right (``normalize_pipe_tables``) moves every later value one column
+    left, filing a row total under the previous column's header. The Docling
+    grid still knows each cell's column, so every row that matches a source row
+    is rebuilt from the source layout before padding can guess. Rows that match
+    nothing keep their content and are counted, never silently repositioned.
+    """
+    candidates = _reconcilable_candidates(table_candidates)
+    if not candidates:
+        return markdown, {}
+    lines = markdown.splitlines()
+    cursors: dict[str, int] = {}
+    realigned = 0
+    ambiguous = 0
+    for start, end in iter_pipe_blocks(lines):
+        indices = [
+            index for index in range(start, end) if not is_separator_line(lines[index])
+        ]
+        # Row 0 is the header: restoring it is realign_collapsed_span_headers' job.
+        body = indices[1:]
+        rows = [split_row(lines[index]) for index in body]
+        if not rows:
+            continue
+        best: (
+            tuple[TableCandidate, list[list[str]], int, list[tuple[int, int]]] | None
+        ) = None
+        for candidate in candidates:
+            grid = _candidate_grid(candidate)
+            if grid is None:
+                continue
+            grid_rows, num_cols = grid
+            pairs = _match_rows_to_grid(
+                rows, grid_rows, cursors.get(candidate.candidate_id, 0)
+            )
+            if len(pairs) < max(_RECONCILE_MIN_ROWS, _RECONCILE_MIN_RATIO * len(rows)):
+                continue
+            if best is None or len(pairs) > len(best[3]):
+                best = (candidate, grid_rows, num_cols, pairs)
+        if best is None:
+            continue
+        candidate, grid_rows, num_cols, pairs = best
+        cursors[candidate.candidate_id] = pairs[-1][1] + 1
+        matched = dict(pairs)
+        for position, cells in enumerate(rows):
+            grid_index = matched.get(position)
+            aligned = (
+                _align_row_to_grid(cells, grid_rows[grid_index], num_cols)
+                if grid_index is not None
+                else None
+            )
+            if aligned is None:
+                # Only a short row is a guess — and not even then when its
+                # source row is known and padding already agrees with it.
+                if len(cells) != num_cols and not (
+                    grid_index is not None
+                    and _padding_keeps_source_columns(cells, grid_rows[grid_index])
+                ):
+                    ambiguous += 1
+                continue
+            if aligned != cells:
+                lines[body[position]] = "| " + " | ".join(aligned) + " |"
+            # Count only rows padding would have got wrong: a row that merely
+            # gained its trailing empties is not a finding worth reporting.
+            if aligned != cells + [""] * max(0, num_cols - len(cells)):
+                realigned += 1
+    warnings: dict[str, int] = {}
+    if realigned:
+        warnings["table_rows_realigned"] = realigned
+    if ambiguous:
+        warnings["ambiguous_table_arity"] = ambiguous
+    if not realigned:
+        return markdown, warnings
+    return "\n".join(lines) + ("\n" if markdown.endswith("\n") else ""), warnings
+
+
+# --------------------------------------------------------------------------- #
 # Pseudo-table unwrapping (F4): ruled two-column *layout* pages (Description /
 # Management measures risk spreads) that TableFormer serialized as data tables.
 # --------------------------------------------------------------------------- #
@@ -644,27 +858,42 @@ def drop_empty_header_row(markdown: str) -> tuple[str, int]:
     return re.sub(r"\n{3,}", "\n\n", kept).strip() + "\n", dropped
 
 
+def _header_segment(
+    grid_rows: list[list[str]],
+    header_rows: int,
+    cursor: int,
+    pairs: list[tuple[int, int]],
+) -> list[list[str]]:
+    """The source rows heading this span's body rows.
+
+    One Docling table can hold several stacked subtables that repeat their
+    column headers. Restoring the table's *leading* header rows onto the second
+    subtable relabels its data (invoices "received" instead of "issued"), so the
+    header comes from the rows sitting directly above the matched body rows.
+    """
+    if pairs:
+        # One row of slack: a repeated super-header is often split over an
+        # extra grid row that the leading header block wrote as one.
+        segment = grid_rows[cursor:pairs[0][1]]
+        if 1 <= len(segment) <= header_rows + 1:
+            return segment
+    return grid_rows[:header_rows]
+
+
 def realign_collapsed_span_headers(
     markdown: str, table_candidates: list[TableCandidate] | None
 ) -> tuple[str, int]:
     """Restore a collapsed VLM table header from its matching Docling grid."""
     from ..tables import _grid_header_row_count, _merge_grid_header, numeric_tokens
 
-    candidates = [
-        candidate
-        for candidate in table_candidates or []
-        if candidate.kind == "docling_table"
-        and not candidate.verified
-        and not (candidate.stats or {}).get("headerless")
-        and not (candidate.stats or {}).get("kpi_panel")
-        and (candidate.stats or {}).get("format") != "kpi_list"
-    ]
+    candidates = _reconcilable_candidates(table_candidates)
     if not candidates:
         return markdown, 0
 
     lines = markdown.splitlines()
     replacements: list[tuple[int, str]] = []
     used_candidates: set[str] = set()
+    cursors: dict[str, int] = {}
     for start, _, table_rows in iter_table_spans(lines):
         if len(table_rows) < 2:
             continue
@@ -689,7 +918,12 @@ def realign_collapsed_span_headers(
                 len(row) != num_cols for row in body_rows
             ):
                 continue
-            grid_header = _merge_grid_header(grid_rows, header_rows, num_cols)
+            cursor = cursors.get(candidate.candidate_id, 0)
+            pairs = _match_rows_to_grid(
+                [list(row) for row in body_rows], grid_rows, cursor
+            )
+            header_block = _header_segment(grid_rows, header_rows, cursor, pairs)
+            grid_header = _merge_grid_header(header_block, len(header_block), num_cols)
             current_labels = [label.casefold() for label in current_header if label]
             grid_labels: set[str] = set()
             for label in grid_header:
@@ -724,6 +958,8 @@ def realign_collapsed_span_headers(
                 continue
             replacements.append((start, "| " + " | ".join(grid_header) + " |"))
             used_candidates.add(candidate.candidate_id)
+            if pairs:
+                cursors[candidate.candidate_id] = pairs[-1][1] + 1
             break
     if not replacements:
         return markdown, 0
@@ -1276,6 +1512,7 @@ __all__ = [
     "is_loose_symbol_line", "strip_loose_symbol_lines",
     "mark_redundant_summaries",
     "standalone_value_line_count", "normalize_pipe_tables",
+    "reconcile_table_columns", "realign_collapsed_span_headers",
     "drop_orphan_header_tables", "unwrap_layout_tables", "strip_br_lines",
     "drop_empty_header_row",
     "_rows_prefix_subset", "drop_duplicate_subset_tables", "replace_sectioned_tables",

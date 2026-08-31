@@ -9,12 +9,10 @@ from __future__ import annotations
 
 import re
 import shutil
-import sys
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from document_extract.layout.prompt_map import (
     build_layout_prompt_map,
